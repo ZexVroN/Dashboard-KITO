@@ -170,9 +170,14 @@
           Bt = 30;
         const vals = s.map((x) => x?.[k]).filter((x) => x != null);
         const top = Math.ceil(Math.max(60, ...vals) / 60) * 60;
+        const PX = 14; // jarak titik pertama/terakhir dari tepi grafik
         const X = (i) =>
-            L + (D.dates.length < 2 ? 0 : (i * (W - L - R)) / (D.dates.length - 1)),
-          Y = (v) => T + (H - T - Bt) * (1 - v / top);
+        L +
+        PX +
+        (D.dates.length < 2
+        ? 0
+        : (i * (W - L - R - 2 * PX)) / (D.dates.length - 1)),
+        Y = (v) => T + (H - T - Bt) * (1 - v / top);
         let g = "";
         for (let i = 0; i <= 2; i++) {
           const v = (top * i) / 2;
@@ -198,7 +203,49 @@
         }
         return `<div class="u"><b>${nama}</b><svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Tren ${nama}">${g}</svg></div>`;
       }
+      
 
+              const rk = { m: 2, s: "region" }; // m: metrik, s: cakupan
+        const METRIK = [
+          { n: "Teller", tinggi: false, f: (i) => D.Q[i][st.d]?.[0] },
+          { n: "CS", tinggi: false, f: (i) => D.Q[i][st.d]?.[1] },
+          { n: "Semua TRX", tinggi: false, f: (i) => D.Q[i][st.d]?.[2] },
+          {
+            n: "O2O %",
+            tinggi: true,
+            f: (i) => {
+              const m = D.M[i];
+              return m && m[0] + m[1] > 0 ? m[0] / (m[0] + m[1]) : null;
+            },
+          },
+        ];
+
+        function kartuRanking() {
+          const M = METRIK[rk.m],
+            fmt = (v) => (M.tinggi ? P(v) : f(v)),
+            kelas = (v) => (M.tinggi ? club(v) : mp(v))[1];
+          const rows = D.B.map((b, i) => ({ i, b, v: M.f(i) }))
+            .filter((r) => r.v != null && r.v > 0 && (rk.s === "region" || r.b[2] === st.a))
+            .sort((x, y) => (M.tinggi ? y.v - x.v : x.v - y.v));
+          const n = Math.min(10, Math.floor(rows.length / 2));
+          const terbaik = rows.slice(0, n),
+            terburuk = rows.slice(rows.length - n).reverse();
+          const baris = (arr) =>
+            arr
+              .map(
+                (r, j) =>
+                  `<div class="rk" data-b="${r.i}"><span class="no">${j + 1}</span><span class="nm">${esc(r.b[1])}<small>${esc(r.b[2])}</small></span><b class="${kelas(r.v)}">${fmt(r.v)}</b></div>`,
+              )
+              .join("");
+          const tombol = (attr, val, teks, aktif) =>
+            `<button type="button" data-${attr}="${val}" class="${aktif ? "on" : ""}">${esc(teks)}</button>`;
+          const tgl = M.tinggi ? D.mdate : D.dates[st.d];
+          return `<div class="cd"><h2>Ranking Cabang · ${dlong(tgl)}</h2>
+            <div class="seg">${METRIK.map((x, j) => tombol("m", j, x.n, j === rk.m)).join("")}</div>
+            <div class="seg">${tombol("s", "region", "Seluruh Region II", rk.s === "region")}${tombol("s", "area", "Area: " + st.a, rk.s === "area")}</div>
+            ${n ? `<div class="rk-judul ok">▲ ${n} Terbaik</div>${baris(terbaik)}<div class="rk-judul bad">▼ ${n} Terburuk</div>${baris(terburuk)}` : '<div class="sub">Data belum cukup untuk dibuat ranking.</div>'}
+          </div>`;
+        }
 
       function util(label, n, o) {
         const p = pc(n, o),
@@ -248,6 +295,9 @@
           h += `<div class="cd"><h2>Utilisasi NBDS</h2>${util("Financial Perorangan", fpn, fpo)}${util("Financial Non Perorangan", fnn, fno)}${util("Non Financial", nfn, nfo)}</div>`;
         }
         
+
+          h += kartuRanking();
+
         // DETAIL DATA OLD BDS
         h += `<div class="cd"><h2>Detail Data Old BDS (${ob.length})</h2>${ob.length ? `<div class="tw"><table><tr><th>Transaksi</th><th>Nasabah</th><th>Kategori</th><th>User ID</th></tr>${ob.map((x) => `<tr><td>${esc(x[1])}</td><td>${esc(x[2])}</td><td>${chip(x[4] || "–", x[4] === "Finansial" ? "ok" : "n")}</td><td>${esc(x[3])}</td></tr>`).join("")}</table></div>` : '<div class="sub">Tidak ada transaksi Old BDS.</div>'}</div>`;
        
@@ -329,6 +379,25 @@ if (tombolTema) {
     setTema(document.documentElement.dataset.theme === "dark" ? "light" : "dark"),
   );
 }
+
+
+$("#app").addEventListener("click", (e) => {
+  const t = e.target.closest("[data-m],[data-s],[data-b]");
+  if (!t) return;
+  if (t.dataset.m != null) {
+    rk.m = +t.dataset.m;
+    render();
+  } else if (t.dataset.s) {
+    rk.s = t.dataset.s;
+    render();
+  } else if (t.dataset.b != null) {
+    st.b = +t.dataset.b;
+    st.a = D.B[st.b][2];
+    fill();
+    render();
+    scrollTo(0, 0);
+  }
+});
       fill();
       render();
   

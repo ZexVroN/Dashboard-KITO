@@ -321,3 +321,44 @@ footer {
 [data-theme="dark"] .chip.warn { color: #ffa45c; }
 [data-theme="dark"] .chip.bad { color: #ff8a80; }
 [data-theme="dark"] .chip.n { background: #26324f; color: #c4cde0; }
+
+
+/* ===== Ranking cabang ===== */
+.seg { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px; }
+.seg button {
+  border: 1px solid var(--ln);
+  background: var(--cd);
+  color: var(--mu);
+  border-radius: 999px;
+  padding: 6px 12px;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.seg button.on { background: var(--nv); border-color: var(--nv); color: #fff; }
+.rk-judul { margin: 14px 0 4px; font-size: 13px; font-weight: 800; }
+.rk {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 0;
+  border-top: 1px solid var(--ln);
+  cursor: pointer;
+}
+.rk .no {
+  flex: none;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: #eef2fb;
+  color: var(--nv);
+  font-size: 12px;
+  font-weight: 800;
+  display: grid;
+  place-items: center;
+}
+.rk .nm { flex: 1; min-width: 0; font-size: 13px; font-weight: 600; }
+.rk .nm small { display: block; color: var(--mu); font-weight: 500; font-size: 11px; }
+.rk b { font-variant-numeric: tabular-nums; }
+[data-theme="dark"] .rk .no { background: #26324f; color: var(--tx); }

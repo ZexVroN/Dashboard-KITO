@@ -362,3 +362,51 @@ footer {
 .rk .nm small { display: block; color: var(--mu); font-weight: 500; font-size: 11px; }
 .rk b { font-variant-numeric: tabular-nums; }
 [data-theme="dark"] .rk .no { background: #26324f; color: var(--tx); }
+
+
+/* ===== Pencarian cabang ===== */
+.cari { position: relative; margin-top: 8px; }
+.cari input {
+  width: 100%;
+  padding: 11px 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  background: #fff;
+  color: var(--nv);
+  font: inherit;
+  font-size: 16px; /* 16px mencegah layar HP memperbesar sendiri saat diketuk */
+  font-weight: 600;
+  -webkit-appearance: none;
+  appearance: none;
+}
+.cari input::placeholder { color: #8a94a8; font-weight: 500; }
+.cari input:focus-visible { outline: 3px solid rgba(255, 255, 255, 0.55); outline-offset: 1px; }
+.hasil {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: calc(100% + 6px);
+  max-height: 50vh;
+  overflow-y: auto;
+  background: #fff;
+  color: #14213d;
+  border-radius: 14px;
+  box-shadow: 0 12px 32px rgba(0, 32, 96, 0.3);
+  z-index: 10;
+}
+.hasil[hidden] { display: none; }
+.hasil div {
+  padding: 11px 14px;
+  font-size: 14px;
+  font-weight: 600;
+  border-top: 1px solid #eef1f6;
+  cursor: pointer;
+}
+.hasil div:first-child { border-top: 0; }
+.hasil div:hover, .hasil div.pilih { background: #f1f5fd; }
+.hasil small { display: block; color: #667085; font-weight: 500; font-size: 12px; }
+.hasil .kosong { color: #667085; cursor: default; font-weight: 500; }
+[data-theme="dark"] .hasil { background: var(--cd); color: var(--tx); }
+[data-theme="dark"] .hasil div { border-top-color: var(--ln); }
+[data-theme="dark"] .hasil div:hover, [data-theme="dark"] .hasil div.pilih { background: #1b2744; }
+[data-theme="dark"] .hasil small { color: var(--mu); }

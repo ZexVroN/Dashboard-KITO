@@ -398,6 +398,63 @@ $("#app").addEventListener("click", (e) => {
     scrollTo(0, 0);
   }
 });
+
+
+const qi = $("#q"),
+  hs = $("#hasil");
+let hasilCari = [];
+
+function cari() {
+  const kata = qi.value.trim().toLowerCase().split(/\s+/).filter(Boolean);
+  if (!kata.length) {
+    hs.hidden = true;
+    hasilCari = [];
+    return;
+  }
+  hasilCari = D.B.map((b, i) => [b, i])
+    .filter(([b]) => {
+      const teks = (b[1] + " " + b[0]).toLowerCase();
+      return kata.every((w) => teks.includes(w));
+    })
+    .sort((x, y) => x[0][1].localeCompare(y[0][1]))
+    .slice(0, 30);
+  hs.innerHTML = hasilCari.length
+    ? hasilCari
+        .map(([b, i]) => `<div data-i="${i}">${esc(b[1])}<small>${esc(b[2])} · ${esc(b[0])}</small></div>`)
+        .join("")
+    : '<div class="kosong">Cabang tidak ditemukan</div>';
+  hs.hidden = false;
+}
+
+function bukaCabang(i) {
+  st.b = i;
+  st.a = D.B[i][2];
+  qi.value = "";
+  hs.hidden = true;
+  qi.blur();
+  fill();
+  render();
+  scrollTo(0, 0);
+}
+
+if (qi) {
+  qi.addEventListener("input", cari);
+  qi.addEventListener("focus", cari);
+  qi.addEventListener("keydown", (e) => {
+    if (e.key === "Enter" && hasilCari.length) bukaCabang(hasilCari[0][1]);
+    if (e.key === "Escape") {
+      qi.value = "";
+      hs.hidden = true;
+    }
+  });
+  hs.addEventListener("click", (e) => {
+    const r = e.target.closest("[data-i]");
+    if (r) bukaCabang(+r.dataset.i);
+  });
+  document.addEventListener("click", (e) => {
+    if (!e.target.closest(".cari")) hs.hidden = true;
+  });
+}
       fill();
       render();
   

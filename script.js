@@ -432,6 +432,7 @@ function bukaCabang(i) {
   qi.value = "";
   hs.hidden = true;
   qi.blur();
+  goSlide(0);
   fill();
   render();
   scrollTo(0, 0);
@@ -452,8 +453,33 @@ if (qi) {
     if (r) bukaCabang(+r.dataset.i);
   });
   document.addEventListener("click", (e) => {
-    if (!e.target.closest(".cari")) hs.hidden = true;
+        if (!e.target.closest(".cari, #hasil")) hs.hidden = true;
   });
+}
+
+const gs = $("#geser"),
+  tabs = document.querySelectorAll(".tab-geser button");
+
+function goSlide(i) {
+  gs.scrollTo({ left: i * gs.clientWidth, behavior: "smooth" });
+}
+
+if (gs) {
+  gs.addEventListener(
+    "scroll",
+    () => {
+      const i = Math.round(gs.scrollLeft / gs.clientWidth);
+      tabs.forEach((t, j) => t.classList.toggle("on", j === i));
+      if (i === 0) hs.hidden = true;
+    },
+    { passive: true },
+  );
+  tabs.forEach((t, j) =>
+    t.addEventListener("click", () => {
+      goSlide(j);
+      if (j === 1) setTimeout(() => qi.focus(), 300);
+    }),
+  );
 }
       fill();
       render();

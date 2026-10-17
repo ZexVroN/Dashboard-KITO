@@ -29,21 +29,31 @@
           🌙
         </button>
       </div>
-      <div class="fl">
-        <select id="sa" aria-label="Area"></select
-        ><select id="sc" aria-label="Cabang"></select
-        ><select id="sd" aria-label="Tanggal"></select>
+      <div class="geser" id="geser">
+        <div class="slide">
+          <div class="fl">
+            <select id="sa" aria-label="Area"></select
+            ><select id="sc" aria-label="Cabang"></select
+            ><select id="sd" aria-label="Tanggal"></select>
+          </div>
+        </div>
+        <div class="slide">
+          <div class="cari">
+            <input
+              id="q"
+              type="search"
+              placeholder="Cari nama atau kode cabang…"
+              autocomplete="off"
+              aria-label="Cari cabang"
+            />
+          </div>
+        </div>
       </div>
-      <div class="cari">
-        <input
-          id="q"
-          type="search"
-          placeholder="Cari nama atau kode cabang…"
-          autocomplete="off"
-          aria-label="Cari cabang"
-        />
-        <div id="hasil" class="hasil" hidden></div>
+      <div class="tab-geser">
+        <button type="button" class="on">Filter</button>
+        <button type="button">Cari</button>
       </div>
+      <div id="hasil" class="hasil" hidden></div>
     </header>
     <main id="app"><div class="memuat">Memuat dashboard…</div></main>
     <noscript

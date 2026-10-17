@@ -383,9 +383,9 @@ footer {
 .cari input:focus-visible { outline: 3px solid rgba(255, 255, 255, 0.55); outline-offset: 1px; }
 .hasil {
   position: absolute;
-  left: 0;
-  right: 0;
-  top: calc(100% + 6px);
+  left: 12px;
+  right: 12px;
+  top: calc(100% + 8px);
   max-height: 50vh;
   overflow-y: auto;
   background: #fff;
@@ -410,3 +410,34 @@ footer {
 [data-theme="dark"] .hasil div { border-top-color: var(--ln); }
 [data-theme="dark"] .hasil div:hover, [data-theme="dark"] .hasil div.pilih { background: #1b2744; }
 [data-theme="dark"] .hasil small { color: var(--mu); }
+
+/* ===== Header geser ===== */
+.geser {
+  display: flex;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
+}
+.geser::-webkit-scrollbar { display: none; }
+.slide {
+  flex: 0 0 100%;
+  min-width: 0;
+  scroll-snap-align: start;
+  scroll-snap-stop: always;
+}
+.slide .cari { margin-top: 0; }
+.tab-geser { display: flex; gap: 6px; margin-top: 8px; }
+.tab-geser button {
+  border: 0;
+  background: rgba(255, 255, 255, 0.14);
+  color: rgba(255, 255, 255, 0.8);
+  font: inherit;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 4px 12px;
+  border-radius: 999px;
+  cursor: pointer;
+}
+.tab-geser button.on { background: #fff; color: var(--nv); }

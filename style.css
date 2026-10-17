@@ -13,18 +13,7 @@
         --c2: #e8710c;
         --c3: #12a150;
       }
-      @media (prefers-color-scheme: dark) {
-        :root {
-          --bg: #0d1424;
-          --cd: #16203a;
-          --tx: #e8ecf5;
-          --mu: #9aa6c0;
-          --ln: #26324f;
-          --nv: #0a1a40;
-          --md: #f5b700;
-          --c1: #6ea0ff;
-        }
-      }
+   
       * {
         box-sizing: border-box;
       }

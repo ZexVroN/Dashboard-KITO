@@ -159,6 +159,47 @@
         g += `<line x1="${X(st.d)}" x2="${X(st.d)}" y1="${T}" y2="${H - Bt}" stroke="var(--mu)" stroke-dasharray="3 3"/>`;
         return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Tren waktu antrian">${g}</svg><div class="lg">${nm.map((n, k) => `<span><i style="background:${col[k]}"></i>${n}</span>`).join("")}</div>`;
       }
+
+        function chart1(k, nama, warna) {
+        const s = D.Q[st.b],
+          W = 340,
+          H = 160,
+          L = 34,
+          R = 18,
+          T = 22,
+          Bt = 30;
+        const vals = s.map((x) => x?.[k]).filter((x) => x != null);
+        const top = Math.ceil(Math.max(60, ...vals) / 60) * 60;
+        const X = (i) =>
+            L + (D.dates.length < 2 ? 0 : (i * (W - L - R)) / (D.dates.length - 1)),
+          Y = (v) => T + (H - T - Bt) * (1 - v / top);
+        let g = "";
+        for (let i = 0; i <= 2; i++) {
+          const v = (top * i) / 2;
+          g += `<line x1="${L}" x2="${W - R}" y1="${Y(v)}" y2="${Y(v)}" stroke="var(--ln)"/><text x="${L - 4}" y="${Y(v) + 3}" font-size="9" text-anchor="end" fill="var(--mu)">${f(v)}</text>`;
+        }
+        D.dates.forEach((d, i) => {
+          g += `<text x="${X(i)}" y="${H - 8}" font-size="9" text-anchor="middle" fill="${i === st.d ? "var(--tx)" : "var(--mu)"}" font-weight="${i === st.d ? 700 : 400}">${dl(d)}</text>`;
+        });
+        const pts = s
+          .map((x, i) => (x?.[k] == null ? null : [X(i), Y(x[k]), x[k], i]))
+          .filter(Boolean);
+        if (pts.length) {
+          g += `<polyline fill="none" stroke="${warna}" stroke-width="2.2" stroke-linejoin="round" points="${pts.map((p) => p[0] + "," + p[1]).join(" ")}"/>`;
+          pts.forEach((p, j) => {
+            // titik tetangga: kalau rata-rata tetangga lebih rendah di layar, angka ditaruh di atas
+            const nb = [pts[j - 1], pts[j + 1]].filter(Boolean).map((q) => q[1]);
+            const atas = nb.length ? nb.reduce((a, b) => a + b) / nb.length >= p[1] : true;
+            const ly = atas ? p[1] - 7 : p[1] + 13;
+            g +=
+              `<circle cx="${p[0]}" cy="${p[1]}" r="${p[3] === st.d ? 4 : 2.8}" fill="${warna}"/>` +
+              `<text x="${p[0]}" y="${ly}" font-size="8" font-weight="${p[3] === st.d ? 700 : 600}" text-anchor="middle" fill="var(--tx)" stroke="var(--cd)" stroke-width="3" stroke-linejoin="round" paint-order="stroke">${f(p[2])}</text>`;
+          });
+        }
+        return `<div class="u"><b>${nama}</b><svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Tren ${nama}">${g}</svg></div>`;
+      }
+
+
       function util(label, n, o) {
         const p = pc(n, o),
           [c, cc] = club(p);
@@ -183,6 +224,8 @@
    ${b[4] || b[5] ? `<div class="row" style="margin-top:10px"><span class="sub">PIC: <b>${esc(b[4] || "–")}</b></span>${b[5] ? `<a class="btn" href="tel:${esc(b[5])}">Telepon</a><a class="btn w" href="https://wa.me/${wa}">WhatsApp</a>` : ""}</div>` : ""}</div>`;
         h += `<div class="cd"><h2>Waktu Antrian · ${dlong(D.dates[st.d])}</h2><div class="g3">${qcard("TELLER", 0)}${qcard("CS", 1)}${qcard("SEMUA TRX", 2)}</div></div>`;
         h += `<div class="cd"><h2>Tren Waktu Antrian</h2>${chart()}</div>`;
+        h += `<div class="cd"><h2>Tren Per Kategori</h2>${chart1(0, "Teller", "var(--c1)")}${chart1(1, "Customer Service", "var(--c2)")}${chart1(2, "Semua TRX", "var(--c3)")}</div>`;
+
         h += `<div class="cd"><h2>Data Kelompok</h2>${[
           ["Teller", 6, 7, 8],
           ["Customer Service", 9, 10, 11],

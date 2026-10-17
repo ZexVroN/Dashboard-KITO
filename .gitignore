@@ -3,7 +3,6 @@
 *.xlsb
 *.xltx
 *.xls
-data.js
 
 # Backend: database akun dan rahasia aplikasi
 app.db

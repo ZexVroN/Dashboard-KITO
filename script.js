@@ -303,6 +303,14 @@
           render();
         }
       });
+
+     const ft = $("#ft");
+if (ft) {
+  ft.innerHTML =
+    "Antrian s.d. <b>" + dlong(D.dates[D.dates.length - 1]) +
+    "</b> · Utilisasi per <b>" + dlong(D.mdate) +
+    "</b><br>Dashboard Monitoring Inbranch · Region II";
+}
       fill();
       render();
   

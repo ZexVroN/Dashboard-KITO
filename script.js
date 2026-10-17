@@ -311,6 +311,24 @@ if (ft) {
     "</b> · Utilisasi per <b>" + dlong(D.mdate) +
     "</b><br>Dashboard Monitoring Inbranch · Region II";
 }
+
+
+const tombolTema = $("#tema");
+function setTema(t) {
+  document.documentElement.dataset.theme = t;
+  tombolTema.textContent = t === "dark" ? "☀️" : "🌙";
+  const m = document.querySelector('meta[name="theme-color"]');
+  if (m) m.content = t === "dark" ? "#0a1a40" : "#002060";
+  try {
+    localStorage.setItem("tema", t);
+  } catch (e) {}
+}
+if (tombolTema) {
+  setTema(document.documentElement.dataset.theme === "dark" ? "dark" : "light");
+  tombolTema.addEventListener("click", () =>
+    setTema(document.documentElement.dataset.theme === "dark" ? "light" : "dark"),
+  );
+}
       fill();
       render();
   

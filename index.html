@@ -9,6 +9,12 @@
     <meta name="theme-color" content="#002060" />
     <title>Dashboard Monitoring Inbranch</title>
     <link rel="stylesheet" href="style.css?v=3" />
+    <script>
+      try {
+        if (localStorage.getItem("tema") === "dark")
+          document.documentElement.dataset.theme = "dark";
+      } catch (e) {}
+    </script>
     <link
       rel="icon"
       href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📊</text></svg>"
@@ -17,7 +23,12 @@
   </head>
   <body>
     <header>
-      <h1>DASHBOARD MONITORING INBRANCH · R2</h1>
+      <div class="bar-atas">
+        <h1>DASHBOARD MONITORING INBRANCH · R2</h1>
+        <button id="tema" class="tema" type="button" aria-label="Ganti tema">
+          🌙
+        </button>
+      </div>
       <div class="fl">
         <select id="sa" aria-label="Area"></select
         ><select id="sc" aria-label="Cabang"></select

@@ -1,0 +1,14 @@
+# Data sumber dan hasil olahan (data operasional bank)
+*.xlsx
+*.xlsb
+*.xltx
+*.xls
+data.js
+
+# Backend: database akun dan rahasia aplikasi
+app.db
+.env
+
+# Lingkungan Python
+.venv/
+__pycache__/

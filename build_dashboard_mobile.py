@@ -95,8 +95,12 @@ for _, r in dr.iterrows():
 
 
 def mask(v):
-    v = s(v)
-    return ("•••" + v[-4:]) if (MASK_ID and len(v) > 4) else v
+    if pd.isna(v):
+        return ""
+    if isinstance(v, float) and v.is_integer():
+        v = int(v)
+    v = str(v).strip()
+    return ("*" * (len(v) - 4) + v[-4:]) if (MASK_ID and len(v) > 4) else v
 
 
 O = []
@@ -107,7 +111,7 @@ for _, r in ob.iterrows():
                 idx[r["nama_cabang"]],
                 s(r["service"]),
                 s(r["cif_class"]),
-                mask(r["usrnam"] if s(r["usrnam"]) else r["user_id"]),
+                mask(r["user_id"]),
                 s(r["Kategorisasi"]),
                 s(r["flag_bds"]),
             ]

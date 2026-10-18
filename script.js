@@ -361,8 +361,8 @@ const URUTAN = [
   kartuO2O,
   kartuShifting,
   kartuUtilisasi,
-  kartuRanking,
   kartuOldBds,
+  kartuRanking,
   kartuDetailAntrian,
 ];
 

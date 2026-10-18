@@ -269,15 +269,19 @@
         h += `<div class="cd"><h2>Tren Waktu Antrian</h2>${chart()}</div>`;
         h += `<div class="cd"><h2>Tren Per Kategori</h2>${chart1(0, "Teller", "var(--c1)")}${chart1(1, "Customer Service", "var(--c2)")}${chart1(2, "Semua TRX", "var(--c3)")}</div>`;
 
-        h += `<div class="cd"><h2>Data Kelompok</h2>${[
+        
+          h += `<div class="cd"><h2>Data Kelompok</h2><div class="kel-grid">${[
           ["Teller", 6, 7, 8],
           ["Customer Service", 9, 10, 11],
         ]
           .map(
             ([n, i, j, k]) =>
-              `<div class="kv"><span><b>${n}</b><div class="sub">${D.kl[0]}: ${b[i] ?? "–"} → ${D.kl[1]}: ${b[j] ?? "–"}</div></span>${ket(b[k])}</div>`,
+              `<div class="kel ${b[k] === "Membaik" ? "ok" : b[k] === "Memburuk" ? "bad" : "n"}"><div class="kel-t">${n}</div><div class="kel-dua"><div class="kel-b"><small>${D.kl[0]}</small><b>${b[i] ?? "–"}</b></div><span class="kel-pn">→</span><div class="kel-b baru"><small>${D.kl[1]}</small><b>${b[j] ?? "–"}</b></div></div>${ket(b[k])}</div>`,
           )
-          .join("")}</div>`;
+          .join("")}</div></div>`;
+
+
+
         if (m) {
           const [o2o, nb, csm, old, fpn, fpo, fnn, fno, nfn, nfo] = m,
             tot = o2o + nb,

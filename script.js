@@ -322,6 +322,7 @@
        
        
           $("#app").innerHTML = h;
+                  pasangUnduh();
         try {
           localStorage.setItem("dbm", JSON.stringify({ b: st.b }));
         } catch (e) {}
@@ -477,6 +478,87 @@ if (gs) {
     }),
   );
 }
+
+
+// ===== Ekspor CSV =====
+function csv(nama, baris) {
+  const sel = (v) => {
+    let t = String(v ?? "");
+    if (/^[=+\-@]/.test(t)) t = "'" + t;
+    return /[;"\n\r]/.test(t) ? '"' + t.replace(/"/g, '""') + '"' : t;
+  };
+  const teks = "\uFEFF" + baris.map((r) => r.map(sel).join(";")).join("\r\n");
+  const url = URL.createObjectURL(new Blob([teks], { type: "text/csv;charset=utf-8" }));
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = nama + ".csv";
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+const namaFile = (s) =>
+  String(s).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+
+const EKSPOR = {
+  antrian() {
+    const s = D.Q[st.b], b = D.B[st.b];
+    csv("antrian-" + namaFile(b[1]), [
+      ["Cabang", "Tanggal", "Teller (mm:ss)", "CS (mm:ss)", "Semua TRX (mm:ss)"],
+      ...D.dates.map((d, i) => [b[1], d, ...[0, 1, 2].map((k) => (s[i]?.[k] == null ? "" : f(s[i][k])))]),
+    ]);
+  },
+  ranking() {
+    const M = METRIK[rk.m];
+    const rows = D.B.map((b, i) => ({ b, v: M.f(i) }))
+      .filter((r) => r.v != null && r.v > 0 && (rk.s === "region" || r.b[2] === st.a))
+      .sort((x, y) => (M.tinggi ? y.v - x.v : x.v - y.v));
+    csv("ranking-" + namaFile(M.n) + "-" + (rk.s === "region" ? "region" : namaFile(st.a)), [
+      ["Peringkat", "Cabang", "Area", M.n],
+      ...rows.map((r, j) => [j + 1, r.b[1], r.b[2], M.tinggi ? P(r.v) : f(r.v)]),
+    ]);
+  },
+  oldbds() {
+    const b = D.B[st.b];
+    csv("old-bds-" + namaFile(b[1]), [
+      ["Cabang", "Transaksi", "Nasabah", "Kategori", "User ID"],
+      ...D.O.filter((x) => x[0] === st.b).map((x) => [b[1], x[1], x[2], x[4], x[3]]),
+    ]);
+  },
+};
+
+// Menempelkan tombol CSV ke judul kartu setelah halaman digambar
+function pasangUnduh() {
+  const peta = [
+    ["Detail Waktu Antrian", "antrian"],
+    ["Ranking Cabang", "ranking"],
+    ["Detail Data Old BDS", "oldbds"],
+  ];
+  document.querySelectorAll("#app .cd h2").forEach((h2) => {
+    const p = peta.find(([awal]) => h2.textContent.startsWith(awal));
+    if (!p) return;
+    if (p[1] === "oldbds" && !D.O.some((x) => x[0] === st.b)) return;
+    h2.insertAdjacentHTML("beforeend", `<button type="button" class="unduh" data-ex="${p[1]}">⬇ CSV</button>`);
+  });
+}
+
+$("#app").addEventListener("click", (e) => {
+  const t = e.target.closest("[data-ex]");
+  if (t) EKSPOR[t.dataset.ex]();
+});
+
+// ===== Cetak =====
+let temaSebelum = null;
+window.addEventListener("beforeprint", () => {
+  temaSebelum = document.documentElement.dataset.theme;
+  document.documentElement.dataset.theme = "light"; // cetak selalu terang
+});
+window.addEventListener("afterprint", () => {
+  if (temaSebelum) document.documentElement.dataset.theme = temaSebelum;
+});
+const cetak = $("#cetak");
+if (cetak) cetak.addEventListener("click", () => window.print());
       fill();
       render();
   

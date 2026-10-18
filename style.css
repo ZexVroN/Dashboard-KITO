@@ -455,3 +455,45 @@ footer {
   text-overflow: ellipsis;
 }
 .rk2 .rk b { font-size: 12px; }
+
+/* ===== Tombol ekspor dan cetak ===== */
+.unduh {
+  margin-left: auto;
+  border: 1px solid var(--ln);
+  background: var(--cd);
+  color: var(--nv);
+  border-radius: 999px;
+  padding: 4px 10px;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: none;
+  letter-spacing: 0;
+  cursor: pointer;
+}
+[data-theme="dark"] .unduh { color: var(--tx); }
+
+.aksi { max-width: 720px; margin: 4px auto 10px; padding: 0 12px; text-align: center; }
+.cetak {
+  border: 1px solid var(--ln);
+  background: var(--cd);
+  color: var(--nv);
+  border-radius: 999px;
+  padding: 9px 18px;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: var(--sh);
+}
+[data-theme="dark"] .cetak { color: var(--tx); }
+
+@media print {
+  header, .aksi, .unduh, #hasil { display: none !important; }
+  body { background: #fff; padding: 0; }
+  .cd { box-shadow: none; animation: none; break-inside: avoid; border: 1px solid #ccd3e0; }
+  .hero, .chip, .stack i, .bar b, .seg button.on {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+}

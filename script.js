@@ -221,31 +221,27 @@
         ];
 
         function kartuRanking() {
-          const M = METRIK[rk.m],
-            fmt = (v) => (M.tinggi ? P(v) : f(v)),
-            kelas = (v) => (M.tinggi ? club(v) : mp(v))[1];
-          const rows = D.B.map((b, i) => ({ i, b, v: M.f(i) }))
-            .filter((r) => r.v != null && r.v > 0 && (rk.s === "region" || r.b[2] === st.a))
-            .sort((x, y) => (M.tinggi ? y.v - x.v : x.v - y.v));
-          const n = Math.min(10, Math.floor(rows.length / 2));
-          const terbaik = rows.slice(0, n),
-            terburuk = rows.slice(rows.length - n).reverse();
-          const baris = (arr) =>
-            arr
-              .map(
-                (r, j) =>
-                  `<div class="rk" data-b="${r.i}"><span class="no">${j + 1}</span><span class="nm">${esc(r.b[1])}<small>${esc(r.b[2])}</small></span><b class="${kelas(r.v)}">${fmt(r.v)}</b></div>`,
-              )
-              .join("");
-          const tombol = (attr, val, teks, aktif) =>
-            `<button type="button" data-${attr}="${val}" class="${aktif ? "on" : ""}">${esc(teks)}</button>`;
-          const tgl = M.tinggi ? D.mdate : D.dates[st.d];
-          return `<div class="cd"><h2>Ranking Cabang · ${dlong(tgl)}</h2>
-            <div class="seg">${METRIK.map((x, j) => tombol("m", j, x.n, j === rk.m)).join("")}</div>
-            <div class="seg">${tombol("s", "region", "Seluruh Region II", rk.s === "region")}${tombol("s", "area", "Area: " + st.a, rk.s === "area")}</div>
-            ${n ? `<div class="rk-judul ok">▲ ${n} Terbaik</div>${baris(terbaik)}<div class="rk-judul bad">▼ ${n} Terburuk</div>${baris(terburuk)}` : '<div class="sub">Data belum cukup untuk dibuat ranking.</div>'}
-          </div>`;
-        }
+  const M = METRIK[rk.m],
+    fmt = (v) => (M.tinggi ? P(v) : f(v)),
+    kelas = (v) => (M.tinggi ? club(v) : mp(v))[1];
+  const rows = D.B.map((b, i) => ({ i, b, v: M.f(i) }))
+    .filter((r) => r.v != null && r.v > 0 && (rk.s === "region" || r.b[2] === st.a))
+    .sort((x, y) => (M.tinggi ? y.v - x.v : x.v - y.v));
+  const n = Math.min(10, Math.floor(rows.length / 2));
+  const terbaik = rows.slice(0, n),
+    terburuk = rows.slice(rows.length - n).reverse();
+  const item = (r, j) =>
+    `<div class="rk" data-b="${r.i}"><span class="no">${j + 1}</span><span class="nm">${esc(r.b[1])}<small>${esc(r.b[2])}</small></span><b class="${kelas(r.v)}">${fmt(r.v)}</b></div>`;
+  const pasang = terbaik.map((r, j) => item(r, j) + item(terburuk[j], j)).join("");
+  const tombol = (attr, val, teks, aktif) =>
+    `<button type="button" data-${attr}="${val}" class="${aktif ? "on" : ""}">${esc(teks)}</button>`;
+  const tgl = M.tinggi ? D.mdate : D.dates[st.d];
+  return `<div class="cd"><h2>Ranking Cabang · ${dlong(tgl)}</h2>
+    <div class="seg">${METRIK.map((x, j) => tombol("m", j, x.n, j === rk.m)).join("")}</div>
+    <div class="seg">${tombol("s", "region", "Seluruh Region II", rk.s === "region")}${tombol("s", "area", "Area: " + st.a, rk.s === "area")}</div>
+    ${n ? `<div class="rk2"><div class="rk-judul ok">▲ ${n} Terbaik</div><div class="rk-judul bad">▼ ${n} Terburuk</div>${pasang}</div>` : '<div class="sub">Data belum cukup untuk dibuat ranking.</div>'}
+  </div>`;
+}
 
       function util(label, n, o) {
         const p = pc(n, o),

@@ -441,3 +441,17 @@ footer {
   cursor: pointer;
 }
 .tab-geser button.on { background: #fff; color: var(--nv); }
+
+/* ===== Ranking dua kolom ===== */
+.rk2 { display: grid; grid-template-columns: 1fr 1fr; column-gap: 12px; }
+.rk2 .rk-judul { margin: 14px 0 4px; font-size: 12px; }
+.rk2 .rk { min-width: 0; gap: 6px; padding: 8px 0; align-items: flex-start; }
+.rk2 .rk .no { width: 20px; height: 20px; font-size: 11px; }
+.rk2 .rk .nm { font-size: 11.5px; line-height: 1.25; overflow-wrap: anywhere; }
+.rk2 .rk .nm small {
+  font-size: 10px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.rk2 .rk b { font-size: 12px; }

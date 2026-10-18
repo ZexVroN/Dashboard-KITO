@@ -266,8 +266,7 @@
         let h = `<div class="cd hero"><h3>${esc(b[1])}</h3><div class="row sub"><span>${esc(b[2])}</span>${b[3] ? chip("Kelas " + b[3], "n") : ""}</div>
    ${b[4] || b[5] ? `<div class="row" style="margin-top:10px"><span class="sub">PIC: <b>${esc(b[4] || "–")}</b></span>${b[5] ? `<a class="btn" href="tel:${esc(b[5])}">Telepon</a><a class="btn w" href="https://wa.me/${wa}">WhatsApp</a>` : ""}</div>` : ""}</div>`;
         h += `<div class="cd"><h2>Waktu Antrian · ${dlong(D.dates[st.d])}</h2><div class="g3">${qcard("TELLER", 0)}${qcard("CS", 1)}${qcard("SEMUA TRX", 2)}</div></div>`;
-        h += `<div class="cd"><h2>Tren Waktu Antrian</h2>${chart()}</div>`;
-        h += `<div class="cd"><h2>Tren Per Kategori</h2>${chart1(0, "Teller", "var(--c1)")}${chart1(1, "Customer Service", "var(--c2)")}${chart1(2, "Semua TRX", "var(--c3)")}</div>`;
+                h += `<div class="cd"><h2>Tren Waktu Antrian</h2><div class="seg" id="dots"><button type="button" class="on">Gabungan</button><button type="button">Teller</button><button type="button">CS</button><button type="button">Semua TRX</button></div><div class="slider" id="sl"><div class="sl"><div class="u"><b>Teller · CS · Semua TRX</b>${chart()}</div></div><div class="sl">${chart1(0, "Teller", "var(--c1)")}</div><div class="sl">${chart1(1, "Customer Service", "var(--c2)")}</div><div class="sl">${chart1(2, "Semua TRX", "var(--c3)")}</div></div></div>`;
 
         
           h += `<div class="cd"><h2>Data Kelompok</h2><div class="kel-grid">${[
@@ -326,6 +325,7 @@
        
        
           $("#app").innerHTML = h;
+                  pasangSlider();
                   pasangUnduh();
         try {
           localStorage.setItem("dbm", JSON.stringify({ b: st.b }));
@@ -563,6 +563,30 @@ window.addEventListener("afterprint", () => {
 });
 const cetak = $("#cetak");
 if (cetak) cetak.addEventListener("click", () => window.print());
+
+// ===== Slider grafik tren =====
+let slIdx = 0;
+function pasangSlider() {
+  const sl = $("#sl");
+  if (!sl) return;
+  const dots = document.querySelectorAll("#dots button");
+  const tandai = (i) => dots.forEach((d, j) => d.classList.toggle("on", j === i));
+  sl.scrollLeft = slIdx * sl.clientWidth;
+  tandai(slIdx);
+  sl.addEventListener(
+    "scroll",
+    () => {
+      slIdx = Math.round(sl.scrollLeft / sl.clientWidth);
+      tandai(slIdx);
+    },
+    { passive: true },
+  );
+  dots.forEach((d, j) =>
+    d.addEventListener("click", () =>
+      sl.scrollTo({ left: j * sl.clientWidth, behavior: "smooth" }),
+    ),
+  );
+}
       fill();
       render();
   

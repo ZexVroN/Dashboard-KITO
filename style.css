@@ -571,3 +571,25 @@ footer {
 [data-theme="dark"] .kel-b b { color: var(--tx); }
 [data-theme="dark"] .kel-b.baru { background: #2a4fa0; border-color: #2a4fa0; }
 [data-theme="dark"] .kel-b.baru b { color: #fff; }
+
+/* ===== Slider grafik tren ===== */
+.slider {
+  display: flex;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
+}
+.slider::-webkit-scrollbar { display: none; }
+.sl {
+  flex: 0 0 100%;
+  min-width: 0;
+  scroll-snap-align: start;
+  scroll-snap-stop: always;
+}
+
+@media print {
+  .slider { display: block; overflow: visible; }
+  .sl { break-inside: avoid; margin-bottom: 8px; }
+}

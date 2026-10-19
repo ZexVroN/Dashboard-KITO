@@ -318,6 +318,9 @@ function kartuUtilisasi() {
   return `<div class="cd"><h2>Utilisasi NBDS</h2>${util("Financial Perorangan", fpn, fpo)}${util("Financial Non Perorangan", fnn, fno)}${util("Non Financial", nfn, nfo)}</div>`;
 }
 
+
+
+
 // Ranking cabang: terbaik di kiri, terburuk di kanan
 function kartuRanking() {
   const M = METRIK[rk.m],

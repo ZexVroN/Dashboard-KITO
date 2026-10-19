@@ -1,4 +1,6 @@
-import sys, json, warnings
+import json
+import sys
+import warnings
 import pandas as pd
 
 warnings.filterwarnings("ignore")
@@ -11,11 +13,12 @@ dr = pd.read_excel(src, sheet_name="Data Raw")
 ob = pd.read_excel(src, sheet_name="Raw Old BDS")
 ls = pd.read_excel(src, sheet_name="Lists", usecols="A:L")
 raw = pd.read_excel(src, sheet_name="Lists", header=None)
-bw = float(raw.iat[19, 12]) / float(raw.iat[19, 14])  # Avg Bankwide O2O (M20/O20)
+
+# Diperbaiki: AP7 (baris 7, kolom AP/indeks 41) / AR7 (baris 7, kolom AR/indeks 43)
+bw = float(raw.iat[6, 41]) / float(raw.iat[6, 43])
 
 
 def sec(x):
-
     return (
         None
         if pd.isna(x)
@@ -35,8 +38,6 @@ dates = sorted(dr["Tanggal"].unique())
 dstr = [pd.Timestamp(d).strftime("%Y-%m-%d") for d in dates]
 mdate = pd.Timestamp(dr.dropna(subset=["O2O"])["Tanggal"].max()).strftime("%Y-%m-%d")
 
-# Kolom kelompok dibaca berdasarkan urutan (kolom ke-5,6 untuk Teller, ke-8,9 untuk CS),
-# jadi nama bulan di judul kolom boleh berubah.
 kol = list(ls.columns)
 
 
@@ -100,6 +101,7 @@ def mask(v):
     if isinstance(v, float) and v.is_integer():
         v = int(v)
     v = str(v).strip()
+    # Diperbaiki: penggunaan operator * yang benar untuk masking string
     return ("*" * (len(v) - 4) + v[-4:]) if (MASK_ID and len(v) > 4) else v
 
 

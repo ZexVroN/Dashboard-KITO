@@ -315,7 +315,7 @@ function kartuUtilisasi() {
   const m = D.M[st.b];
   if (!m) return "";
   const [, , , , fpn, fpo, fnn, fno, nfn, nfo] = m;
-  return `<div class="cd"><h2>Utilisasi NBDS</h2>${util("Teller Perorangan", fpn, fpo)}${util("Teller Perusahaan", fnn, fno)}${util("Custommer Service", nfn, nfo)}</div>`;
+  return `<div class="cd"><h2>Utilisasi NBDS</h2>${util("Teller Perorangan", fpn, fpo)}${util("Teller Perusahaan", fnn, fno)}${util("Customer Service", nfn, nfo)}</div>`;
 }
 
 

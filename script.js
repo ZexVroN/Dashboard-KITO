@@ -45,12 +45,12 @@ const club = (p) =>
   p == null
     ? ["–", "n"]
     : p < 0.7
-      ? ["<70%", "bad"]
+      ? ["Target : 98%", "bad"]
       : p <= 0.8
-        ? ["70-80%", "warn"]
+        ? ["Target : 98%", "warn"]
         : p <= 0.9
-          ? [">80-90%", "mid"]
-          : [">90-100%", "ok"];
+          ? ["Target : 98%", "mid"]
+          : ["Target : 98%", "ok"];
 
 const chip = (t, c) => `<span class="chip ${c}">${esc(t)}</span>`;
 
@@ -202,9 +202,9 @@ function util(label, n, o) {
   const p = pc(n, o),
     [c, cc] = club(p);
   const warna = cc === "n" ? "mu" : cc === "mid" ? "md" : cc === "warn" ? "wr" : cc === "bad" ? "bd" : "ok";
-  return `<div class="u"><div class="row" style="justify-content:space-between"><b>${label}</b>${chip(c, cc)}</div>
+  return `<div class="u"><div class="row" style="justify-content:space-between"><b>${label}</b>${chip(c,cc)}</div>
   <div class="bar"><b style="width:${(p || 0) * 100}%;background:var(--${warna})"></b></div>
-  <div class="row sub" style="justify-content:space-between"><span>NBDS <b>${n ?? "–"}</b> · Old BDS <b>${o ?? "–"}</b></span><b>${P(p)}${p != null && p >= 0.98 ? " · ≥98%" : ""}</b></div></div>`;
+  <div class="row sub" style="justify-content:space-between"><span>NBDS <b>${n ?? "–"}</b> · Old BDS <b>${o ?? "–"}</b></span><b>${P(p)}${p != null && p >= 0.98 ? " " : ""}</b></div></div>`;
 }
 
 // lingkaran O2O
@@ -315,7 +315,7 @@ function kartuUtilisasi() {
   const m = D.M[st.b];
   if (!m) return "";
   const [, , , , fpn, fpo, fnn, fno, nfn, nfo] = m;
-  return `<div class="cd"><h2>Utilisasi NBDS</h2>${util("Financial Perorangan", fpn, fpo)}${util("Financial Non Perorangan", fnn, fno)}${util("Non Financial", nfn, nfo)}</div>`;
+  return `<div class="cd"><h2>Utilisasi NBDS</h2>${util("Teller Perorangan", fpn, fpo)}${util("Teller Perusahaan", fnn, fno)}${util("Custommer Service", nfn, nfo)}</div>`;
 }
 
 

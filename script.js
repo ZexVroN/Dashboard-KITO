@@ -348,7 +348,8 @@ function kartuRanking() {
 // Tabel transaksi Old BDS untuk cabang terpilih
 function kartuOldBds() {
   const ob = D.O.filter((x) => x[0] === st.b);
-  return `<div class="cd"><h2>Detail Data Old BDS (${ob.length})</h2>${ob.length ? `<div class="tw"><table><tr><th>Transaksi</th><th>Nasabah</th><th>Kategori</th><th>User ID</th></tr>${ob.map((x) => `<tr><td>${esc(x[1])}</td><td>${esc(x[2])}</td><td>${chip(x[4] || "–", x[4] === "Finansial" ? "ok" : "n")}</td><td>${esc(x[3])}</td></tr>`).join("")}</table></div>` : '<div class="sub">Tidak ada transaksi Old BDS.</div>'}</div>`;
+  const total = ob.reduce((a, x) => a + (x[6] || 0), 0);
+  return `<div class="cd"><h2>Detail Data Old BDS (${ob.length})</h2>${ob.length ? `<div class="tw"><table><tr><th>Transaksi</th><th>Nasabah</th><th>Kategori</th><th>User ID</th><th class="ang">Total Transaksi</th></tr>${ob.map((x) => `<tr><td>${esc(x[1])}</td><td>${esc(x[2])}</td><td>${chip(x[4] || "–", x[4] === "Finansial" ? "ok" : "n")}</td><td>${esc(x[3])}</td><td class="ang">${x[6] ?? "–"}</td></tr>`).join("")}</table></div><div class="note">Total ${total} transaksi dari ${ob.length} baris</div>` : '<div class="sub">Tidak ada transaksi Old BDS.</div>'}</div>`;
 }
 
 // Tabel waktu antrian per tanggal (ketuk baris untuk ganti tanggal)
@@ -597,11 +598,11 @@ const EKSPOR = {
       ...rows.map((r, j) => [j + 1, r.b[1], r.b[2], M.tinggi ? P(r.v) : f(r.v)]),
     ]);
   },
-  oldbds() {
+   oldbds() {
     const b = D.B[st.b];
     csv("old-bds-" + namaFile(b[1]), [
-      ["Cabang", "Transaksi", "Nasabah", "Kategori", "User ID"],
-      ...D.O.filter((x) => x[0] === st.b).map((x) => [b[1], x[1], x[2], x[4], x[3]]),
+      ["Cabang", "Transaksi", "Nasabah", "Kategori", "User ID", "Total Transaksi"],
+      ...D.O.filter((x) => x[0] === st.b).map((x) => [b[1], x[1], x[2], x[4], x[3], x[6] ?? ""]),
     ]);
   },
 };

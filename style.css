@@ -260,6 +260,7 @@ main .cd:nth-child(n + 6) { animation-delay: 0.12s; }
 .sub { color: var(--mu); font-size: 13px; }
 .note { font-size: 12px; color: var(--mu); margin-top: 10px; }
 .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.ang { text-align: right; }
 
 /* tombol telepon dan WhatsApp */
 .btn {

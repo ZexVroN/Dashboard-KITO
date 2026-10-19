@@ -116,6 +116,7 @@ for _, r in ob.iterrows():
                 mask(r["user_id"]),
                 s(r["Kategorisasi"]),
                 s(r["flag_bds"]),
+                n(r["tot_frek"]),
             ]
         )
 

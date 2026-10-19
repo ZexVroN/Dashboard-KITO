@@ -1,27 +1,10 @@
-/* =====================================================================
-   Dashboard Monitoring Inbranch · style.css
-
-   ISI FILE
-   1. Dasar           warna, reset, body
-   2. Header          judul, tombol tema, filter, header geser, pencarian
-   3. Halaman         main, footer, teks memuat, tombol cetak
-   4. Kartu           kartu dasar dan judul kartu
-   5. Komponen        chip, tombol, daftar, bar, tabel, tombol pilihan, CSV
-   6. Kartu khusus    nama cabang, antrian, grafik, kelompok, ranking
-   7. Layar lebar
-   8. Mode gelap      SEMUA aturan mode gelap ada di sini
-   9. Cetak
-
-   Mengubah warna utama: ubah variabel di bagian 1 (:root).
-   ===================================================================== */
-
 /* ===== 1. DASAR ===== */
 :root {
   --bg: #f2f4f8;
   --cd: #fff;
   --tx: #14213d;
   --mu: #667085;
-  --ln: #e4e7ec;
+  --ln: #e4ece8;
   --nv: #002060;
   --ok: #12a150;
   --md: #c28a00;
@@ -387,6 +370,35 @@ tr[data-d]:hover td { background: #f5f8fe; }
 tr.on td { background: rgba(37, 99, 235, 0.09); }
 tr.on td:first-child { box-shadow: inset 3px 0 0 var(--c1); }
 
+
+/* --- Shifting Digital --- */
+.sh-atas { display: flex; align-items: center; gap: 14px; margin-bottom: 14px; }
+.sh-n { font-size: 44px; font-weight: 800; letter-spacing: -1px; line-height: 1; color: var(--nv); }
+.sh-t { font-size: 13px; line-height: 1.4; color: var(--mu); }
+.sh-t b { color: var(--tx); }
+.sh-bar { display: flex; gap: 2px; height: 14px; border-radius: 999px; overflow: hidden; background: var(--ln); }
+.sh-bar i { display: block; height: 100%; }
+.sh-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 14px; }
+.sh-it {
+  display: grid;
+  grid-template-columns: 10px 1fr auto;
+  align-items: center;
+  gap: 4px 8px;
+  padding: 10px 12px;
+  border-radius: 14px;
+  background: #f6f8fd;
+  border: 1px solid #e6ecf7;
+}
+.sh-it i { width: 10px; height: 10px; border-radius: 50%; }
+.sh-it span { font-size: 12px; font-weight: 700; color: var(--mu); }
+.sh-it b { font-size: 18px; font-weight: 800; }
+.sh-it small { grid-column: 2 / 4; font-size: 11px; color: var(--mu); }
+.sh-o2o { background: var(--c1); }
+.sh-csm { background: var(--c3); }
+.sh-nbds { background: #98a2b3; }
+.sh-obds { background: var(--c2); }
+
+
 /* ===== 6. KARTU KHUSUS ===== */
 
 /* --- Nama cabang --- */
@@ -595,13 +607,17 @@ tr.on td:first-child { box-shadow: inset 3px 0 0 var(--c1); }
 [data-theme="dark"] .kel-b b { color: var(--tx); }
 [data-theme="dark"] .kel-b.baru { background: #2a4fa0; border-color: #2a4fa0; }
 [data-theme="dark"] .kel-b.baru b { color: #fff; }
+[data-theme="dark"] .sh-n { color: var(--tx); }
+[data-theme="dark"] .sh-it { background: #1b2744; border-color: #26324f; }
+
+
 
 /* ===== 9. CETAK ===== */
 @media print {
   header, .aksi, .unduh, #hasil { display: none !important; }
   body { background: #fff; padding: 0; }
   .cd { box-shadow: none; animation: none; break-inside: avoid; border: 1px solid #ccd3e0; }
-  .hero, .chip, .bar b, .seg button.on {
+    .hero, .chip, .bar b, .sh-bar i, .sh-it i, .seg button.on {
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
   }

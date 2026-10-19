@@ -284,14 +284,30 @@ function kartuO2O() {
      <div class="note">Avg Bankwide ${P(D.bw)} · ${tot ? (abv ? '<b class="ok">⬆ Above Avg</b>' : '<b class="bad">⬇ Below Avg</b>') : ""}</div></div>`;
 }
 
-// Shifting Digital: (O2O + CSM) / total
+// Shifting Digital: (O2O + CSM) / total, dengan rincian empat bagian
 function kartuShifting() {
   const m = D.M[st.b];
   if (!m) return "";
   const [o2o, nb, csm, old] = m,
-    sh = o2o + nb + csm + old;
-  return `<div class="cd"><h2>Shifting Digital</h2><div class="row" style="justify-content:space-between"><div><div class="big">${sh ? P((o2o + csm) / sh) : "–"}</div><div class="sub">(O2O+CSM) / Total</div></div>
-     <div class="sub" style="text-align:right">CSM <b>${csm}</b> · OBDS <b>${old}</b><br>Total Digital <b>${sh}</b></div></div></div>`;
+    sh = o2o + nb + csm + old,
+    dig = o2o + csm;
+  const bagian = [
+    ["O2O", o2o, "sh-o2o"],
+    ["CSM", csm, "sh-csm"],
+    ["NBDS", nb, "sh-nbds"],
+    ["OBDS", old, "sh-obds"],
+  ];
+  const pct = (v) => (sh ? Math.round((v / sh) * 100) + "%" : "–");
+  const bar = bagian.map(([n, v, c]) => (v ? `<i class="${c}" style="flex:${v}"></i>` : "")).join("");
+  const leg = bagian
+    .map(([n, v, c]) => `<div class="sh-it"><i class="${c}"></i><span>${n}</span><b>${v}</b><small>${pct(v)} dari total</small></div>`)
+    .join("");
+  return `<div class="cd"><h2>Shifting Digital · ${dlong(D.mdate)}</h2>
+    <div class="sh-atas"><div class="sh-n">${sh ? P(dig / sh) : "–"}</div>
+      <div class="sh-t">${sh ? `<b>${dig}</b> dari <b>${sh}</b> transaksi lewat O2O dan CSM` : "Belum ada data transaksi"}</div></div>
+    ${sh ? `<div class="sh-bar">${bar}</div><div class="sh-grid">${leg}</div>` : ""}
+    <div class="note">Rumus: (O2O + CSM) ÷ (O2O + NBDS + CSM + OBDS)</div>
+  </div>`;
 }
 
 // Utilisasi NBDS: tiga baris dengan bar

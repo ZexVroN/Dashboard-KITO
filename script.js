@@ -370,6 +370,12 @@ function kartuDetailAntrian() {
     .join("")}</table></div><div class="note">Ketuk baris untuk ganti tanggal.</div></div>`;
 }
 
+// Halaman Region dan Area: tampilan "sedang dalam pengembangan"
+function kartuMaintenance(nama) {
+  return `<div class="cd mt"><div class="mt-ik">🚧</div><h3>Halaman ${nama} sedang dalam pengembangan</h3><p>Tampilan ${nama} sedang kami siapkan. Sementara itu, data lengkap per cabang sudah bisa dilihat di tab Cabang.</p><button type="button" class="btn" data-v="cabang">Buka Cabang</button></div>`;
+}
+
+
 /* ===== 6. URUTAN HALAMAN =====
    Pindahkan baris ke atas atau bawah untuk mengubah posisi kartu.
    Beri // di depan sebuah baris untuk menyembunyikan kartunya. */
@@ -386,8 +392,16 @@ const URUTAN = [
   kartuDetailAntrian,
 ];
 
+// Tab yang sedang dibuka: "region", "area", atau "cabang"
+let tampil = "cabang";
+
 function render() {
-  $("#app").innerHTML = URUTAN.map((kartu) => kartu()).join("");
+  document.body.classList.toggle("maint", tampil !== "cabang");
+  document.querySelectorAll("#nav button").forEach((b) => b.classList.toggle("on", b.dataset.v === tampil));
+  $("#app").innerHTML =
+    tampil === "cabang"
+      ? URUTAN.map((kartu) => kartu()).join("")
+      : kartuMaintenance(tampil === "region" ? "Region" : "Area");
   pasangSlider();
   pasangUnduh();
   try {
@@ -656,6 +670,22 @@ function pasangSlider() {
   );
 }
 
+
+/* --- Navigasi: Region, Area, Cabang --- */
+function bukaTab(v) {
+  if (v === tampil) return;
+  tampil = v;
+  render();
+  scrollTo(0, 0);
+}
+document.addEventListener("click", (e) => {
+  const t = e.target.closest("[data-v]");
+  if (t) bukaTab(t.dataset.v);
+});
+
 /* ===== MULAI ===== */
+
+
+
 fill();
 render();

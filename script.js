@@ -121,17 +121,41 @@ function qcard(name, k) {
   return `<div class="q"><div class="t">${name}</div><div class="v">${f(cur)}</div>${chip(m, c)}<div class="d">${dh}</div><div class="m">MtD ${f(mtd)}</div></div>`;
 }
 
+// lebar grafik mengikuti lebar frame (kartu) di layar
+function lebarGrafik() {
+  const vw = document.documentElement.clientWidth || 360;
+  const sisi = vw >= 720 ? 72 : 56; // padding halaman + padding kartu (kiri dan kanan)
+  return Math.max(260, Math.round(Math.min(vw, 720) - sisi - 2));
+}
+
+// memilih tanggal mana yang diberi label agar tidak saling menumpuk:
+// label dipasang tiap beberapa titik sesuai ruang yang tersedia, dihitung dari tanggal terakhir;
+// tanggal terpilih selalu diberi label
+function idxLabel(n, spasi, minGap, pilih) {
+  const langkah = Math.max(1, Math.ceil(minGap / Math.max(spasi, 1)));
+  const tampil = new Set();
+  for (let i = n - 1; i >= 0; i -= langkah) tampil.add(i);
+  [...tampil].forEach((i) => {
+    if (i !== pilih && Math.abs(i - pilih) * spasi < minGap) tampil.delete(i);
+  });
+  tampil.add(pilih);
+  return tampil;
+}
+
 // grafik gabungan: tiga garis dalam satu grafik
 function chart() {
   const s = D.Q[st.b],
-    W = 340,
+    W = lebarGrafik(),
     H = 190,
     L = 34,
-    R = 10,
+    R = 14,
     T = 12,
     Bt = 26,
     col = ["var(--c1)", "var(--c2)", "var(--c3)"],
     nm = ["Teller", "CS", "Semua TRX"];
+  const n = D.dates.length,
+    spasi = n < 2 ? W : (W - L - R) / (n - 1),
+    tglTampil = idxLabel(n, spasi, 30, st.d);
   const all = s.flat().filter((x) => x != null),
     mx = Math.max(60, ...all),
     top = Math.ceil(mx / 120) * 120 || 120;
@@ -143,6 +167,7 @@ function chart() {
     g += `<line x1="${L}" x2="${W - R}" y1="${Y(v)}" y2="${Y(v)}" stroke="var(--ln)"/><text x="${L - 4}" y="${Y(v) + 3}" font-size="9" text-anchor="end" fill="var(--mu)">${f(v)}</text>`;
   }
   D.dates.forEach((d, i) => {
+    if (!tglTampil.has(i)) return;
     g += `<text x="${X(i)}" y="${H - 8}" font-size="9" text-anchor="middle" fill="${i === st.d ? "var(--tx)" : "var(--mu)"}" font-weight="${i === st.d ? 700 : 400}">${dl(d)}</text>`;
   });
   [0, 1, 2].forEach((k) => {
@@ -156,18 +181,22 @@ function chart() {
   return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Tren waktu antrian">${g}</svg><div class="lg">${nm.map((n, k) => `<span><i style="background:${col[k]}"></i>${n}</span>`).join("")}</div>`;
 }
 
-// grafik satu kategori, dengan nilai di setiap titik
+// grafik satu kategori, dengan nilai di titik-titik yang cukup lega
 function chart1(k, nama, warna) {
   const s = D.Q[st.b],
-    W = 340,
+    W = lebarGrafik(),
     H = 160,
     L = 34,
     R = 18,
     T = 22,
     Bt = 30;
+  const PX = 14; // jarak titik pertama/terakhir dari tepi grafik
+  const n = D.dates.length,
+    spasi = n < 2 ? W : (W - L - R - 2 * PX) / (n - 1),
+    tglTampil = idxLabel(n, spasi, 30, st.d),
+    nilaiTampil = idxLabel(n, spasi, 30, st.d);
   const vals = s.map((x) => x?.[k]).filter((x) => x != null);
   const top = Math.ceil(Math.max(60, ...vals) / 60) * 60;
-  const PX = 14; // jarak titik pertama/terakhir dari tepi grafik
   const X = (i) =>
       L + PX + (D.dates.length < 2 ? 0 : (i * (W - L - R - 2 * PX)) / (D.dates.length - 1)),
     Y = (v) => T + (H - T - Bt) * (1 - v / top);
@@ -177,6 +206,7 @@ function chart1(k, nama, warna) {
     g += `<line x1="${L}" x2="${W - R}" y1="${Y(v)}" y2="${Y(v)}" stroke="var(--ln)"/><text x="${L - 4}" y="${Y(v) + 3}" font-size="9" text-anchor="end" fill="var(--mu)">${f(v)}</text>`;
   }
   D.dates.forEach((d, i) => {
+    if (!tglTampil.has(i)) return;
     g += `<text x="${X(i)}" y="${H - 8}" font-size="9" text-anchor="middle" fill="${i === st.d ? "var(--tx)" : "var(--mu)"}" font-weight="${i === st.d ? 700 : 400}">${dl(d)}</text>`;
   });
   const pts = s
@@ -189,9 +219,9 @@ function chart1(k, nama, warna) {
       const nb = [pts[j - 1], pts[j + 1]].filter(Boolean).map((q) => q[1]);
       const atas = nb.length ? nb.reduce((a, b) => a + b) / nb.length >= p[1] : true;
       const ly = atas ? p[1] - 7 : p[1] + 13;
-      g +=
-        `<circle cx="${p[0]}" cy="${p[1]}" r="${p[3] === st.d ? 4 : 2.8}" fill="${warna}"/>` +
-        `<text x="${p[0]}" y="${ly}" font-size="8" font-weight="${p[3] === st.d ? 700 : 600}" text-anchor="middle" fill="var(--tx)" stroke="var(--cd)" stroke-width="3" stroke-linejoin="round" paint-order="stroke">${f(p[2])}</text>`;
+      g += `<circle cx="${p[0]}" cy="${p[1]}" r="${p[3] === st.d ? 4 : 2.8}" fill="${warna}"/>`;
+      if (nilaiTampil.has(p[3]))
+        g += `<text x="${p[0]}" y="${ly}" font-size="8" font-weight="${p[3] === st.d ? 700 : 600}" text-anchor="middle" fill="var(--tx)" stroke="var(--cd)" stroke-width="3" stroke-linejoin="round" paint-order="stroke">${f(p[2])}</text>`;
     });
   }
   return `<div class="u"><b>${nama}</b><svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Tren ${nama}">${g}</svg></div>`;
@@ -682,6 +712,21 @@ document.addEventListener("click", (e) => {
   const t = e.target.closest("[data-v]");
   if (t) bukaTab(t.dataset.v);
 });
+
+/* --- Grafik menyesuaikan lebar frame saat layar diputar atau diubah ukurannya --- */
+let lebarSaatRender = lebarGrafik(),
+  tmrUkuran;
+window.addEventListener("resize", () => {
+  clearTimeout(tmrUkuran);
+  tmrUkuran = setTimeout(() => {
+    const w = lebarGrafik();
+    if (w !== lebarSaatRender) {
+      lebarSaatRender = w;
+      render();
+    }
+  }, 200);
+});
+
 
 /* ===== MULAI ===== */
 

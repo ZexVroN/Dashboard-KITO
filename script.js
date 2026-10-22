@@ -379,11 +379,7 @@ function kartuRanking() {
 function kartuOldBds() {
   const ob = D.O.filter((x) => x[0] === st.b);
   const total = ob.reduce((a, x) => a + (x[6] || 0), 0);
-<<<<<<< HEAD
   return `<div class="cd"><h2>Detail Data Old BDS (${ob.length})</h2>${ob.length ? `<div class="tw"><table><tr><th>Transaksi</th><th>Nasabah</th><th>Kategori</th><th>User ID</th><th class="ang">Total Transaksi</th></tr>${ob.map((x) => `<tr><td>${esc(x[1])}</td><td>${esc(x[2])}</td><td>${chip(x[4] === "Finansial" ? "Teller" : x[4] === "Non Finansial" ? "Customer Service" : (x[4] || "–"), x[4] === "Finansial" ? "ok" : "n")}</td><td>${esc(x[3])}</td><td class="ang">${x[6] ?? "–"}</td></tr>`).join("")}</table></div><div class="note">Total ${total} transaksi dari ${ob.length} baris</div>` : '<div class="sub">Tidak ada transaksi Old BDS.</div>'}</div>`;
-=======
-  return `<div class="cd"><h2>Detail Data Old BDS (${ob.length})</h2>${ob.length ? `<div class="tw"><table><tr><th>Transaksi</th><th>Nasabah</th><th>Kategori</th><th>User ID</th><th class="ang">Total Transaksi</th></tr>${ob.map((x) => `<tr><td>${esc(x[1])}</td><td>${esc(x[2])}</td><td>${chip(x[4] || "–", x[4] === "Finansial" ? "ok" : "n")}</td><td>${esc(x[3])}</td><td class="ang">${x[6] ?? "–"}</td></tr>`).join("")}</table></div><div class="note">Total ${total} transaksi dari ${ob.length} baris</div>` : '<div class="sub">Tidak ada transaksi Old BDS.</div>'}</div>`;
->>>>>>> 6a52c77393ac884cff15d277b2cd634b7a75798c
 }
 
 // Tabel waktu antrian per tanggal (ketuk baris untuk ganti tanggal)

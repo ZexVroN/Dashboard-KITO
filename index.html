@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width,initial-scale=1,viewport-fit=cover"
+    />
+    <meta name="theme-color" content="#002060" />
+    <title>Dashboard Monitoring Inbranch</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="style.css?v=4" />
+    <script>
+      try {
+        if (localStorage.getItem("tema") === "dark")
+          document.documentElement.dataset.theme = "dark";
+      } catch (e) {}
+    </script>
+    <link rel="apple-touch-icon" sizes="180x180" href="Pic/kito-logo.png" />
+    <link rel="icon" type="image/png" href="Pic/kito-logo.png" />
+    <meta name="robots" content="noindex" />
+  </head>
+  <body>
+    <header>
+      <div class="bar-atas">
+        <h1>DASHBOARD MONITORING INBRANCH · R2</h1>
+        <button id="tema" class="tema" type="button" aria-label="Ganti tema">
+          🌙
+        </button>
+      </div>
+      <div class="geser" id="geser">
+        <div class="slide">
+          <div class="fl">
+            <select id="sa" aria-label="Area"></select
+            ><select id="sc" aria-label="Cabang"></select
+            ><select id="sd" aria-label="Tanggal"></select>
+          </div>
+        </div>
+        <div class="slide">
+          <div class="cari">
+            <input
+              id="q"
+              type="search"
+              placeholder="Cari nama atau kode cabang…"
+              autocomplete="off"
+              aria-label="Cari cabang"
+            />
+          </div>
+        </div>
+      </div>
+      <div class="tab-geser">
+        <button type="button" class="on">Filter</button>
+        <button type="button">Cari</button>
+      </div>
+      <div id="hasil" class="hasil" hidden></div>
+    </header>
+    <main id="app"><div class="memuat">Memuat dashboard…</div></main>
+    <noscript
+      ><p class="memuat">
+        Aktifkan JavaScript untuk melihat dashboard.
+      </p></noscript
+    >
+    <div class="aksi">
+      <button id="cetak" class="cetak" type="button">
+        🖨 Cetak / Simpan PDF
+      </button>
+    </div>
+    <footer id="ft"></footer>
+
+    <nav class="nav" id="nav" aria-label="Navigasi utama">
+      <button type="button" data-v="region">
+        <span class="ik">🗺️</span><span>Region</span>
+      </button>
+      <button type="button" data-v="area">
+        <span class="ik">📍</span><span>Area</span>
+      </button>
+      <button type="button" data-v="cabang" class="on">
+        <span class="ik">🏢</span><span>Cabang</span>
+      </button>
+    </nav>
+    <link rel="stylesheet" href="infografis.css?v=1" />
+    <script src="data.js?v=1"></script>
+    <script src="script.js?v=4"></script>
+    <script src="infografis-data.js?v=1"></script>
+    <script src="infografis.js?v=3"></script>
+    <link rel="stylesheet" href="pegawai.css?v=1" />
+    <script src="pegawai-data.js?v=1"></script>
+    <script src="pegawai.js?v=1"></script>
+  </body>
+</html>

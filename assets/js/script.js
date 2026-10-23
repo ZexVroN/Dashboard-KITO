@@ -114,9 +114,9 @@ function qcard(name, k) {
     dd == null
       ? ""
       : dd < 0
-        ? `<span class="ok">▲ Membaik ${-dd} dtk</span>`
+        ? `<span class="ok">▲ Membaik ${-dd} detik</span>`
         : dd > 0
-          ? `<span class="bad">▼ Memburuk ${dd} dtk</span>`
+          ? `<span class="bad">▼ Memburuk ${dd} detik</span>`
           : '<span class="mu">Tetap</span>';
   return `<div class="q"><div class="t">${name}</div><div class="v">${f(cur)}</div>${chip(m, c)}<div class="d">${dh}</div><div class="m">MtD ${f(mtd)}</div></div>`;
 }

@@ -2,6 +2,8 @@
 (()=>{'use strict';
  const source=window.KITO_INFO_DATA;
  if(!source||typeof URUTAN==='undefined'||typeof D==='undefined')return;
+ const ceilValue=v=>{if(v==null||v==='')return null;const n=typeof v==='string'?Number(v.trim().replace(',','.')):Number(v);return Number.isFinite(n)?Math.ceil(n):null};
+ for(const row of source.rows)for(const key of ['cakra','cif','pebisnis','payroll','pegawai','target_cif'])if(key in row)row[key]=ceilValue(row[key]);
  const byCode=new Map(source.rows.map(r=>[String(r.kode).replace(/\D/g,''),r]));
  const byName=new Map(source.rows.map(r=>[String(r.cabang).trim().toLowerCase(),r]));
  const pegawai=window.KITO_PEGAWAI_DATA?.rows||[];

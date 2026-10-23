@@ -2,6 +2,9 @@
 (()=>{'use strict';
 const data=window.KITO_PEGAWAI_DATA;
 if(!data||typeof URUTAN==='undefined'||typeof D==='undefined')return;
+// Bulatkan setiap nilai sebelum digunakan oleh tabel dan rekap.
+const ceilValue=v=>{if(v==null||v==='')return null;const n=typeof v==='string'?Number(v.trim().replace(',','.')):Number(v);return Number.isFinite(n)?Math.ceil(n):null};
+for(const row of data.rows)for(const key of Object.keys(row.metrics||{})){const [a,t]=row.metrics[key].map(ceilValue);row.metrics[key]=[a,t,a!=null&&t!=null?a-t:null]}
 const map=new Map();
 for(const r of data.rows){const k=String(r.kode).replace(/\D/g,'');if(!map.has(k))map.set(k,[]);map.get(k).push(r)}
 const fields=[['cif','New CIF'],['etb','Akuisisi ETB'],['pebisnis','Rek Pebisnis'],['individu','Rek Individu'],['prioritas','Rek Prioritas'],['payroll','Rek Payroll']];
@@ -12,7 +15,7 @@ function kartuPegawai(){
  const b=D.B[st.b];if(!b)return '';
  const key=String(b[0]??'').replace(/\D/g,'');const list=map.get(key)||[];
  const buttons=fields.map(([k,n],i)=>`<button type="button" class="pg-tab ${i===0?'on':''}" data-pg-m="${k}">${n}</button>`).join('');
- return `<section class="cd pg-card" id="pegawai-cabang"><h2>Informasi Pegawai & Akuisisi · 16 Oktober 2026</h2><p class="pg-desc">Mapping pegawai untuk <b>${esc(b[1])}</b> · Kode ${esc(key)} · ${list.length} pegawai</p>${list.length?`<div class="pg-tabs" role="group" aria-label="Jenis akuisisi">${buttons}</div><div class="pg-summary" id="pg-summary"></div><div class="tw"><table class="pg-table"><thead><tr><th>Pegawai / Jabatan</th><th class="ang">Akuisisi</th><th class="ang">Target</th><th class="ang">Gap</th><th class="ang">Ach.</th></tr></thead><tbody id="pg-rows"></tbody></table></div><p class="pg-desc">Warna: hijau ≥100% target, kuning 80–&lt;100%, merah &lt;80%. Target 0 ditampilkan netral. Gap sesuai sheet pegawai.</p>`:'<p class="pg-desc">Tidak ada mapping pegawai pada sheet pegawai untuk kode cabang ini.</p>'}</section>`;
+ return `<section class="cd pg-card" id="pegawai-cabang"><h2>Informasi Pegawai & Akuisisi · 16 Oktober 2026</h2><p class="pg-desc">Mapping pegawai untuk <b>${esc(b[1])}</b> · Kode ${esc(key)} · ${list.length} pegawai</p>${list.length?`<div class="pg-tabs" role="group" aria-label="Jenis akuisisi">${buttons}</div><div class="pg-summary" id="pg-summary"></div><div class="tw"><table class="pg-table"><thead><tr><th>Pegawai / Jabatan</th><th class="ang">Akuisisi</th><th class="ang">Target</th><th class="ang">Gap</th><th class="ang">Ach.</th></tr></thead><tbody id="pg-rows"></tbody></table></div><p class="pg-desc">Warna: hijau ≥100% target, kuning 80–&lt;100%, merah &lt;80%. Target 0 ditampilkan netral. Target dibulatkan ke atas sesuai sheet pegawai. Gap = Akuisisi − Target setelah pembulatan.</p>`:'<p class="pg-desc">Tidak ada mapping pegawai pada sheet pegawai untuk kode cabang ini.</p>'}</section>`;
 }
 URUTAN.push(kartuPegawai);
 const originalRender=render;

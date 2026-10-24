@@ -14,6 +14,15 @@
     <meta name="apple-mobile-web-app-title" content="KITO" />
     <meta name="format-detection" content="telephone=no" />
     <link rel="manifest" href="manifest.webmanifest" />
+    <!-- Deteksi offline: tampilkan halaman offline jika tidak ada koneksi -->
+    <script>
+      if (!navigator.onLine) {
+        document.location.href = 'offline.html';
+      }
+      window.addEventListener('offline', () => {
+        document.location.href = 'offline.html';
+      });
+    </script>
     <title>Dashboard Monitoring Inbranch</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -63,7 +72,6 @@
     <header>
       <div class="bar-atas">
         <h1>DASHBOARD MONITORING INBRANCH · R2</h1>
-        <button id="muat-ulang" class="tema muat-ulang" type="button" aria-label="Muat ulang data" title="Muat ulang">⟳</button>
         <button id="tema" class="tema" type="button" aria-label="Ganti tema">
           🌙
         </button>
@@ -150,9 +158,5 @@
     <script src="assets/js/region.js?v=4"></script>
     <link rel="stylesheet" href="assets/css/animasi.css?v=2" />
     <script src="assets/js/animasi.js?v=4"></script>
-    <script>
-      // tombol muat ulang (hanya tampil di mode layar penuh: tidak ada tombol refresh Safari)
-      document.getElementById("muat-ulang")?.addEventListener("click", () => location.reload());
-    </script>
 </body>
 </html>

@@ -192,4 +192,15 @@ Skrip **tidak mengekspor** nama/no HP BOM-BOS; User ID disamarkan `******1234`.
 | Gaya mode aplikasi | `assets/css/pwa.css` | tombol ⟳ Muat ulang, tanpa overscroll, safe-area kiri/kanan |
 
 Syarat: dashboard harus diakses lewat **HTTPS**. Uji di iPhone: Safari → Bagikan → *Tambah ke Layar Utama* → buka dari ikon (tanpa bilah alamat Safari).
-Setelah data diperbarui, pengguna mode aplikasi cukup menekan **⟳** (atau menutup–membuka aplikasi).
+
+---
+
+## 8. Deteksi offline & halaman tanpa koneksi
+| Bagian | Lokasi | Catatan |
+|---|---|---|
+| Deteksi offline | Skrip di `<head>` `index.html` | Cek `navigator.onLine` saat halaman muat; jika offline, redirect ke `offline.html`. Listener `offline` untuk perubahan status real-time. |
+| Halaman offline | `offline.html` | Tampil saat tidak ada koneksi internet dengan animasi 📡, saran troubleshooting (periksa WiFi, matikan mode Pesawat), tombol "Coba Lagi", tema gelap/terang (sinkron `localStorage`), safe-area iOS. |
+| Deteksi online kembali | `offline.html` + listener `online` | Update status dan redirect otomatis ke `index.html` saat koneksi kembali (dengan delay 2 detik). |
+| Cek berkala | `offline.html`, interval 5 detik | Memastikan status tercermin dengan cepat bahkan jika browser tidak memicu event `online` dengan sempurna. |
+
+Fitur ini memerlukan **browser yang mendukung `navigator.onLine`** (semua browser modern: Chrome, Firefox, Safari, Edge). Halaman offline juga memakai tema gelap dan styling konsisten dengan dashboard.

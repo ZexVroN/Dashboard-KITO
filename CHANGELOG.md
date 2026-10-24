@@ -6,6 +6,14 @@ Panduan arsitektur dan cara pembaruan data ada di [`DEVELOPER.md`](DEVELOPER.md)
 
 ---
 
+## [v1.11] Deteksi offline + hapus tombol refresh
+- **Halaman offline** (`offline.html`): tampil otomatis saat tidak ada koneksi internet dengan animasi, saran troubleshooting, dan deteksi kembali online.
+- Skrip di `<head>` index.html: `navigator.onLine` diperiksa; jika offline, redirect ke `offline.html`; listener `offline` untuk perubahan status real-time.
+- **Tombol ⟳ muat ulang** (v1.10) dihapus dari header — user dapat refresh lewat browser atau sistem operasi.
+- **offline.html** support tema gelap/terang (sinkron dengan `localStorage`), safe-area padding iOS, dan tombol "Coba Lagi".
+- File baru: `offline.html`. Diubah: `index.html`, `assets/css/pwa.css`.
+- Catatan: fitur offline memerlukan browser yang support `navigator.onLine` (semua browser modern).
+
 ## [v1.10] iOS: layar penuh dari "Tambah ke Layar Utama"
 - Meta iOS: `apple-mobile-web-app-capable`, status bar `black-translucent` (konten sampai ke bawah status bar; header sudah memakai `env(safe-area-inset-top)`), judul aplikasi **KITO**.
 - `manifest.webmanifest` (display `standalone`, `display_override: fullscreen`), ikon 180/192/512 + maskable, favicon 32 px (menggantikan logo 1,2 MB).

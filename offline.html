@@ -1,0 +1,235 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+    <meta name="theme-color" content="#002060" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="KITO" />
+    <meta name="format-detection" content="telephone=no" />
+    <link rel="manifest" href="manifest.webmanifest" />
+    <title>KITO — Tidak Ada Koneksi</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <link rel="apple-touch-icon" sizes="180x180" href="assets/images/ios/apple-touch-icon.png" />
+    <link rel="icon" type="image/png" sizes="32x32" href="assets/images/ios/favicon-32.png" />
+    <style>
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      html {
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        --bg: #f8f9fa;
+        --fg: #1a1a1a;
+        --border: #e0e0e0;
+        --accent: #002060;
+        --accent-light: #0057ae;
+      }
+      html[data-theme="dark"] {
+        --bg: #0f1419;
+        --fg: #f0f0f0;
+        --border: #2a2a2a;
+        --accent: #4a90ff;
+        --accent-light: #6ba3ff;
+      }
+      body {
+        background: var(--bg);
+        color: var(--fg);
+        min-height: 100vh;
+        min-height: 100dvh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+        padding-left: max(20px, env(safe-area-inset-left));
+        padding-right: max(20px, env(safe-area-inset-right));
+        padding-top: max(20px, env(safe-area-inset-top));
+        padding-bottom: max(20px, env(safe-area-inset-bottom));
+      }
+      .kontainer {
+        max-width: 420px;
+        text-align: center;
+      }
+      .ikon {
+        font-size: 64px;
+        margin-bottom: 16px;
+        animation: gelombang 2s ease-in-out infinite;
+      }
+      @keyframes gelombang {
+        0%, 100% { transform: scale(1); }
+        50% { transform: scale(1.1); }
+      }
+      h1 {
+        font-size: 24px;
+        font-weight: 700;
+        margin-bottom: 8px;
+        letter-spacing: -0.5px;
+      }
+      .pesan {
+        font-size: 14px;
+        color: var(--fg);
+        opacity: 0.8;
+        margin-bottom: 24px;
+        line-height: 1.6;
+      }
+      .status-waktu {
+        font-size: 12px;
+        color: var(--fg);
+        opacity: 0.6;
+        margin-bottom: 32px;
+        padding: 12px;
+        background: rgba(0, 0, 0, 0.02);
+        border-radius: 8px;
+        border: 1px solid var(--border);
+      }
+      html[data-theme="dark"] .status-waktu {
+        background: rgba(255, 255, 255, 0.02);
+      }
+      .tombol {
+        display: inline-block;
+        padding: 12px 24px;
+        background: var(--accent);
+        color: white;
+        border: none;
+        border-radius: 8px;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s ease;
+      }
+      .tombol:hover {
+        background: var(--accent-light);
+        transform: translateY(-2px);
+      }
+      .tombol:active {
+        transform: translateY(0);
+      }
+      .saran {
+        margin-top: 32px;
+        padding-top: 24px;
+        border-top: 1px solid var(--border);
+        font-size: 13px;
+        color: var(--fg);
+        opacity: 0.7;
+        line-height: 1.6;
+      }
+      .saran strong {
+        color: var(--fg);
+        opacity: 1;
+      }
+      .tema-btn {
+        position: fixed;
+        top: max(14px, env(safe-area-inset-top));
+        right: max(14px, env(safe-area-inset-right));
+        background: rgba(0, 0, 0, 0.1);
+        border: none;
+        border-radius: 50%;
+        width: 40px;
+        height: 40px;
+        font-size: 18px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s ease;
+      }
+      html[data-theme="dark"] .tema-btn {
+        background: rgba(255, 255, 255, 0.1);
+      }
+      .tema-btn:hover {
+        background: rgba(0, 0, 0, 0.2);
+      }
+      html[data-theme="dark"] .tema-btn:hover {
+        background: rgba(255, 255, 255, 0.2);
+      }
+      .indikator-pulsa {
+        display: inline-block;
+        width: 8px;
+        height: 8px;
+        background: #dc3545;
+        border-radius: 50%;
+        animation: berkedip 1s ease-in-out infinite;
+        margin-right: 6px;
+      }
+      @keyframes berkedip {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.3; }
+      }
+    </style>
+  </head>
+  <body>
+    <button class="tema-btn" id="tema-btn" aria-label="Ganti tema">🌙</button>
+    <div class="kontainer">
+      <div class="ikon">📡</div>
+      <h1>Tidak Ada Koneksi Internet</h1>
+      <p class="pesan">
+        Dashboard KITO memerlukan koneksi internet untuk menampilkan data terbaru. Periksa koneksi Anda dan coba lagi.
+      </p>
+      <div class="status-waktu">
+        <span class="indikator-pulsa"></span>
+        <span id="status">Mendeteksi koneksi…</span>
+      </div>
+      <button class="tombol" id="coba-lagi">Coba Lagi</button>
+      <div class="saran">
+        <strong>Saran:</strong>
+        <ul style="list-style: none; margin-top: 8px;">
+          <li>• Periksa WiFi atau data seluler</li>
+          <li>• Matikan mode Pesawat jika aktif</li>
+          <li>• Muat ulang halaman setelah terhubung</li>
+        </ul>
+      </div>
+    </div>
+
+    <script>
+      // Load tema dari localStorage
+      try {
+        if (localStorage.getItem("tema") === "dark") {
+          document.documentElement.dataset.theme = "dark";
+        }
+      } catch (e) {}
+
+      // Toggle tema
+      document.getElementById("tema-btn").addEventListener("click", () => {
+        const tema = document.documentElement.dataset.theme === "dark" ? "light" : "dark";
+        document.documentElement.dataset.theme = tema;
+        try {
+          localStorage.setItem("tema", tema);
+        } catch (e) {}
+      });
+
+      // Update status koneksi
+      function updateStatus() {
+        const status = document.getElementById("status");
+        if (navigator.onLine) {
+          status.textContent = "Koneksi kembali! Redirect dalam 2 detik…";
+          setTimeout(() => {
+            document.location.href = "index.html";
+          }, 2000);
+        } else {
+          const waktu = new Date().toLocaleTimeString("id-ID");
+          status.textContent = `Offline sejak ${waktu}`;
+        }
+      }
+
+      // Cek koneksi saat halaman dimuat
+      updateStatus();
+
+      // Listener untuk perubahan status koneksi
+      window.addEventListener("online", updateStatus);
+      window.addEventListener("offline", updateStatus);
+
+      // Tombol coba lagi
+      document.getElementById("coba-lagi").addEventListener("click", () => {
+        if (navigator.onLine) {
+          document.location.href = "index.html";
+        } else {
+          alert("Masih tidak ada koneksi. Periksa lagi dalam beberapa saat.");
+        }
+      });
+
+      // Cek koneksi berkala setiap 5 detik
+      setInterval(updateStatus, 5000);
+    </script>
+  </body>
+</html>

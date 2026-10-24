@@ -118,7 +118,15 @@ function qcard(name, k) {
         : dd > 0
           ? `<span class="bad">▼ Memburuk ${dd} detik</span>`
           : '<span class="mu">Tetap</span>';
-  return `<div class="q"><div class="t">${name}</div><div class="v">${f(cur)}</div>${chip(m, c)}<div class="d">${dh}</div><div class="m">MtD ${f(mtd)}</div></div>`;
+  // rincian Single / Multipel tanggal terpilih (D.QD: [Teller single, Teller multipel, CS single, CS multipel])
+  const r = D.QD?.[st.b]?.[st.d];
+  const rinci =
+    k === 2
+      ? "Gabungan<br>Teller + CS"
+      : r && (r[k * 2] != null || r[k * 2 + 1] != null)
+        ? `Single <b>${f(r[k * 2])}</b><br>Multipel <b>${f(r[k * 2 + 1])}</b>`
+        : "Single –<br>Multipel –";
+  return `<div class="q"><div class="t">${name}</div><div class="v">${f(cur)}</div>${chip(m, c)}<div class="s">${rinci}</div><div class="d">${dh}</div><div class="m">MtD ${f(mtd)}</div></div>`;
 }
 
 // lebar grafik mengikuti lebar frame (kartu) di layar
@@ -367,7 +375,7 @@ function kartuUtilisasi() {
   const m = D.M[st.b];
   if (!m) return "";
   const [, , , , fpn, fpo, fnn, fno, nfn, nfo] = m;
-  return `<div class="cd"><h2>Utilisasi NBDS</h2>${util("Teller Perorangan", fpn, fpo)}${util("Teller Perusahaan", fnn, fno)}${util("Customer Service", nfn, nfo)}</div>`;
+  return `<div class="cd"><h2>Utilisasi NBDS</h2>${util("Teller Perorangan", fpn, fpo)}${util("Teller Badan", fnn, fno)}${util("Customer Service", nfn, nfo)}</div>`;
 }
 
 

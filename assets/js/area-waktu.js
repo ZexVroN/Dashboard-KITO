@@ -48,8 +48,9 @@ function tile(name,per,e,isRegion,svc){
   const refArr=per==='mtd'?region.m:region.d[dtdIso()];
   if(!arr)return `<div class="wt-tile"><b class="wt-nm">${name}</b><div class="wt-v n">–</div><span class="chip n">Tidak ada data</span></div>`;
   const i=IDX[svc],v=arr[i];
-  const sub=svc==='all'?'P90 gabungan Teller + CS'
-    :`Single ${clock(arr[i-2])} · Multipel ${clock(arr[i-1])}`;
+  // format sama dengan kotak kanal di tab Cabang: dua baris Single / Multipel
+  const sub=svc==='all'?'Gabungan<br>Teller + CS'
+    :`Single <b>${clock(arr[i-2])}</b><br>Multipel <b>${clock(arr[i-1])}</b>`;
   const ft=delta(v,refArr?refArr[i]:null,isRegion);
   // struktur seragam: nama · nilai · kategori · info · footer pembanding (footer selalu di dasar kotak)
   return `<div class="wt-tile"><b class="wt-nm">${name}</b><div class="wt-v ${tk(v)}">${clock(v)}</div><span class="chip ${tk(v)}">${catText(v)}</span><div class="wt-info"><small>${sub}</small></div>${ft?`<div class="wt-foot">${ft}</div>`:''}</div>`;

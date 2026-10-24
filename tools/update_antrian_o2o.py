@@ -6,6 +6,8 @@ Pemakaian (dari folder Dashboard-KITO):
 Yang diperbarui (hanya Region II / Sumatera 2):
   assets/js/data.js
     - D.dates + D.Q  : P90 Teller / CS / Semua TRX per cabang per tanggal   (sheet "Calc", kunci C|kode|tgl)
+    - D.QD / D.QDM   : rincian Single & Multipel per cabang [Teller single, Teller multipel,
+                       CS single, CS multipel] per tanggal (QD) dan MTD (QDM)     (sheet "Calc")
     - D.B[i][3]      : kelas cabang                                          (sheet "Per Cabang")
     - D.M[i][0..3]   : Livin O2O, NBDS O2O, CSM, Old BDS                      ("Cabang O2O" + "Cabang by Channel")
     - D.M[i][10]     : NBDS seluruh transaksi ganti kartu (penyebut Shifting Digital resmi, "Cabang by Channel")
@@ -136,6 +138,15 @@ def main():
                 seri.append(old)
         Q.append(seri)
     D["dates"], D["Q"] = baru, Q
+
+    # rincian Single/Multipel per cabang: [Teller single, Teller multipel, CS single, CS multipel]
+    RINCI = ("ts", "tm", "cs1", "csm")
+    QD, QDM = [], []
+    for b in D["B"]:
+        x = cab.get(str(b[0]), {})
+        QD.append([[x[t][f] for f in RINCI] if t in x else None for t in baru])
+        QDM.append([x["MTD"][f] for f in RINCI] if "MTD" in x else None)
+    D["QD"], D["QDM"] = QD, QDM
 
     kelas_beda = []
     for i, b in enumerate(D["B"]):

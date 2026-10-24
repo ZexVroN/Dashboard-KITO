@@ -80,3 +80,10 @@ i.ok{background:var(--ok)}i.md{background:var(--md)}i.wr{background:var(--wr)}i.
   .wt-tile{padding:9px}
   .wt-tile .chip{align-self:stretch;text-align:center}
 }
+
+/* isi kotak kanal rata tengah (Area: Waktu Tunggu & Utilisasi NBDS) */
+.wt-tile{align-items:center;text-align:center}
+.wt-tile .wt-nm,.wt-info,.wt-foot{text-align:center}
+.wt-info small{text-align:center}
+.wt-foot{align-items:center}
+.wt-info small b{color:var(--tx);font-variant-numeric:tabular-nums}

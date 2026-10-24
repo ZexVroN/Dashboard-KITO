@@ -5,4 +5,16 @@
 .kito-splash.is-hidden{opacity:0;visibility:hidden;pointer-events:none}
 @media (orientation:portrait){.kito-splash-picture img{object-position:center center}}
 @media (prefers-reduced-motion:reduce){.kito-splash{transition:none}}
+/* Animasi loading (splash.js): kartu kaca di bawah layar, tidak menutupi logo */
+.kito-load{position:absolute;left:50%;bottom:calc(36px + env(safe-area-inset-bottom));transform:translateX(-50%);width:min(86vw,420px);padding:14px 16px 12px;border-radius:16px;background:rgba(0,20,70,.42);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,.22);box-shadow:0 10px 30px rgba(0,0,0,.25);color:#fff;font:600 13px/1.35 "Inter",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;animation:kito-load-masuk .5s ease both}
+.kito-load-top{display:flex;justify-content:space-between;align-items:baseline;gap:10px;margin-bottom:9px}
+.kito-load-txt{opacity:.95;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.kito-load-pct{font-size:18px;font-weight:800;font-variant-numeric:tabular-nums}
+.kito-load-bar{position:relative;height:8px;border-radius:99px;background:rgba(255,255,255,.22);overflow:hidden}
+.kito-load-bar i{position:absolute;left:0;top:0;bottom:0;width:0;border-radius:99px;background:linear-gradient(90deg,#7fd3ff,#ffffff);box-shadow:0 0 12px rgba(127,211,255,.8);transition:width .25s linear}
+.kito-load-bar i::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,transparent,rgba(255,255,255,.75),transparent);transform:translateX(-100%);animation:kito-kilau 1.2s ease-in-out infinite}
+.kito-load-eta{display:block;margin-top:8px;font-size:11px;font-weight:500;opacity:.85;font-variant-numeric:tabular-nums}
+@keyframes kito-load-masuk{from{opacity:0;transform:translate(-50%,12px)}to{opacity:1;transform:translate(-50%,0)}}
+@keyframes kito-kilau{to{transform:translateX(100%)}}
+@media (prefers-reduced-motion:reduce){.kito-load{animation:none}.kito-load-bar i{transition:none}.kito-load-bar i::after{animation:none;display:none}}
 @media print{.kito-splash{display:none!important}}

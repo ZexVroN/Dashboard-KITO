@@ -1,0 +1,67 @@
+/* Dashboard Infografis O2O · tab Area (data: sheet "Area Okt") */
+.o2o-subnav{margin:0 0 12px;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch;padding-bottom:2px}.o2o-subnav::-webkit-scrollbar{display:none}
+.o2o-subnav button{display:inline-flex;align-items:center;gap:6px;flex:none;white-space:nowrap}
+.o2o-eyebrow{display:block;font-size:11px;font-weight:800;letter-spacing:.12em;color:var(--c1)}
+.o2o-hero h3{margin:6px 0 2px;font-size:24px;font-weight:800;color:var(--tx);text-transform:none;letter-spacing:0}
+.o2o-sub{margin:0;color:var(--mu);font-size:12px}
+.o2o-hero-body{display:flex;align-items:center;gap:18px;flex-wrap:wrap;margin-top:16px}
+.o2o-donut{width:140px;flex:none}
+.o2o-kv{flex:1;min-width:170px;display:grid;gap:8px}
+.o2o-kv div{display:flex;justify-content:space-between;align-items:baseline;gap:10px;padding:9px 12px;background:var(--bg);border:1px solid var(--ln);border-radius:12px}
+.o2o-kv span{font-size:12px;color:var(--mu);font-weight:600}
+.o2o-kv b{font-size:18px;font-variant-numeric:tabular-nums}
+.o2o-chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:14px}
+.o2o-title{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
+.o2o-grid{display:grid;grid-template-columns:1fr;gap:12px;margin-top:12px}
+.o2o-seg{--sc:var(--c1);border:1px solid var(--ln);border-radius:16px;padding:14px;background:var(--cd);border-top:4px solid var(--sc);min-width:0}
+.o2o-seg-h{display:flex;align-items:center;gap:8px;font-size:13px}
+.o2o-seg-h .chip{margin-left:auto}
+.o2o-dot{width:10px;height:10px;border-radius:50%;background:var(--sc);flex:none}
+.o2o-pct{font-size:34px;font-weight:800;line-height:1.1;margin:8px 0 6px;color:var(--tx);font-variant-numeric:tabular-nums}
+.o2o-split{display:flex;height:10px;border-radius:99px;overflow:hidden;background:var(--ln)}
+.o2o-split i{display:block;height:100%}
+.o2o-split .a{background:var(--sc)}
+.o2o-split .b{background:var(--ln);filter:brightness(.92)}
+.o2o-split-lg{display:flex;justify-content:space-between;gap:8px;font-size:11px;color:var(--mu);margin-top:6px;flex-wrap:wrap}
+.o2o-split-lg b{color:var(--tx)}
+.o2o-cmp{display:grid;grid-template-columns:78px 1fr 52px;align-items:center;gap:8px;margin-top:8px;font-size:11px}
+.o2o-cmp span{color:var(--mu);font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.o2o-cmp b{text-align:right;font-variant-numeric:tabular-nums}
+.o2o-track{height:8px;border-radius:99px;background:var(--ln);overflow:hidden}
+.o2o-track i{display:block;height:100%;border-radius:99px;background:var(--mu);opacity:.55}
+.o2o-cmp.me .o2o-track i{background:var(--sc);opacity:1}
+.o2o-cmp.me span,.o2o-cmp.me b{color:var(--tx)}
+.o2o-gap{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.o2o-rank-row{display:grid;grid-template-columns:24px minmax(0,1fr) 54px;align-items:center;gap:10px;width:100%;padding:9px 6px;border:0;border-bottom:1px solid var(--ln);background:transparent;color:inherit;font:inherit;text-align:left;cursor:pointer;border-radius:10px}
+.o2o-rank-row:hover{background:rgba(37,99,235,.06)}
+.o2o-rank-row.me{background:rgba(37,99,235,.1)}
+.o2o-rank-no{width:24px;height:24px;border-radius:50%;display:grid;place-items:center;font-size:11px;font-weight:800;background:var(--ln);color:var(--tx)}
+.o2o-rank-row.me .o2o-rank-no{background:var(--nv);color:#fff}
+.o2o-rank-nm{display:block;font-size:12px;font-weight:700;margin-bottom:5px;overflow-wrap:anywhere}
+.o2o-rank-nm small{color:var(--mu);font-weight:500;margin-left:6px}
+.o2o-rank-bar{display:block;position:relative;height:10px;border-radius:99px;background:var(--ln)}
+.o2o-rank-bar i{position:absolute;left:0;top:0;bottom:0;border-radius:99px;background:var(--c1)}
+.o2o-rank-bar u{position:absolute;top:-3px;bottom:-3px;width:2px;border-radius:2px;text-decoration:none}
+.o2o-rank-bar u.reg{background:var(--wr)}
+.o2o-rank-bar u.bw{background:var(--tx)}
+.o2o-rank-row.ok-row .o2o-rank-bar i{background:var(--ok)}
+.o2o-rank-row.bd-row .o2o-rank-bar i{background:var(--bd)}
+.o2o-rank-v{font-weight:800;font-size:13px;text-align:right;font-variant-numeric:tabular-nums}
+.o2o-legend{display:flex;flex-wrap:wrap;gap:14px;font-size:11px;color:var(--mu);margin:10px 0 0}
+.o2o-legend span{display:inline-flex;align-items:center;gap:6px}
+.o2o-legend i{display:inline-block;width:10px;height:10px;border-radius:50%}
+.o2o-legend u{display:inline-block;width:3px;height:12px;border-radius:2px;text-decoration:none}
+.o2o-note{font-size:11px;color:var(--mu);line-height:1.5;margin:12px 0 0}
+.o2o-empty{padding:16px;text-align:center;color:var(--mu);font-size:13px}
+@media(min-width:720px){.o2o-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.o2o-hero h3{font-size:28px}}
+@media print{.o2o-subnav{display:none}.o2o-seg,.o2o-hero{break-inside:avoid}}
+
+/* Shifting Digital level Area (memakai .sh-* dari style.css dan .o2o-rank-* di atas) */
+.sd-card .sh-atas{margin-top:4px}
+.sd-chips{margin:0 0 14px}
+.cd h3.sd-h{margin:22px 0 4px;font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--mu)}
+.sd-sub{display:block;margin:2px 0 0!important;font-size:10.5px;line-height:1.35}
+.sd-warn{color:var(--wr);font-weight:600}
+.sd-more{display:block;width:100%;margin-top:10px;padding:9px 12px;border-radius:12px;border:1px solid var(--ln);background:var(--bg);color:var(--tx);font:inherit;font-size:12px;font-weight:700;cursor:pointer}
+.sd-more:hover{border-color:var(--c1)}
+@media print{.sd-more{display:none}}

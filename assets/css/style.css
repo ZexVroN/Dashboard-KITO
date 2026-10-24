@@ -308,6 +308,9 @@ main .cd:nth-child(n + 6) { animation-delay: 0.12s; }
   cursor: pointer;
 }
 .seg button.on { background: var(--nv); border-color: var(--nv); color: #fff; }
+/* ranking cabang: tombol metrik per grup, dengan judul kecil di depan */
+.rk-seg { align-items: center; margin-bottom: 8px; }
+.rk-g { flex: 0 0 100%; font-size: 10.5px; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; color: var(--mu); }
 
 /* tombol CSV di judul kartu */
 .unduh {
@@ -672,3 +675,28 @@ body.maint .geser, body.maint .tab-geser, body.maint #hasil { display: none; }
   .slider { display: block; overflow: visible; }
   .sl { break-inside: avoid; margin-bottom: 8px; }
 }
+/* ===== Detail Data Old BDS (tab Cabang & rincian Layanan NBDS) ===== */
+.ob-sub { margin: -2px 0 8px; }
+.ob-ring { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+.ob-tbl { font-size: 12px; }
+.ob-tbl th { white-space: nowrap; font-size: 10.5px; }
+.ob-tbl td { padding: 9px 6px; vertical-align: middle; }
+.ob-tbl .ob-no { width: 30px; text-align: center; color: var(--mu); font-weight: 700; font-variant-numeric: tabular-nums; }
+.ob-trx { min-width: 170px; }
+.ob-trx b, .ob-cab b { display: block; font-weight: 600; line-height: 1.3; }
+.ob-trx small, .ob-cab small { display: block; margin-top: 2px; font-size: 10.5px; color: var(--mu); }
+.ob-cab { min-width: 120px; }
+.ob-nas, .ob-uid { white-space: nowrap; }
+.ob-uid { font-variant-numeric: tabular-nums; letter-spacing: .02em; color: var(--mu); }
+.ob-n { white-space: nowrap; }
+.ob-k { white-space: nowrap; }
+.chip.ob-k-fp { background: rgba(37, 99, 235, .12); color: #1d4ed8; }
+.chip.ob-k-fnp { background: rgba(232, 113, 12, .14); color: #b4540a; }
+.chip.ob-k-nf { background: rgba(18, 161, 80, .13); color: #0b7a3b; }
+[data-theme="dark"] .chip.ob-k-fp { color: #8fb6ff; }
+[data-theme="dark"] .chip.ob-k-fnp { color: #ffa45c; }
+[data-theme="dark"] .chip.ob-k-nf { color: #5ee09a; }
+.ob-tw.gulir { max-height: 420px; overflow: auto; border: 1px solid var(--ln); border-radius: 10px; background: var(--cd); }
+.ob-tw.gulir th { position: sticky; top: 0; background: var(--cd); z-index: 1; }
+.ob-tbl tr:nth-child(even) td { background: rgba(102, 112, 133, .04); }
+@media print { .ob-tw.gulir { max-height: none; overflow: visible; } }

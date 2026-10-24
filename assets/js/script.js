@@ -82,7 +82,7 @@ function fill() {
   const cs = D.B.map((b, i) => [b, i])
     .filter((x) => x[0][2] === st.a)
     .sort((x, y) => x[0][1].localeCompare(y[0][1]));
-  if (!cs.some((x) => x[1] === st.b)) st.b = cs[0][1];
+  if (cs.length && !cs.some((x) => x[1] === st.b)) st.b = cs[0][1];
   $("#sc").innerHTML = cs
     .map(([b, i]) => `<option value="${i}" ${i === st.b ? "selected" : ""}>${esc(b[1])}</option>`)
     .join("");
@@ -248,12 +248,21 @@ function donut(a, b) {
 
 /* ===== 4. PENGATURAN RANKING ===== */
 const rk = { m: 2, s: "region" }; // m: nomor metrik, s: cakupan ("region" atau "area")
+/* Setiap metrik:
+   n       nama tombol, g: grup tombol (judul kecil di depan baris tombol)
+   tinggi  true = nilai besar lebih baik
+   f(i)    nilai untuk cabang ke-i (null = tidak ikut ranking)
+   Opsional (modul tambahan, mis. area-nbds.js, boleh mengisi):
+   fmt(v)  teks nilai · kelas(v) kelas warna · valid(v) ikut ranking? (bawaan: v > 0)
+   tgl()   tanggal ISO di judul · tie(i) pembanding saat nilai sama (besar = lebih baik)
+   sub(i)  keterangan kecil di bawah nama cabang */
 const METRIK = [
-  { n: "Teller", tinggi: false, f: (i) => D.Q[i][st.d]?.[0] },
-  { n: "CS", tinggi: false, f: (i) => D.Q[i][st.d]?.[1] },
-  { n: "Semua TRX", tinggi: false, f: (i) => D.Q[i][st.d]?.[2] },
+  { n: "Teller", g: "Waktu Antrian", tinggi: false, f: (i) => D.Q[i][st.d]?.[0] },
+  { n: "CS", g: "Waktu Antrian", tinggi: false, f: (i) => D.Q[i][st.d]?.[1] },
+  { n: "Semua TRX", g: "Waktu Antrian", tinggi: false, f: (i) => D.Q[i][st.d]?.[2] },
   {
     n: "O2O %",
+    g: "Utilisasi",
     tinggi: true,
     f: (i) => {
       const m = D.M[i];
@@ -261,6 +270,16 @@ const METRIK = [
     },
   },
 ];
+
+// baris ranking (terbaik -> terburuk) untuk metrik dan cakupan aktif; dipakai kartu dan ekspor CSV
+function barisRanking() {
+  const M = METRIK[rk.m],
+    valid = M.valid || ((v) => v != null && v > 0);
+  return D.B.map((b, i) => ({ i, b, v: M.f(i) }))
+    .filter((r) => valid(r.v) && (rk.s === "region" || r.b[2] === st.a))
+    .sort((x, y) => (M.tinggi ? y.v - x.v : x.v - y.v) || (M.tie ? M.tie(y.i) - M.tie(x.i) : 0));
+}
+const fmtRanking = (M, v) => (M.fmt ? M.fmt(v) : M.tinggi ? P(v) : f(v));
 
 /* ===== 5. KARTU-KARTU HALAMAN =====
    Setiap fungsi mengembalikan teks HTML satu kartu.
@@ -318,7 +337,10 @@ function kartuO2O() {
 function kartuShifting() {
   const m = D.M[st.b];
   if (!m) return "";
-  const [o2o, nb, csm, old] = m,
+  // NBDS untuk Shifting = seluruh transaksi ganti kartu lewat New BDS (D.M[10], laporan Ganti Kartu "Cabang by Channel");
+  // bila belum ada, pakai NBDS O2O (D.M[1]) seperti sebelumnya
+  const [o2o, , csm, old] = m,
+    nb = m[10] ?? m[1],
     sh = o2o + nb + csm + old,
     dig = o2o + csm;
   const bagian = [
@@ -336,7 +358,7 @@ function kartuShifting() {
     <div class="sh-atas"><div class="sh-n">${sh ? P(dig / sh) : "–"}</div>
       <div class="sh-t">${sh ? `<b>${dig}</b> dari <b>${sh}</b> transaksi lewat O2O dan CSM` : "Belum ada data transaksi"}</div></div>
     ${sh ? `<div class="sh-bar">${bar}</div><div class="sh-grid">${leg}</div>` : ""}
-    <div class="note">Rumus: (O2O + CSM) ÷ (O2O + NBDS + CSM + OBDS)</div>
+    <div class="note">Rumus: (O2O + CSM) ÷ (O2O + NBDS + CSM + OBDS) · NBDS = seluruh transaksi ganti kartu lewat New BDS</div>
   </div>`;
 }
 
@@ -353,33 +375,74 @@ function kartuUtilisasi() {
 
 // Ranking cabang: terbaik di kiri, terburuk di kanan
 function kartuRanking() {
+  if (!METRIK[rk.m]) rk.m = 2;
   const M = METRIK[rk.m],
-    fmt = (v) => (M.tinggi ? P(v) : f(v)),
-    kelas = (v) => (M.tinggi ? club(v) : mp(v))[1];
-  const rows = D.B.map((b, i) => ({ i, b, v: M.f(i) }))
-    .filter((r) => r.v != null && r.v > 0 && (rk.s === "region" || r.b[2] === st.a))
-    .sort((x, y) => (M.tinggi ? y.v - x.v : x.v - y.v));
+    fmt = (v) => fmtRanking(M, v),
+    kelas = M.kelas || ((v) => (M.tinggi ? club(v) : mp(v))[1]);
+  const rows = barisRanking();
   const n = Math.min(10, Math.floor(rows.length / 2));
   const terbaik = rows.slice(0, n),
     terburuk = rows.slice(rows.length - n).reverse();
   const item = (r, j) =>
-    `<div class="rk" data-b="${r.i}"><span class="no">${j + 1}</span><span class="nm">${esc(r.b[1])}<small>${esc(r.b[2])}</small></span><b class="${kelas(r.v)}">${fmt(r.v)}</b></div>`;
+    `<div class="rk" data-b="${r.i}"><span class="no">${j + 1}</span><span class="nm">${esc(r.b[1])}<small>${esc(r.b[2])}${M.sub ? " · " + esc(M.sub(r.i)) : ""}</small></span><b class="${kelas(r.v)}">${fmt(r.v)}</b></div>`;
   const pasang = terbaik.map((r, j) => item(r, j) + item(terburuk[j], j)).join("");
   const tombol = (attr, val, teks, aktif) =>
     `<button type="button" data-${attr}="${val}" class="${aktif ? "on" : ""}">${esc(teks)}</button>`;
-  const tgl = M.tinggi ? D.mdate : D.dates[st.d];
-  return `<div class="cd"><h2>Ranking Cabang · ${dlong(tgl)}</h2>
-    <div class="seg">${METRIK.map((x, j) => tombol("m", j, x.n, j === rk.m)).join("")}</div>
+  const tgl = M.tgl ? M.tgl() : M.tinggi ? D.mdate : D.dates[st.d];
+  // tombol metrik dikelompokkan per grup (Waktu Antrian, Utilisasi, Utilisasi NBDS, ...)
+  const grup = [...new Set(METRIK.map((x) => x.g || ""))];
+  const segMetrik = grup
+    .map(
+      (g) =>
+        `<div class="seg rk-seg">${g ? `<span class="rk-g">${esc(g)}</span>` : ""}${METRIK.map((x, j) => [x, j])
+          .filter(([x]) => (x.g || "") === g)
+          .map(([x, j]) => tombol("m", j, x.n, j === rk.m))
+          .join("")}</div>`,
+    )
+    .join("");
+  return `<div class="cd"><h2>Ranking Cabang · ${esc(M.g ? M.g + " " + M.n : M.n)} · ${dlong(tgl)}</h2>
+    ${segMetrik}
     <div class="seg">${tombol("s", "region", "Seluruh Region II", rk.s === "region")}${tombol("s", "area", "Area: " + st.a, rk.s === "area")}</div>
     ${n ? `<div class="rk2"><div class="rk-judul ok">▲ ${n} Terbaik</div><div class="rk-judul bad">▼ ${n} Terburuk</div>${pasang}</div>` : '<div class="sub">Data belum cukup untuk dibuat ranking.</div>'}
   </div>`;
 }
 
+/* --- Detail Data Old BDS ---
+   Format seragam dengan rincian Layanan di dashboard Utilisasi NBDS (tab Area):
+   No · Transaksi (layanan di bawahnya) · Nasabah · Kategori (kanal) · User ID · Total */
+const KANAL_OB = { fp: "Teller Perorangan", fnp: "Teller Badan", nf: "Customer Service" };
+const URUT_OB = ["fp", "fnp", "nf"];
+// kanal dari kategori + jenis nasabah (sama dengan penggolongan laporan NBDS)
+function kanalOb(kategori, nasabah) {
+  if (/customer|non finansial/i.test(kategori || "")) return "nf";
+  return String(nasabah || "").toLowerCase() === "perorangan" ? "fp" : "fnp";
+}
+// baris Old BDS satu cabang; nama layanan (fitur) diambil dari data NBDS bila tersedia
+function barisOldBds(i) {
+  const kode = String(D.B[i][0]);
+  const fitur = new Map(((window.KITO_AREA_NBDS || {}).oldbds || []).filter((r) => r[0] === kode).map((r) => [r[4], r[3]]));
+  return D.O.filter((x) => x[0] === i)
+    .map((x) => ({ transaksi: x[1], fitur: fitur.get(x[1]) || "", nasabah: x[2], kanal: kanalOb(x[4], x[2]), uid: x[3], n: x[6] || 0 }))
+    .sort((a, b) => URUT_OB.indexOf(a.kanal) - URUT_OB.indexOf(b.kanal) || a.transaksi.localeCompare(b.transaksi) || b.n - a.n);
+}
+// tabel bersama (dipakai juga oleh area-nbds.js); opt.cabang = tampilkan kolom cabang, opt.gulir = tinggi terbatas
+function tabelOldBds(rows, opt = {}) {
+  const nas = (t) => { const s = String(t || "–"); return s.charAt(0).toUpperCase() + s.slice(1); };
+  const head = `<tr><th class="ob-no">No</th>${opt.cabang ? "<th>Cabang</th>" : ""}<th>Transaksi</th><th>Nasabah</th><th>Kategori</th><th>User ID</th><th class="ang">Total</th></tr>`;
+  const body = rows.map((r, j) => `<tr><td class="ob-no">${j + 1}</td>${opt.cabang ? `<td class="ob-cab"><b>${esc(r.cabang)}</b><small>${esc(r.kode)}</small></td>` : ""}<td class="ob-trx"><b>${esc(r.transaksi)}</b>${r.fitur ? `<small>${esc(r.fitur)}</small>` : ""}</td><td class="ob-nas">${esc(nas(r.nasabah))}</td><td><span class="chip ob-k ob-k-${r.kanal}">${KANAL_OB[r.kanal] || "–"}</span></td><td class="ob-uid">${esc(r.uid || "–")}</td><td class="ang ob-n"><b>${r.n}</b></td></tr>`).join("");
+  return `<div class="tw ob-tw ${opt.gulir ? "gulir" : ""}"><table class="ob-tbl">${head}${body}</table></div>`;
+}
+// ringkasan jumlah transaksi per kanal
+function ringkasOldBds(rows) {
+  return `<div class="ob-ring">${URUT_OB.map((k) => { const n = rows.filter((r) => r.kanal === k).reduce((s, r) => s + r.n, 0); return n ? `<span class="chip ob-k ob-k-${k}">${KANAL_OB[k]} · ${n}</span>` : ""; }).join("")}</div>`;
+}
+
 // Tabel transaksi Old BDS untuk cabang terpilih
 function kartuOldBds() {
-  const ob = D.O.filter((x) => x[0] === st.b);
-  const total = ob.reduce((a, x) => a + (x[6] || 0), 0);
-  return `<div class="cd"><h2>Detail Data Old BDS (${ob.length})</h2>${ob.length ? `<div class="tw"><table><tr><th>Transaksi</th><th>Nasabah</th><th>Kategori</th><th>User ID</th><th class="ang">Total Transaksi</th></tr>${ob.map((x) => `<tr><td>${esc(x[1])}</td><td>${esc(x[2])}</td><td>${chip(x[4] === "Finansial" ? "Teller" : x[4] === "Non Finansial" ? "Customer Service" : (x[4] || "–"), x[4] === "Finansial" ? "ok" : "n")}</td><td>${esc(x[3])}</td><td class="ang">${x[6] ?? "–"}</td></tr>`).join("")}</table></div><div class="note">Total ${total} transaksi dari ${ob.length} baris</div>` : '<div class="sub">Tidak ada transaksi Old BDS.</div>'}</div>`;
+  const ob = barisOldBds(st.b);
+  const total = ob.reduce((a, x) => a + x.n, 0);
+  const tgl = (window.KITO_AREA_NBDS || {}).tanggal || D.mdate;
+  return `<div class="cd"><h2>Detail Data Old BDS (${ob.length})</h2>${ob.length ? `<p class="sub ob-sub">Transaksi yang masih lewat Old BDS · DtD ${dlong(tgl)}</p>${ringkasOldBds(ob)}${tabelOldBds(ob)}<div class="note">Total ${total} transaksi dari ${ob.length} baris · User ID disamarkan</div>` : '<div class="sub">Tidak ada transaksi Old BDS.</div>'}</div>`;
 }
 
 // Tabel waktu antrian per tanggal (ketuk baris untuk ganti tanggal)
@@ -418,7 +481,6 @@ const URUTAN = [
   kartuShifting,
   kartuUtilisasi,
   kartuOldBds,
-  kartuRanking,
   kartuDetailAntrian,
 ];
 
@@ -444,12 +506,12 @@ $("#sa").addEventListener("change", (e) => {
   st.a = e.target.value;
   fill();
   render();
-  scrollTo(0, 0);
+  window.scrollTo({top:0,behavior:window.matchMedia("(prefers-reduced-motion: reduce)").matches?"auto":"smooth"});
 });
 $("#sc").addEventListener("change", (e) => {
   st.b = +e.target.value;
   render();
-  scrollTo(0, 0);
+  window.scrollTo({top:0,behavior:window.matchMedia("(prefers-reduced-motion: reduce)").matches?"auto":"smooth"});
 });
 $("#sd").addEventListener("change", (e) => {
   st.d = +e.target.value;
@@ -485,7 +547,7 @@ $("#app").addEventListener("click", (e) => {
     st.a = D.B[st.b][2];
     fill();
     render();
-    scrollTo(0, 0);
+    window.scrollTo({top:0,behavior:window.matchMedia("(prefers-reduced-motion: reduce)").matches?"auto":"smooth"});
   }
 });
 
@@ -554,7 +616,7 @@ function bukaCabang(i) {
   goSlide(0);
   fill();
   render();
-  scrollTo(0, 0);
+  window.scrollTo({top:0,behavior:window.matchMedia("(prefers-reduced-motion: reduce)").matches?"auto":"smooth"});
 }
 
 if (qi) {
@@ -634,19 +696,18 @@ const EKSPOR = {
   },
   ranking() {
     const M = METRIK[rk.m];
-    const rows = D.B.map((b, i) => ({ b, v: M.f(i) }))
-      .filter((r) => r.v != null && r.v > 0 && (rk.s === "region" || r.b[2] === st.a))
-      .sort((x, y) => (M.tinggi ? y.v - x.v : x.v - y.v));
-    csv("ranking-" + namaFile(M.n) + "-" + (rk.s === "region" ? "region" : namaFile(st.a)), [
-      ["Peringkat", "Cabang", "Area", M.n],
-      ...rows.map((r, j) => [j + 1, r.b[1], r.b[2], M.tinggi ? P(r.v) : f(r.v)]),
+    const rows = barisRanking();
+    const judul = M.g ? M.g + " " + M.n : M.n;
+    csv("ranking-" + namaFile(judul) + "-" + (rk.s === "region" ? "region" : namaFile(st.a)), [
+      ["Peringkat", "Cabang", "Area", judul, ...(M.sub ? ["Keterangan"] : [])],
+      ...rows.map((r, j) => [j + 1, r.b[1], r.b[2], fmtRanking(M, r.v), ...(M.sub ? [M.sub(r.i)] : [])]),
     ]);
   },
    oldbds() {
     const b = D.B[st.b];
     csv("old-bds-" + namaFile(b[1]), [
-      ["Cabang", "Transaksi", "Nasabah", "Kategori", "User ID", "Total Transaksi"],
-      ...D.O.filter((x) => x[0] === st.b).map((x) => [b[1], x[1], x[2], x[4], x[3], x[6] ?? ""]),
+      ["No", "Cabang", "Transaksi", "Layanan", "Nasabah", "Kategori", "User ID", "Total Transaksi"],
+      ...barisOldBds(st.b).map((r, j) => [j + 1, b[1], r.transaksi, r.fitur, r.nasabah, KANAL_OB[r.kanal], r.uid, r.n]),
     ]);
   },
 };
@@ -706,7 +767,7 @@ function bukaTab(v) {
   if (v === tampil) return;
   tampil = v;
   render();
-  scrollTo(0, 0);
+  window.scrollTo({top:0,behavior:window.matchMedia("(prefers-reduced-motion: reduce)").matches?"auto":"smooth"});
 }
 document.addEventListener("click", (e) => {
   const t = e.target.closest("[data-v]");

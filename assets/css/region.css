@@ -1,0 +1,73 @@
+/* Dashboard Region (pasangan assets/js/region.js). Memakai juga .rg-* (ranking.css) dan .wt-* (area-waktu.css). */
+
+/* header: di tab Region hanya filter Tanggal yang relevan */
+body.mode-region #sa, body.mode-region #sc { display: none !important; }
+body.mode-region .fl { grid-template-columns: 1fr; }
+
+.rx-hero h3 { margin: 6px 0 2px; font-size: 22px; font-weight: 800; color: var(--tx); letter-spacing: 0; text-transform: none; }
+.rx-hero h3 small { display: block; font-size: 13px; font-weight: 600; color: var(--mu); margin-top: 2px; }
+.rx-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
+.rx-ctrl { display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: flex-end; margin-top: 12px; padding-top: 10px; border-top: 1px dashed var(--ln); }
+.rx-ctrl .seg { margin: 4px 0 0; }
+.rx-cmp { display: flex; flex-direction: column; min-width: 200px; flex: 1; }
+.rx-cmp select { margin-top: 4px; padding: 8px 10px; border-radius: 10px; border: 1px solid var(--ln); background: var(--cd); color: var(--tx); font: inherit; font-size: 13px; font-weight: 600; }
+
+/* kartu skor per indikator */
+.rx-grid { display: grid; grid-template-columns: 1fr; gap: 0; }
+/* satu kolom di semua lebar layar: kartu tetap lega dan tabel di dalamnya tidak bertumpuk */
+.rx-card-h { display: flex; gap: 10px; align-items: flex-start; }
+.rx-card-h h2 { margin-bottom: 2px; }
+.rx-ik { font-size: 22px; line-height: 1; margin-top: 2px; }
+.rx-big { display: flex; justify-content: space-between; align-items: flex-end; gap: 10px; margin: 12px 0 8px; padding: 12px; border-radius: 14px; background: var(--bg); border: 1px solid var(--ln); }
+.rx-big small { display: block; font-size: 11px; font-weight: 700; color: var(--mu); }
+.rx-big b { display: block; font-size: 32px; font-weight: 800; line-height: 1.1; font-variant-numeric: tabular-nums; }
+.rx-rank { text-align: right; }
+.rx-rank b { font-size: 26px; color: var(--nv); }
+[data-theme="dark"] .rx-rank b { color: var(--tx); }
+.rx-vs { display: flex; flex-wrap: wrap; gap: 6px; }
+
+/* strip posisi 12 region: Region II menyala */
+.rx-strip { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 3px; margin-top: 12px; }
+.rx-strip i { height: 20px; border-radius: 5px; background: var(--ln); font-style: normal; font-size: 9px; font-weight: 800; color: #fff; display: grid; place-items: center; }
+.rx-strip i.me { background: var(--c1); }
+.rx-strip i.cmp { background: transparent; box-shadow: inset 0 0 0 2px var(--c2); }
+.rx-strip-lg { display: flex; justify-content: space-between; font-size: 10px; color: var(--mu); margin-top: 3px; }
+
+/* sub-indikator di kartu skor */
+.rx-subs { margin-top: 12px; }
+.rx-sub-h, .rx-sub { display: grid; grid-template-columns: minmax(0, 1fr) 62px 34px 66px; gap: 6px; align-items: center; }
+.rx-sub-h { padding: 0 4px 4px; font-size: 9.5px; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; color: var(--mu); }
+.rx-sub-h span:not(:first-child) { text-align: right; }
+.rx-sub { width: 100%; padding: 8px 4px; border: 0; border-top: 1px solid var(--ln); background: transparent; color: inherit; font: inherit; font-size: 12px; text-align: left; cursor: pointer; border-radius: 8px; }
+.rx-sub:hover { background: rgba(37, 99, 235, .06); }
+.rx-sub.main span:first-child { font-weight: 800; }
+.rx-sub b, .rx-sub .rx-rk, .rx-sub .rx-d { text-align: right; font-variant-numeric: tabular-nums; }
+.rx-sub .rx-rk { font-weight: 800; color: var(--nv); }
+[data-theme="dark"] .rx-sub .rx-rk { color: var(--tx); }
+.rx-d { font-size: 11px; font-weight: 700; }
+.rx-mu, .rx-d.mu { color: var(--mu); }
+
+/* head-to-head */
+.rx-score { margin: 0 0 8px; font-size: 13px; }
+.rx-score b { font-size: 18px; color: var(--c1); }
+.rx-tbl { font-size: 12px; }
+.rx-tbl th, .rx-tbl td { padding-left: 5px; padding-right: 5px; }
+.rx-tbl td small { display: block; font-size: 10px; color: var(--mu); font-weight: 500; }
+.rx-tbl td:not(:first-child), .rx-tbl th:not(:first-child) { text-align: right; white-space: nowrap; }
+.rx-tbl td.mu { color: var(--mu); }
+
+/* daftar 12 region */
+.rx-row.cmp { background: rgba(232, 113, 12, .1); }
+.rx-row.cmp .rg-no:not(.top) { background: var(--c2); color: #fff; }
+.rg-bar i.rx-grey { background: var(--mu); opacity: .45; }
+.rx-row.cmp .rg-bar i.rx-grey { background: var(--c2); opacity: .9; }
+.rx-row .rg-bar u.tgt { background: var(--bd); }
+.rx-sum-me { border-color: var(--c1) !important; box-shadow: inset 0 0 0 1px var(--c1); }
+.rx-dot-me, .rx-dot-cmp { display: inline-block; width: 10px; height: 10px; border-radius: 50%; }
+.rx-dot-me { background: var(--c1); }
+.rx-dot-cmp { background: var(--c2); }
+.rg-tbl tr.rx-cmp-row td { background: rgba(232, 113, 12, .1); }
+.rg-tbl tr[data-rx-pilih] { cursor: pointer; }
+
+@media (min-width: 720px) { .rx-hero h3 { font-size: 26px; } }
+@media print { .rx-ctrl select { border: 0; } }

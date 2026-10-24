@@ -25,3 +25,9 @@ Dashboard-KITO/
 -js/ — Script dan data dashboard
 |
 -images/ — Logo dan gambar Splash Screen
+
+
+
+1. Penambahan Rank
+2. Region
+3. Area

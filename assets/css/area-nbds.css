@@ -1,0 +1,92 @@
+/* Dashboard Utilisasi NBDS · tab Area (pasangan assets/js/area-nbds.js).
+   Memakai gaya .wt-* dari area-waktu.css dan .ak-* dari area-kelompok.css; di sini hanya tambahan. */
+.nb-chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}
+.nb-chips:empty{display:none}
+.nb-need-s{color:var(--wr)!important;font-weight:600}
+.nb-need-s b{color:inherit}
+
+/* ringkasan gabungan 3 kanal di bawah kotak DtD/MTD */
+.nb-total{display:grid;grid-template-columns:auto 1fr;align-items:baseline;gap:2px 10px;margin-top:10px;padding:10px 12px;border-radius:12px;background:var(--bg);border:1px dashed var(--ln)}
+.nb-total span{font-size:12px;font-weight:700;color:var(--mu)}
+.nb-total>b{font-size:18px;font-weight:800;text-align:right;font-variant-numeric:tabular-nums}
+.nb-total small{grid-column:1/-1;font-size:11px;color:var(--mu);line-height:1.45}
+.nb-total small b{color:var(--tx)}
+
+/* baris ranking/prioritas: keterangan kecil di bawah nama */
+.nb-meta{display:block;font-size:10.5px;font-weight:500;color:var(--mu);margin-top:1px}
+.nb-row .wt-nm{margin-bottom:6px}
+.nb-need-bar{display:flex;align-items:center;gap:8px}
+.nb-need-bar i{display:block;height:8px;border-radius:99px;background:var(--wr);opacity:.85;flex:none;max-width:60%}
+.nb-need-bar em{font-style:normal;font-size:10.5px;font-weight:700;color:var(--wr);white-space:nowrap}
+.nb-sum{margin:12px 0 6px;display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.nb-sum .ak-count{min-width:0;padding:10px}
+.nb-sum .ak-count span{font-size:11px;line-height:1.3}
+.nb-sum .ak-count b{font-variant-numeric:tabular-nums}
+.nb-more{display:block;width:100%;margin-top:10px;padding:9px 12px;border-radius:12px;border:1px solid var(--ln);background:var(--bg);color:var(--tx);font:inherit;font-size:12px;font-weight:700;cursor:pointer}
+.nb-more:hover{border-color:var(--c1)}
+.nb-ok{margin:12px 0 0;padding:10px 12px;border-radius:12px;background:rgba(18,161,80,.1);color:var(--ok);font-size:12px;font-weight:700}
+
+/* layanan Old BDS: baris bisa diketuk untuk membuka rincian */
+.nb-svc{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr) 50px 14px;align-items:center;gap:10px;width:100%;padding:10px 4px;border:0;border-bottom:1px solid var(--ln);background:transparent;color:inherit;font:inherit;text-align:left;cursor:pointer;border-radius:10px}
+.nb-svc:hover{background:rgba(37,99,235,.06)}
+.nb-svc.open{background:rgba(37,99,235,.1);border-bottom-color:transparent;border-radius:10px 10px 0 0}
+.nb-svc-nm b{display:block;font-size:12px;overflow-wrap:anywhere}
+.nb-svc-nm small{display:inline-flex;align-items:center;gap:5px;font-size:10.5px;color:var(--mu)}
+.nb-svc-nm small i{width:8px;height:8px;border-radius:50%;display:inline-block}
+.nb-svc-bar{display:block;height:10px;border-radius:99px;background:var(--ln);overflow:hidden}
+.nb-svc-bar i{display:block;height:100%;border-radius:99px}
+.nb-svc-v{text-align:right;font-weight:800;font-size:13px;font-variant-numeric:tabular-nums}
+.nb-svc-v small{display:block;font-size:10px;font-weight:600;color:var(--mu)}
+.nb-chev{font-size:18px;font-weight:700;color:var(--mu);transition:transform .2s ease;line-height:1}
+.nb-svc.open .nb-chev,.nb-all-ob.on .nb-chev{transform:rotate(90deg)}
+
+/* panel rincian layanan */
+.nb-svc-panel{margin:0 0 10px;padding:12px;border:1px solid rgba(37,99,235,.25);border-top:0;border-radius:0 0 14px 14px;background:var(--bg)}
+.nb-all-ob+.nb-svc-panel{border-top:1px solid rgba(37,99,235,.25);border-radius:14px;margin-top:8px}
+.nb-all-ob.on{background:var(--nv);border-color:var(--nv);color:#fff}
+.nb-svc-panel h4{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;margin:14px 0 6px;font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--mu)}
+.nb-svc-panel h4 small{font-size:10px;font-weight:600;letter-spacing:0;text-transform:none}
+.nb-h4-row .unduh{margin-left:auto}
+.nb-svc-ring{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+.nb-svc-ring span{padding:8px;border-radius:10px;background:var(--cd);border:1px solid var(--ln);font-size:11px;color:var(--mu);text-align:center;line-height:1.3}
+.nb-svc-ring b{display:block;font-size:17px;color:var(--tx);font-variant-numeric:tabular-nums}
+.nb-jenis{list-style:none;margin:0;padding:0}
+.nb-jenis li{display:flex;justify-content:space-between;gap:10px;padding:6px 0;border-bottom:1px dashed var(--ln);font-size:12px}
+.nb-jenis li:last-child{border-bottom:0}
+.nb-jenis b{font-variant-numeric:tabular-nums}
+.nb-cab{display:grid;grid-template-columns:minmax(0,1fr) 44px;gap:10px;align-items:center;width:100%;padding:8px 10px;margin-bottom:6px;border:1px solid var(--ln);border-radius:12px;background:var(--cd);color:inherit;font:inherit;text-align:left;cursor:pointer}
+.nb-cab:hover{border-color:var(--c1)}
+.nb-cab-nm b{display:block;font-size:12px}
+.nb-cab-nm small{display:block;font-size:10.5px;color:var(--mu)}
+.nb-cab-nm small.nb-cab-j{margin-top:3px;color:var(--tx);opacity:.85;line-height:1.4}
+.nb-cab-nm small.nb-cab-j b{display:inline;font-size:10.5px;color:var(--wr)}
+.nb-cab-v{text-align:right;font-weight:800;font-size:15px;font-variant-numeric:tabular-nums}
+.nb-cab-v small{display:block;font-size:10px;font-weight:600;color:var(--mu)}
+.nb-ob-tw{max-height:420px;overflow:auto;border:1px solid var(--ln);border-radius:10px;background:var(--cd)}
+.nb-ob-tbl{font-size:12px}
+.nb-ob-tbl th{position:sticky;top:0;background:var(--cd);z-index:1;font-size:10.5px;white-space:nowrap}
+.nb-ob-tbl td{padding:8px 6px;vertical-align:top}
+.nb-ob-tbl td:first-child{min-width:120px}
+.nb-ob-tbl td:nth-child(2){min-width:170px}
+.nb-ob-tbl .chip{white-space:nowrap}
+.chip.nb-k-fp{background:rgba(37,99,235,.12);color:#1d4ed8}
+.chip.nb-k-fnp{background:rgba(232,113,12,.14);color:#b4540a}
+.chip.nb-k-nf{background:rgba(18,161,80,.13);color:#0b7a3b}
+[data-theme="dark"] .chip.nb-k-fp{color:#8fb6ff}
+[data-theme="dark"] .chip.nb-k-fnp{color:#ffa45c}
+[data-theme="dark"] .chip.nb-k-nf{color:#5ee09a}
+
+/* kotak info tren: jumlah Old BDS */
+.wt-tip-g span small{font-size:10px;color:var(--mu)}
+
+/* tabel: kolom pembanding redup; baris tanggal bisa diketuk */
+td.nb-mu,td.mu{color:var(--mu)}
+.nb-tbl th,.nb-tbl td{white-space:nowrap;padding-left:5px;padding-right:5px;font-size:12.5px}
+.nb-tbl td:first-child,.nb-tbl th:first-child{padding-left:2px}
+.nb-tbl th{font-size:10.5px;white-space:normal;line-height:1.25;vertical-align:bottom}
+.nb-src{overflow-wrap:anywhere}
+.nb-hari{font-size:10px;color:var(--mu);margin-left:2px}
+tr[data-nb-d]{cursor:pointer}
+tr[data-nb-d]:hover td{background:rgba(37,99,235,.06)}
+
+@media print{.nb-more:not(.on){display:none}.nb-svc{break-inside:avoid}.nb-ob-tw{max-height:none;overflow:visible}.nb-chev{display:none}}

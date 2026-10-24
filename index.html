@@ -7,6 +7,13 @@
       content="width=device-width,initial-scale=1,viewport-fit=cover"
     />
     <meta name="theme-color" content="#002060" />
+    <!-- iOS: layar penuh saat dibuka dari "Tambah ke Layar Utama" (standalone, tanpa bilah Safari) -->
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="KITO" />
+    <meta name="format-detection" content="telephone=no" />
+    <link rel="manifest" href="manifest.webmanifest" />
     <title>Dashboard Monitoring Inbranch</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -21,9 +28,28 @@
         if (localStorage.getItem("tema") === "dark")
           document.documentElement.dataset.theme = "dark";
       } catch (e) {}
+      // tandai mode aplikasi layar penuh (iOS: navigator.standalone; lainnya: display-mode)
+      try {
+        if (window.navigator.standalone === true || window.matchMedia("(display-mode: standalone), (display-mode: fullscreen)").matches)
+          document.documentElement.classList.add("pwa");
+      } catch (e) {}
     </script>
-    <link rel="apple-touch-icon" sizes="180x180" href="assets/images/kito-logo.png" />
-    <link rel="icon" type="image/png" href="assets/images/kito-logo.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="assets/images/ios/apple-touch-icon.png" />
+    <link rel="icon" type="image/png" sizes="32x32" href="assets/images/ios/favicon-32.png" />
+    <!-- layar pembuka iOS (ditampilkan sebelum halaman dimuat) per ukuran iPhone -->
+    <link rel="apple-touch-startup-image" media="screen and (device-width: 440px) and (device-height: 956px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" href="assets/images/ios/startup-1320x2868.jpg" />
+    <link rel="apple-touch-startup-image" media="screen and (device-width: 402px) and (device-height: 874px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" href="assets/images/ios/startup-1206x2622.jpg" />
+    <link rel="apple-touch-startup-image" media="screen and (device-width: 430px) and (device-height: 932px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" href="assets/images/ios/startup-1290x2796.jpg" />
+    <link rel="apple-touch-startup-image" media="screen and (device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" href="assets/images/ios/startup-1179x2556.jpg" />
+    <link rel="apple-touch-startup-image" media="screen and (device-width: 428px) and (device-height: 926px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" href="assets/images/ios/startup-1284x2778.jpg" />
+    <link rel="apple-touch-startup-image" media="screen and (device-width: 390px) and (device-height: 844px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" href="assets/images/ios/startup-1170x2532.jpg" />
+    <link rel="apple-touch-startup-image" media="screen and (device-width: 375px) and (device-height: 812px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" href="assets/images/ios/startup-1125x2436.jpg" />
+    <link rel="apple-touch-startup-image" media="screen and (device-width: 414px) and (device-height: 896px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" href="assets/images/ios/startup-1242x2688.jpg" />
+    <link rel="apple-touch-startup-image" media="screen and (device-width: 414px) and (device-height: 896px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)" href="assets/images/ios/startup-828x1792.jpg" />
+    <link rel="apple-touch-startup-image" media="screen and (device-width: 414px) and (device-height: 736px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" href="assets/images/ios/startup-1242x2208.jpg" />
+    <link rel="apple-touch-startup-image" media="screen and (device-width: 375px) and (device-height: 667px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)" href="assets/images/ios/startup-750x1334.jpg" />
+    <link rel="apple-touch-startup-image" media="screen and (device-width: 320px) and (device-height: 568px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)" href="assets/images/ios/startup-640x1136.jpg" />
+    <link rel="stylesheet" href="assets/css/pwa.css?v=2" />
     <meta name="robots" content="noindex" />
   </head>
   <body>
@@ -37,6 +63,7 @@
     <header>
       <div class="bar-atas">
         <h1>DASHBOARD MONITORING INBRANCH · R2</h1>
+        <button id="muat-ulang" class="tema muat-ulang" type="button" aria-label="Muat ulang data" title="Muat ulang">⟳</button>
         <button id="tema" class="tema" type="button" aria-label="Ganti tema">
           🌙
         </button>
@@ -123,5 +150,9 @@
     <script src="assets/js/region.js?v=4"></script>
     <link rel="stylesheet" href="assets/css/animasi.css?v=2" />
     <script src="assets/js/animasi.js?v=4"></script>
+    <script>
+      // tombol muat ulang (hanya tampil di mode layar penuh: tidak ada tombol refresh Safari)
+      document.getElementById("muat-ulang")?.addEventListener("click", () => location.reload());
+    </script>
 </body>
 </html>

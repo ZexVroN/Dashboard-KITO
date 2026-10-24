@@ -1,0 +1,31 @@
+/* Mode aplikasi layar penuh — iOS "Tambah ke Layar Utama" (dan PWA di Android).
+   Kelas html.pwa dipasang oleh skrip kecil di <head> (navigator.standalone / display-mode).
+   Bilah status iOS transparan (black-translucent): konten tampil sampai ke bawah status bar,
+   header sudah memberi jarak env(safe-area-inset-top). */
+
+/* tombol muat ulang: hanya di mode aplikasi (tidak ada tombol refresh Safari) */
+.muat-ulang { display: none; }
+.bar-atas h1 { margin-right: auto; }
+html.pwa .muat-ulang { display: grid; place-items: center; font-size: 18px; font-weight: 700; }
+
+/* tanpa efek pantul / tarik layar yang memperlihatkan latar kosong */
+html.pwa, html.pwa body { overscroll-behavior-y: none; }
+html.pwa { background: #002060; }
+html.pwa body { min-height: 100vh; min-height: 100dvh; }
+
+/* tidak muncul menu tahan-lama (callout) di tombol & navigasi, terasa seperti aplikasi */
+html.pwa button, html.pwa .nav, html.pwa .seg { -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
+
+/* iPhone miring (landscape): beri jarak dari poni / sudut layar */
+html.pwa header {
+  padding-left: max(14px, env(safe-area-inset-left));
+  padding-right: max(14px, env(safe-area-inset-right));
+}
+html.pwa main {
+  padding-left: max(12px, env(safe-area-inset-left));
+  padding-right: max(12px, env(safe-area-inset-right));
+}
+html.pwa .nav { bottom: calc(10px + env(safe-area-inset-bottom)); }
+
+/* judul tetap satu baris walau ada tombol muat ulang */
+html.pwa .bar-atas h1 { font-size: 11px; letter-spacing: 0.8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }

@@ -567,7 +567,8 @@ if (ft) {
   ft.innerHTML =
     "Antrian s.d. <b>" + dlong(D.dates[D.dates.length - 1]) +
     "</b> · Utilisasi per <b>" + dlong(D.mdate) +
-    "</b><br>Dashboard Monitoring Inbranch · Region II";
+    "</b><br>Dashboard Monitoring Inbranch · Region II" +
+    '<span class="kredit">© Credits By: Service Quality x Transaction Operation Region II Sumatera</span>';
 }
 
 /* --- Tema terang / gelap --- */

@@ -156,6 +156,18 @@
         0%, 100% { opacity: 1; }
         50% { opacity: 0.3; }
       }
+      .kredit {
+        position: fixed;
+        left: 0;
+        right: 0;
+        bottom: max(10px, env(safe-area-inset-bottom));
+        padding: 0 12px;
+        text-align: center;
+        font-size: 10.5px;
+        line-height: 1.4;
+        color: var(--fg);
+        opacity: 0.6;
+      }
     </style>
   </head>
   <body>
@@ -180,6 +192,8 @@
         </ul>
       </div>
     </div>
+
+    <div class="kredit">© Credits By: Service Quality x Transaction Operation Region II Sumatera</div>
 
     <script>
       // Load tema dari localStorage

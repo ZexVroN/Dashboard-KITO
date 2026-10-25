@@ -201,6 +201,14 @@ footer {
   color: var(--mu);
 }
 
+footer .kredit {
+  display: block;
+  margin-top: 6px;
+  font-size: 10.5px;
+  line-height: 1.4;
+  opacity: 0.75;
+}
+
 /* tombol cetak di bawah halaman */
 .aksi { max-width: 720px; margin: 4px auto 10px; padding: 0 12px; text-align: center; }
 .cetak {

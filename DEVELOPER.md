@@ -6,7 +6,7 @@ Riwayat perubahan per versi: [`CHANGELOG.md`](CHANGELOG.md).
 | Aspek | Keterangan |
 |---|---|
 | Teknologi | HTML + vanilla JS (tanpa framework, tanpa build step) + CSS. Dibuka langsung dari `index.html`. |
-| Data | Ditanam di file `assets/js/*-data.js` (dihasilkan skrip Python di `tools/`). Dashboard tidak memanggil API untuk data; backend opsional (`backend/`) hanya untuk push notifikasi & update data (§9). |
+| Data | Ditanam di file `assets/js/*-data.js` (dihasilkan skrip Python di `tools/`). Tidak ada backend/fetch. |
 | Target layar | Mobile-first (uji di 360–390 px), juga desktop. Tema terang/gelap (`html[data-theme="dark"]`). |
 | Data terakhir | **22 Oktober 2026** (antrian, O2O, NBDS); infografis & pegawai: 16 Oktober 2026. |
 
@@ -123,7 +123,7 @@ Setiap modul memakai awalan atribut sendiri — gunakan awalan unik untuk modul 
 | `area-o2o-data.js` | `KITO_AREA_O2O` | segmen `gold/platinum/silver/overall` = `[o2o, nbds, total, %, "above/below/avg"]` per area, region, bankwide |
 | `area-nbds-data.js` | `KITO_AREA_NBDS` | `dates`, `cabang[].d/m` & `areas[].d/m/mp` per kanal `fp/fnp/nf` = `[newBDS, oldBDS]`, `oldbds[]` = `[kode, area, kanal, layanan, jenisTransaksi, nasabah, uid, total]`, `metodeMTD` |
 | `region-data.js` | `KITO_REGION` | `regions[]` & `nasional`: `waktu.d[iso]/m` `[teller, cs, all]`, `nbds.{fp,fnp,nf,agg}.d/m/mp`, `o2o.{segmen}`, `ch.{livin, eci, csm, o2o, old, new}` |
-| `infografis-data.js`, `pegawai-data.js` | `KITO_INFO_DATA`, `KITO_PEGAWAI_DATA` | laporan Inbranch MTD; dibuat `tools/convert_inbranch.py` |
+| `infografis-data.js`, `pegawai-data.js` | `KITO_INFO_DATA`, `KITO_PEGAWAI_DATA` | laporan Inbranch MTD 16 Okt (belum ada pembaruan) |
 
 ---
 
@@ -204,18 +204,3 @@ Syarat: dashboard harus diakses lewat **HTTPS**. Uji di iPhone: Safari → Bagik
 | Cek berkala | `offline.html`, interval 5 detik | Memastikan status tercermin dengan cepat bahkan jika browser tidak memicu event `online` dengan sempurna. |
 
 Fitur ini memerlukan **browser yang mendukung `navigator.onLine`** (semua browser modern: Chrome, Firefox, Safari, Edge). Halaman offline juga memakai tema gelap dan styling konsisten dengan dashboard.
-
----
-
-## 9. Backend opsional: Push Notifikasi & Update Data
-Lihat [`backend/README.md`](backend/README.md) untuk instalasi, HTTPS, keamanan, dan cara kerja per platform.
-
-| Bagian | Lokasi | Catatan |
-|---|---|---|
-| Server | `backend/server.js` (`node backend/server.js`) | melayani dashboard + API; `/admin/` = halaman admin |
-| Push (klien) | `sw.js`, `assets/js/push.js`, `assets/css/push.css` | dimuat **sebelum** `animasi.js`; tidak membungkus `render()`. Awalan atribut: tidak ada (tombol 🔔 dibuat lewat DOM). |
-| Push (server) | `backend/lib/webpush.js` | VAPID + aes128gcm tanpa dependensi; diuji dengan vektor RFC 8291 |
-| Update data | `backend/lib/updater.js` + `tools/*.py` | staging → publikasi (backup, naik `?v=` otomatis) → rollback |
-| Inbranch | `tools/convert_inbranch.py` | sheet `Laporan Cabang` & `pegawai`; hanya Reg `02` |
-
-`window.KITO_PUSH_API` (opsional) mengarahkan `push.js` ke backend di domain lain. Tanpa backend (mis. hosting statis) fitur 🔔 menampilkan "server notifikasi tidak terhubung" dan tidak mengganggu dashboard.

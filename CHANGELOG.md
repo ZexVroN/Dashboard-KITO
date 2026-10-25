@@ -6,14 +6,6 @@ Panduan arsitektur dan cara pembaruan data ada di [`DEVELOPER.md`](DEVELOPER.md)
 
 ---
 
-## [v1.12] Backend: Push Notifikasi + Update Data dari Excel
-- **Backend baru** `backend/` (Node, tanpa dependensi): halaman admin `/admin/` untuk **push notifikasi custom** (Android, iOS/iPadOS, Desktop, banner Website), jadwal, template, riwayat, daftar perangkat, target per platform & area.
-- **Dashboard**: tombol 🔔 di header (aktif/matikan, pilih fokus area, panduan iOS "Tambah ke Layar Utama"), `sw.js` (service worker khusus push), banner pengumuman, tautan dalam `?tab=ranking|region|area|cabang`. Otomatis nonaktif bila dibuka sebagai file lokal.
-- **Update Data**: unggah Excel (Waktu Tunggu Antrian, Utilisasi O2O, Utilisasi NBDS, Report Inbranch MTD) → proses di staging → pratinjau → publikasi (backup + naik `?v=` otomatis) / pulihkan; **Export data** (zip) hasil proses & data tayang.
-- **`tools/convert_inbranch.py`** (baru): Report Inbranch MTD → `infografis-data.js` + `pegawai-data.js` (identik dengan data 16 Okt). `tools/inspect_xlsx.py`: baca daftar sheet cepat.
-- File baru: `backend/*`, `sw.js`, `assets/js/push.js`, `assets/css/push.css`, `tools/convert_inbranch.py`, `tools/inspect_xlsx.py`. Diubah: `index.html` (dua tag). Detail: [`backend/README.md`](backend/README.md).
-- Catatan: butuh HTTPS untuk push di perangkat sungguhan; iOS wajib dipasang di Layar Utama (iOS ≥ 16.4).
-
 ## [v1.11] Deteksi offline + hapus tombol refresh
 - **Halaman offline** (`offline.html`): tampil otomatis saat tidak ada koneksi internet dengan animasi, saran troubleshooting, dan deteksi kembali online.
 - Skrip di `<head>` index.html: `navigator.onLine` diperiksa; jika offline, redirect ke `offline.html`; listener `offline` untuk perubahan status real-time.

@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<meta name="theme-color" content="#002060">
+<title>KITO Admin · Notifikasi & Update Data</title>
+<link rel="icon" type="image/png" href="/assets/images/ios/favicon-32.png">
+<link rel="stylesheet" href="admin.css">
+</head>
+<body>
+<div id="login" class="login" hidden>
+  <form id="loginForm" class="login-card" autocomplete="on">
+    <img src="/assets/images/ios/icon-192.png" alt="" width="64" height="64">
+    <h1>KITO Admin</h1>
+    <p>Kelola notifikasi push &amp; pembaruan data dashboard Region II.</p>
+    <label for="pw">Password admin</label>
+    <input id="pw" type="password" autocomplete="current-password" required autofocus>
+    <button class="btn primary" type="submit">Masuk</button>
+    <div id="loginMsg" class="msg err" role="alert"></div>
+  </form>
+</div>
+
+<div id="app" hidden>
+  <header class="top">
+    <div class="brand"><img src="/assets/images/ios/favicon-32.png" alt="" width="24" height="24"><b>KITO Admin</b><span class="env" id="envBadge"></span></div>
+    <nav id="tabs" class="tabs" role="tablist" aria-label="Menu admin"></nav>
+    <div class="top-r"><a class="lnk" href="/" target="_blank" rel="noopener">Buka dashboard ↗</a><button id="logout" class="btn small">Keluar</button></div>
+  </header>
+  <main id="view" class="view"></main>
+</div>
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
+<script src="admin.js"></script>
+</body>
+</html>

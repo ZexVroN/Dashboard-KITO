@@ -81,7 +81,7 @@ function selisih(m,v,ref){
 const chipSel=(s,lbl)=>!s?'':s.sama?`<span class="chip n">≈ setara ${clean(lbl)}</span>`:`<span class="chip ${s.baik?'ok':'bad'}">${s.baik?'▲':'▼'} ${s.kata} vs ${clean(lbl)}</span>`;
 
 /* ----- state ----- */
-const ui={per:'dtd',m:'w-all',cmp:'NASIONAL',tip:null,rekapAll:false};
+const ui={per:'dtd',m:'w-all',cmp:'NASIONAL',tip:null};
 const seg=(attr,list,cur)=>`<div class="seg" role="group">${list.map(([k,t])=>`<button type="button" data-rx-${attr}="${clean(k)}" class="${k===cur?'on':''}">${t}</button>`).join('')}</div>`;
 const cmpEnt=()=>entOf(ui.cmp);
 
@@ -195,17 +195,23 @@ function tipHtml(m,i){
   return `<b>${isoLong(t)}${me>=0?` · Region ${clean(FOKUS.no)} peringkat #${me+1} dari ${rows.length}`:''}</b><div class="wt-tip-g">${it(FOKUS,'var(--c1)')}${cmp!==NAS?it(cmp,'var(--c2)'):''}<span><u class="dash"></u>Nasional<b>${m.fmt(m.seri(NAS)[i])}</b></span>${rows[0]?`<span>Terbaik ${clean(nama(rows[0].e))}<b>${m.fmt(rows[0].v)}</b></span>`:''}</div>`;
 }
 
-/* ===== 6. Rekap peringkat semua indikator ===== */
+/* ===== 6. Rekap peringkat semua indikator =====
+   Tanpa kolom rata-rata dan tanpa peringkat gabungan; baris urut menaik menurut nomor region (I → XII);
+   baris diambil berdasarkan kotak pencarian di header (nama / nomor region), kosong = semua 12 region. */
+const kataCari=()=>{const q=document.getElementById('q');return q?q.value.trim().toLowerCase().split(/\s+/).filter(Boolean):[];};
 function rekap(){
   const cols=MET.map(m=>({m,rows:peringkat(m,ui.per)})).map(c=>({...c,map:new Map(c.rows.map(r=>[r.e,r])),n:c.rows.length}));
-  const ents=REG.map(e=>{const r=cols.map(c=>c.map.get(e)?.rk).filter(x=>x!=null);return{e,cnt:r.length,avg:r.length?r.reduce((a,b)=>a+b,0)/r.length:null};}).filter(x=>x.avg!=null).sort((a,b)=>a.avg-b.avg);
-  let prev,rk=0;ents.forEach((x,j)=>{const v=Math.round(x.avg*100);if(j===0||v!==prev){rk=j+1;prev=v;}x.rk=rk;});
+  // REG sudah berurutan Region I … XII; urutan itu dipakai apa adanya (naik menurut nomor region)
+  const ents=REG.map(e=>({e,cnt:cols.filter(c=>c.map.has(e)).length})).filter(x=>x.cnt>0);
   const cmp=cmpEnt();
   const q=(r,n)=>{const z=n>1?(r-1)/(n-1):0;return z<=.25?'q1':z<=.5?'q2':z<=.75?'q3':'q4';};
-  const head=`<tr><th class="rg-sticky">#</th><th class="rg-sticky2">Region</th>${cols.map(c=>`<th title="${clean(c.m.n)}">${clean(c.m.s)}</th>`).join('')}<th>Rata²</th></tr>`;
-  const body=ents.map(x=>`<tr class="${x.e===FOKUS?'on':x.e===cmp?'rx-cmp-row':''}" data-rx-pilih="${clean(x.e.id)}"><td class="rg-sticky"><b>${x.rk}</b></td><td class="rg-sticky2"><b>${clean(nama(x.e))}</b><small>${clean(x.e.nama)}</small></td>${cols.map(c=>{const r=c.map.get(x.e);return r?`<td class="rg-c ${q(r.rk,c.n)}" title="${clean(c.m.n)}: ${clean(c.m.fmt(r.v))}">${r.rk}</td>`:'<td class="rg-na">–</td>';}).join('')}<td><b>${x.avg.toLocaleString('id-ID',{maximumFractionDigits:1})}</b></td></tr>`).join('');
-  const me=ents.find(x=>x.e===FOKUS);
-  return `<section class="cd"><h2>Rekap Peringkat 12 Region</h2><p class="rg-sub">${ui.per==='mtd'?`MTD ${BULAN}`:`DtD ${isoShort(iso())}`} (O2O & Shifting MTD). Angka di sel = peringkat region pada indikator; urut dari rata-rata peringkat.${me?` Region ${clean(FOKUS.no)} berada di <b>peringkat gabungan #${me.rk}</b>.`:''}</p><div class="tw rg-tw"><table class="rg-tbl">${head}${body}</table></div><div class="rg-leg"><span><i class="q1"></i>25% teratas</span><span><i class="q2"></i>25–50%</span><span><i class="q3"></i>50–75%</span><span><i class="q4"></i>25% terbawah</span></div><p class="rg-note">Peringkat gabungan memberi bobot sama pada ${cols.length} indikator. Ketuk baris untuk menjadikan region tersebut pembanding.</p></section>`;
+  const kata=kataCari(),cariAktif=kata.length>0;
+  const tbl=cariAktif?ents.filter(x=>{const t=(nama(x.e)+' '+x.e.nama).toLowerCase();return kata.every(w=>t.includes(w));}):ents;
+  const head=`<tr><th class="rg-sticky2" style="left:0">Region</th>${cols.map(c=>`<th title="${clean(c.m.n)}">${clean(c.m.s)}</th>`).join('')}</tr>`;
+  const body=tbl.map(x=>`<tr class="${x.e===FOKUS?'on':x.e===cmp?'rx-cmp-row':''}" data-rx-pilih="${clean(x.e.id)}"><td class="rg-sticky2" style="left:0"><b>${clean(nama(x.e))}</b><small>${clean(x.e.nama)}</small></td>${cols.map(c=>{const r=c.map.get(x.e);return r?`<td class="rg-c ${q(r.rk,c.n)}" title="${clean(c.m.n)}: ${clean(c.m.fmt(r.v))}">${r.rk}</td>`:'<td class="rg-na">–</td>';}).join('')}</tr>`).join('')
+    ||`<tr><td colspan="${cols.length+1}" class="rg-na" style="padding:16px;text-align:center">Tidak ada region yang cocok dengan pencarian.</td></tr>`;
+  const info=cariAktif?` Menampilkan <b>${tbl.length}</b> region sesuai pencarian.`:' Ketik nama/nomor region di kotak pencarian atas untuk menyaring tabel.';
+  return `<section class="cd" id="rx-rekap"><h2>Rekap Peringkat 12 Region</h2><p class="rg-sub">${ui.per==='mtd'?`MTD ${BULAN}`:`DtD ${isoShort(iso())}`} (O2O & Shifting MTD). Angka di sel = peringkat region pada indikator tersebut; baris diurutkan menurut nomor region (I → XII).${info}</p><div class="tw rg-tw"><table class="rg-tbl">${head}${body}</table></div><div class="rg-leg"><span><i class="q1"></i>25% teratas</span><span><i class="q2"></i>25–50%</span><span><i class="q3"></i>50–75%</span><span><i class="q4"></i>25% terbawah</span></div><p class="rg-note">Ketuk baris untuk menjadikan region tersebut pembanding.</p></section>`;
 }
 
 function catatan(){
@@ -254,6 +260,14 @@ app.addEventListener('change',e=>{
   if(tampil!=='region')return;
   const s=e.target.closest('[data-rx-cmp]');if(s){ui.cmp=s.value;render();}
 });
+
+// tabel rekap ikut tersaring saat mengetik di kotak pencarian header
+(function(){
+  const qEl=document.getElementById('q');if(!qEl)return;
+  const segarkan=()=>{if(tampil!=='region')return;const el=document.getElementById('rx-rekap');if(el)el.outerHTML=rekap();};
+  qEl.addEventListener('input',segarkan);
+  qEl.addEventListener('keydown',e=>{if(e.key==='Escape')setTimeout(segarkan,0);});
+})();
 
 render();
 })();

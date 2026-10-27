@@ -12,7 +12,7 @@
 
   /* ----- Pengaturan ----- */
   const SEMBUNYIKAN_NAV_SAAT_GULIR = true; // false = nav bawah selalu terlihat
-  const URUTAN_TAB = ['ranking', 'region', 'area', 'cabang']; // menentukan arah geser antar tab
+  const URUTAN_TAB = ['ranking', 'region', 'area', 'cabang', 'kpi']; // menentukan arah geser antar tab
   const reduce = window.matchMedia('(prefers-reduced-motion: reduce)');
   const html = document.documentElement;
 

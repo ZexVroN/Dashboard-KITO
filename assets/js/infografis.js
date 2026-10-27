@@ -20,7 +20,7 @@
      if(key==='cif'&&r?.target_cif!=null)return Number(r.target_cif);
      return null;
    };
-   return `<div class="cd info-cabang"><h2>Informasi Akuisisi Cabang · 16 Oktober 2026</h2>
+   return `<div class="cd info-cabang"><h2>Informasi Akuisisi Cabang · 23 Oktober 2026</h2>
      <p class="info-caption">Data MTD cabang: <b>${esc(b[1])}</b> · ${esc(b[2])}</p>
      ${r?`<div class="info-kpis">${fields.map(([key,label])=>{
        const a=r[key]==null?null:Number(r[key]);

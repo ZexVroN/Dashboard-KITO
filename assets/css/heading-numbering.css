@@ -1,0 +1,20 @@
+/* Penanda judul klasik KITO: garis vertikal biru tanpa nomor atau bullet. */
+#app .cd h2 {
+  gap: 8px;
+  font-size: clamp(13px, 1.25vw, 15px);
+  font-weight: 750;
+  line-height: 1.4;
+}
+#app .cd h2::before {
+  content: "";
+  display: block;
+  flex: 0 0 4px;
+  width: 4px;
+  height: 14px;
+  padding: 0;
+  border-radius: 4px;
+  background: linear-gradient(180deg, var(--c1), var(--nv));
+}
+@media (max-width: 420px) {
+  #app .cd h2 { font-size: 13px; }
+}

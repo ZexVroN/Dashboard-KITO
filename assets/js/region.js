@@ -73,7 +73,7 @@ function peringkat(m,per){
 function selisih(m,v,ref){
   if(v==null||ref==null)return null;
   const d=v-ref,baik=m.tinggi?d>0:d<0,sama=m.jenis==='waktu'?Math.abs(d)<1:Math.abs(d)<0.0005;
-  const teks=m.jenis==='waktu'?`${d<0?'−':'+'}${clock(Math.abs(d))}`:`${d>=0?'+':'−'}${Math.abs(d*100).toLocaleString('id-ID',{minimumFractionDigits:1,maximumFractionDigits:1})} pp`;
+  const teks=m.jenis==='waktu'?`${d<0?'−':'+'}${clock(Math.abs(d))}`:`${d>=0?'+':'−'}${Math.abs(d*100).toLocaleString('id-ID',{minimumFractionDigits:1,maximumFractionDigits:1})} %`;
   // versi kalimat untuk chip/tabel: waktu memakai "lebih cepat/lambat"
   const kata=m.jenis==='waktu'?`${clock(Math.abs(d))} ${d<0?'lebih cepat':'lebih lambat'}`:teks;
   return{d,baik,sama,teks,kata};

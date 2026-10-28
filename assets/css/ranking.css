@@ -91,3 +91,17 @@
 
 @media(min-width:720px){.rg-hero h3{font-size:28px}}
 @media print{.rg-more{display:none}.rg-tw{max-height:none;overflow:visible}.rg-row{break-inside:avoid}}
+
+/* Penanda bullet biru pada empat subjudul panel Indikator Ranking.
+   Tidak mengubah heading kartu utama atau tombol filter. */
+#app .rg-seg > .rg-g::before,
+#app .rg-per > .rg-g::before {
+  content: "";
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  margin-right: 8px;
+  border-radius: 50%;
+  background: #06439b;
+  vertical-align: 2px;
+}

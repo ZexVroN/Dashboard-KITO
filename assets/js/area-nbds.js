@@ -25,7 +25,7 @@ const norm=s=>String(s||'').toLowerCase().replace(/^area\s+/,'').replace(/[^a-z0
 const num=n=>Number(n||0).toLocaleString('id-ID');
 // persen dipotong (bukan dibulatkan) ke 1 desimal, supaya 97,96% tidak tampil "98,0%" padahal belum capai target
 const pct=p=>{if(p==null)return '–';const v=Math.floor(p*1000+1e-9)/10;return v.toLocaleString('id-ID',{minimumFractionDigits:v%1?1:0,maximumFractionDigits:1})+'%';};
-const ppTxt=d=>(d>=0?'+':'−')+Math.abs(d*100).toLocaleString('id-ID',{minimumFractionDigits:1,maximumFractionDigits:1})+' pp';
+const ppTxt=d=>(d>=0?'+':'−')+Math.abs(d*100).toLocaleString('id-ID',{minimumFractionDigits:1,maximumFractionDigits:1})+' %';
 const util=pr=>pr&&pr[0]+pr[1]>0?pr[0]/(pr[0]+pr[1]):null;
 // jumlah transaksi Old BDS yang harus dialihkan ke NBDS agar utilisasi ≥ target
 const need=pr=>pr?Math.max(0,Math.ceil(TGT*(pr[0]+pr[1])-pr[0]-1e-9)):0;
@@ -76,7 +76,7 @@ function tile(k,per,e,isRegion){
   const pr=pairOf(e,per,k),p=util(pr);
   if(!pr||p==null)return `<div class="wt-tile nb-tile"><b class="wt-nm">${clean(KNAME[k])}</b><div class="wt-v n">–</div><span class="chip n">Tanpa transaksi</span></div>`;
   const ref=util(pairOf(region,per,k));
-  // selisih < 0,05 pp ditulis "≈ setara" (bukan "−0,0 pp")
+  // selisih < 0,05 % ditulis "≈ setara" (bukan "−0,0 %")
   // dua baris tetap (nilai · "vs pembanding") agar footer semua kotak sama tinggi
   const banding=(a,b,lbl)=>Math.abs(a-b)<0.0005?`<span class="wt-dl mu">≈ setara<small>vs ${lbl}</small></span>`:`<span class="wt-dl ${a>=b?'ok':'bad'}">${a>=b?'▲':'▼'} ${ppTxt(a-b)}<small>vs ${lbl}</small></span>`;
   const vsReg=!isRegion&&ref!=null?banding(p,ref,'Reg. II'):'';

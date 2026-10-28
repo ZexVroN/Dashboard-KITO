@@ -33,7 +33,7 @@ function current(){
 
 function gapChip(diff,label){
   const pp=diff*100,up=pp>=0;
-  return `<span class="chip ${up?'ok':'bad'}">${up?'▲':'▼'} ${Math.abs(pp).toLocaleString('id-ID',{minimumFractionDigits:1,maximumFractionDigits:1})} pp vs ${label}</span>`;
+  return `<span class="chip ${up?'ok':'bad'}">${up?'▲':'▼'} ${Math.abs(pp).toLocaleString('id-ID',{minimumFractionDigits:1,maximumFractionDigits:1})} % vs ${label}</span>`;
 }
 
 function donut(p,color){
@@ -70,7 +70,7 @@ function segCard(seg,e,isRegion){
   const ket=k==='above'?'ok':'bad';
   const base=isRegion?bank.s[seg.key][3]:region.s[seg.key][3];
   const pp=(p-base)*100;
-  const ppText=(pp>=0?'+':'−')+Math.abs(pp).toLocaleString('id-ID',{minimumFractionDigits:1,maximumFractionDigits:1})+' pp';
+  const ppText=(pp>=0?'+':'−')+Math.abs(pp).toLocaleString('id-ID',{minimumFractionDigits:1,maximumFractionDigits:1})+' %';
   const ketChip=`<span class="chip ${ket}">${k==='above'?'▲ Above':'▼ Below'} Avg ${isRegion?'Bankwide':'Region II'} · ${ppText}</span>`;
   const rk=isRegion?'':`<span class="chip n">#${rankOf[seg.key].get(e.name)} / ${areas.length}</span>`;
   const rows=[cmpRow(isRegion?'Region II':shortName(e.name),p,true)];

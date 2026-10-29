@@ -712,3 +712,7 @@ body.maint .geser, body.maint .tab-geser, body.maint #hasil { display: none; }
 .ob-tw.gulir th { position: sticky; top: 0; background: var(--cd); z-index: 1; }
 .ob-tbl tr:nth-child(even) td { background: rgba(102, 112, 133, .04); }
 @media print { .ob-tw.gulir { max-height: none; overflow: visible; } }
+
+footer .kredit{display:flex;flex-direction:column;align-items:center;text-align:center;gap:2px}
+.credit-property,.credit-attribution{display:block;text-align:center}
+.kredit a,.kito-credit a{color:inherit;text-decoration:underline;text-underline-offset:2px}

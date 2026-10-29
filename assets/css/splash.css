@@ -20,3 +20,6 @@
 @keyframes kito-kilau{to{transform:translateX(100%)}}
 @media (prefers-reduced-motion:reduce){.kito-load{animation:none}.kito-load-bar i{transition:none}.kito-load-bar i::after{animation:none;display:none}}
 @media print{.kito-splash{display:none!important}}
+
+.kito-credit{display:flex;flex-direction:column;align-items:center;gap:2px;pointer-events:auto}
+.kito-credit a{pointer-events:auto}

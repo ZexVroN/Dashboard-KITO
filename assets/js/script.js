@@ -568,7 +568,7 @@ if (ft) {
     "Antrian s.d. <b>" + dlong(D.dates[D.dates.length - 1]) +
     "</b> · Utilisasi per <b>" + dlong(D.mdate) +
     "</b><br>Dashboard Monitoring Inbranch · Region II" +
-    '<span class="kredit">© Credits By: Service Quality x Transaction Operation Region II Sumatera</span>';
+    '<span class="kredit"><span class="credit-property">Property of Operation Region II Sumatera</span><span class="credit-attribution">© Credits by <a href="https://assyahid.github.io/" target="_blank" rel="noopener noreferrer">Assyahid Hasan Albana</a> | Desigen By Deni</span></span>';
 }
 
 /* --- Tema terang / gelap --- */

@@ -62,7 +62,11 @@
     <meta name="robots" content="noindex" />
   <link rel="stylesheet" href="assets/css/typography-update.css?v=1" />
     <link rel="stylesheet" href="assets/css/heading-numbering.css?v=20261028b" />
-</head>
+<style>
+.kito-pctl{display:inline-flex;align-items:center;gap:7px;flex-wrap:wrap;margin:8px 12px;padding:9px 13px;border-left:4px solid #06439b;border-radius:7px;background:rgba(6,67,155,.08);font-size:12px;font-weight:650;line-height:1.5}
+.kito-pctl strong{font-size:13px;color:#0756b4}.kito-pctl small{font-weight:450;opacity:.85}
+.hero .kito-pctl{display:flex;flex-wrap:wrap;margin:12px 0 0;padding:7px 10px;border-left:3px solid #f6bd28;background:rgba(255,255,255,.13);color:#fff;box-shadow:none;gap:4px 9px}.hero .kito-pctl strong{color:#fff;font-size:12px}.hero .kito-pctl small{color:rgba(255,255,255,.85);font-size:11px}.hero .kito-pctl{max-width:100%}
+</style></head>
   <body>
     <div id="kito-splash" class="kito-splash" aria-label="KITO sedang membuka dashboard" role="status">
       <picture class="kito-splash-picture">
@@ -70,9 +74,8 @@
         <source media="(min-width: 1600px)" srcset="assets/images/splash-widescreen.png" />
         <img src="assets/images/splash-landscape.png" alt="KITO Key Inbranch Tracking & Overview" fetchpriority="high" decoding="async" />
       </picture>
-      <div class="kito-credit">© Credits By: Service Quality x Transaction Operation Region II Sumatera</div>
-    </div>
-    <header>
+      <div class="kito-credit"><span class="credit-property">Property of Operation Region II Sumatera</span><span class="credit-attribution">© Credits by <a href="https://assyahid.github.io/" target="_blank" rel="noopener noreferrer">Assyahid Hasan Albana</a> | Desigen By Deni</span></div>
+    </div><header>
       <div class="bar-atas">
         <h1>DASHBOARD MONITORING INBRANCH · R2</h1>
         <button id="tema" class="tema" type="button" aria-label="Ganti tema">
@@ -135,7 +138,7 @@
     </nav>
     <link rel="stylesheet" href="assets/css/infografis.css?v=1" />
     <script src="assets/js/data.js?v=26"></script>
-    <script src="assets/js/script.js?v=9"></script>
+    <script src="assets/js/script.js?v=20261029-pctl"></script>
     <script src="assets/js/infografis-data.js?v=1"></script>
     <script src="assets/js/infografis.js?v=3"></script>
     <link rel="stylesheet" href="assets/css/pegawai.css?v=1" />
@@ -167,5 +170,50 @@
     <script src="assets/js/kpi-data.js?v=3"></script>
     <script src="assets/js/kpi.js?v=8"></script>
     <script src="assets/js/animasi.js?v=5"></script>
+
+<style>
+.kito-pctl-top{position:relative;display:flex;align-items:flex-start;gap:10px;margin:0 0 12px;padding:10px 40px 10px 12px;border-left:4px solid #f3b629;border-radius:9px;background:#e5edff;color:#123a77;box-shadow:0 2px 8px rgba(0,0,0,.06);font-size:12px;line-height:1.45}
+.kito-pctl-top .kito-pctl-copy{display:flex;flex-direction:column;gap:3px;min-width:0}
+.kito-pctl-top strong{font-size:12px;font-weight:750}
+.kito-pctl-top small{font-size:11px;color:#365078}
+.kito-pctl-close{position:absolute;right:8px;top:6px;border:0;background:transparent;color:#123a77;border-radius:6px;font-size:22px;line-height:1;padding:3px 7px;cursor:pointer}
+.kito-pctl-close:hover,.kito-pctl-close:focus-visible{background:rgba(18,58,119,.12)}
+body.dark .kito-pctl-top,[data-theme="dark"] .kito-pctl-top{background:#203962;color:#fff}
+body.dark .kito-pctl-top small,[data-theme="dark"] .kito-pctl-top small{color:#d9e6ff}
+body.dark .kito-pctl-close,[data-theme="dark"] .kito-pctl-close{color:#fff}
+</style>
+<script>
+(function(){
+  let closed=false, busy=false;
+  function update(){
+    if(busy)return;
+    const app=document.getElementById('app');if(!app)return;
+    const kpi=document.querySelector('#nav button.on[data-v="kpi"], #nav button.on[data-v="KPI"]');
+    const otherKpi=document.body.classList.contains('kpi-active');
+    let box=document.getElementById('kito-pctl-top');
+    if(closed||kpi||otherKpi){if(box)box.remove();return;}
+    const date=document.getElementById('sd')?.value||'2026-10-27';
+    const p95=date==='2026-10-27';
+    if(!box){
+      busy=true;
+      box=document.createElement('div');box.id='kito-pctl-top';box.className='kito-pctl-top';box.setAttribute('role','status');
+      box.innerHTML='<div class="kito-pctl-copy"><strong></strong><small></small></div><button type="button" class="kito-pctl-close" aria-label="Tutup informasi persentil waktu antrian" title="Tutup">&times;</button>';
+      box.querySelector('button').addEventListener('click',()=>{closed=true;box.remove()});
+      app.prepend(box);busy=false;
+    }
+    const title=p95?'Waktu Antrian · P95 (27 Okt 2026)':'Waktu Antrian · P90 (hingga 26 Okt 2026)';
+    const desc='Data 27 Okt menggunakan P95; riwayat sampai 26 Okt dan MTD historis menggunakan P90. Kedua persentil tidak dibandingkan langsung.';
+    if(box.querySelector('strong').textContent!==title)box.querySelector('strong').textContent=title;
+    if(box.querySelector('small').textContent!==desc)box.querySelector('small').textContent=desc;
+  }
+  document.addEventListener('DOMContentLoaded',()=>{
+    const app=document.getElementById('app');if(!app)return;
+    new MutationObserver(update).observe(app,{childList:true,subtree:false});
+    document.addEventListener('change',update);
+    document.addEventListener('click',()=>requestAnimationFrame(update));
+    update();
+  });
+})();
+</script>
 </body>
 </html>

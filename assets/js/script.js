@@ -652,7 +652,15 @@ const gs = $("#geser"),
   tabs = document.querySelectorAll(".tab-geser button");
 
 function goSlide(i) {
-  if (gs) gs.scrollTo({ left: i * gs.clientWidth, behavior: "smooth" });
+  if (!gs) return;
+  const desktop = window.matchMedia("(min-width: 769px) and (hover: hover) and (pointer: fine)").matches;
+  if (desktop) {
+    gs.classList.toggle("kito-cari-aktif", i === 1);
+    tabs.forEach((t, j) => t.classList.toggle("on", j === i));
+    if (i === 0) hs.hidden = true;
+    return;
+  }
+  gs.scrollTo({ left: i * gs.clientWidth, behavior: "smooth" });
 }
 
 if (gs) {

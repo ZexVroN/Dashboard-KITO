@@ -1,0 +1,30 @@
+/* Perbaikan khusus browser desktop: dropdown native tidak boleh berada
+   di dalam horizontal scroll container / ancestor ber-transform. */
+@media (min-width: 769px) and (hover: hover) and (pointer: fine) {
+  body:not(.maint) header .geser {
+    display: block !important;
+    overflow: visible !important;
+    scroll-snap-type: none !important;
+    -webkit-overflow-scrolling: auto !important;
+    transform: none !important;
+    animation: none !important;
+    contain: none !important;
+    clip-path: none !important;
+  }
+  body:not(.maint) header .geser .slide {
+    display: none;
+    width: 100%;
+    min-width: 0;
+    transform: none !important;
+    animation: none !important;
+  }
+  body:not(.maint) header .geser:not(.kito-cari-aktif) .slide:first-child,
+  body:not(.maint) header .geser.kito-cari-aktif .slide:nth-child(2) {
+    display: block;
+  }
+  body:not(.maint) header .geser select {
+    max-width: 100%;
+    transform: none !important;
+    animation: none !important;
+  }
+}

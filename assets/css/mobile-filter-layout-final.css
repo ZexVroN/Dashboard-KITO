@@ -1,0 +1,24 @@
+/* Mobile layout: 35/65 first row, 50/50 second row. Explicit placement avoids old span rules. */
+@media (max-width: 768px) {
+ header .fl, body header .fl, body.mode-region header .fl {
+   display:grid!important;
+   grid-template-columns:repeat(20,minmax(0,1fr))!important;
+   grid-auto-flow:row!important;
+   gap:8px!important;
+   width:100%!important;
+   min-width:0!important;
+   align-items:stretch!important;
+ }
+ header .fl > #sa,header .fl > .kito-browser-select:has(> #sa){grid-column:1 / span 7!important;grid-row:1!important;order:1!important}
+ header .fl > #sc,header .fl > .kito-browser-select:has(> #sc){grid-column:8 / -1!important;grid-row:1!important;order:2!important}
+ header .fl > #sm,header .fl > .kito-browser-select:has(> #sm){grid-column:1 / span 10!important;grid-row:2!important;order:3!important}
+ header .fl > #sd,header .fl > .kito-browser-select:has(> #sd){grid-column:11 / -1!important;grid-row:2!important;order:4!important}
+ header .fl > select,header .fl > .kito-browser-select {width:100%!important;max-width:100%!important;min-width:0!important;box-sizing:border-box!important;align-self:stretch!important}
+ header .fl select,header .fl .kito-browser-trigger {width:100%!important;min-width:0!important;max-width:100%!important;box-sizing:border-box!important;font-size:clamp(11px,2.9vw,14px)!important;overflow:hidden!important;text-overflow:ellipsis!important;white-space:nowrap!important}
+ /* Region/Area pages: if Cabang is hidden, Area occupies the full first row. */
+ header .fl:has(> #sc[hidden]) > #sa,
+ header .fl:has(> #sc[style*="display: none"]) > #sa,
+ header .fl:has(> .kito-browser-select:has(> #sc[hidden])) > .kito-browser-select:has(> #sa),
+ header .fl:has(> .kito-browser-select:has(> #sc[style*="display: none"])) > .kito-browser-select:has(> #sa){grid-column:1/-1!important}
+ header .fl > .kito-browser-select:has(> #sc[hidden]),header .fl > .kito-browser-select:has(> #sc[style*="display: none"]){display:none!important}
+}

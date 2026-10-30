@@ -12,4 +12,34 @@
 .fl #sd{order:2!important}
 .fl #sa{order:0!important}
 .fl #sc{order:0!important}
-@media(max-width:640px){.fl #sm,.fl #sd{grid-column:1/-1!important}}
+/* Mobile: Periode Bulan & Tanggal dibagi 2 kolom (50/50) dalam satu baris. */
+@media(max-width:640px){
+ header .fl{grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important}
+ header .fl #sm{grid-column:1!important}
+ header .fl #sd{grid-column:2!important}
+ header .fl #sm,header .fl #sd{min-width:0!important;max-width:100%!important;text-overflow:ellipsis;white-space:nowrap;overflow:hidden}
+}
+
+/* Halaman Navigasi Area (dropdown Cabang disembunyikan oleh script):
+   Area selebar penuh di baris atas, lalu Bulan | Tanggal 50/50 di baris bawah.
+   Berlaku untuk mobile dan versi website. Selector memakai :has() agar tab lain tidak terpengaruh. */
+header .fl:has(#sc[style*="display: none"]) .kito-browser-select:has(> #sc){display:none!important}
+header .fl:has(#sc[style*="display: none"]) :is(#sa,.kito-browser-select:has(> #sa)){grid-column:1/-1!important;order:1!important;width:100%!important;max-width:100%!important}
+header .fl:has(#sc[style*="display: none"]) :is(#sm,.kito-browser-select:has(> #sm)){grid-column:1!important;order:2!important}
+header .fl:has(#sc[style*="display: none"]) :is(#sd,.kito-browser-select:has(> #sd)){grid-column:2!important;order:3!important}
+
+/* Versi website (desktop), tab Cabang/Ranking: Area | Bulan di baris atas, Cabang | Tanggal di baris bawah. */
+@media (min-width:769px) and (hover:hover) and (pointer:fine){
+ body:not(.mode-region):not(.mode-kpi) header .fl:not(:has(#sc[style*="display: none"])) .kito-browser-select:has(> #sa){grid-column:1!important;order:1!important}
+ body:not(.mode-region):not(.mode-kpi) header .fl:not(:has(#sc[style*="display: none"])) .kito-browser-select:has(> #sm){grid-column:2!important;order:2!important}
+ body:not(.mode-region):not(.mode-kpi) header .fl:not(:has(#sc[style*="display: none"])) .kito-browser-select:has(> #sc){grid-column:1!important;order:3!important}
+ body:not(.mode-region):not(.mode-kpi) header .fl:not(:has(#sc[style*="display: none"])) .kito-browser-select:has(> #sd){grid-column:2!important;order:4!important}
+}
+
+/* Halaman Region: Area & Cabang tidak relevan (sembunyikan juga pembungkus dropdown versi website),
+   Bulan | Tanggal berdampingan 50/50 di mobile maupun website. */
+body.mode-region header .fl{grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important}
+body.mode-region header .fl .kito-browser-select:has(> #sa),
+body.mode-region header .fl .kito-browser-select:has(> #sc){display:none!important}
+body.mode-region header .fl :is(#sm,.kito-browser-select:has(> #sm)){grid-column:1!important;order:1!important}
+body.mode-region header .fl :is(#sd,.kito-browser-select:has(> #sd)){grid-column:2!important;order:2!important}

@@ -1,0 +1,26 @@
+/* KITO 28 Oct: viewport penuh pada HP, tidak memengaruhi data / fitur */
+@media (max-width: 768px), (hover: none) and (pointer: coarse) {
+ html,body {width:100%;max-width:100%;min-height:100%;overflow-x:clip;}
+ body {min-height:100vh;min-height:100dvh;margin:0;}
+ header {width:100%;max-width:none;margin:0;padding-left:max(12px,env(safe-area-inset-left));padding-right:max(12px,env(safe-area-inset-right));}
+ main,footer,.aksi {width:100%;max-width:none;margin-left:0;margin-right:0;}
+ main {min-height:calc(100dvh - 240px);padding:12px max(10px,env(safe-area-inset-right)) 18px max(10px,env(safe-area-inset-left));}
+ #app,.cd,.fl,.geser,.slide {min-width:0;max-width:100%;}
+ .fl {grid-template-columns:minmax(0,1fr) minmax(0,1fr);}
+ .fl > .kito-browser-select {min-width:0;max-width:100%;}
+ .fl > .kito-browser-select:nth-child(1){grid-column:1;order:1;}
+ .fl > .kito-browser-select:nth-child(3){grid-column:2;order:2;}
+ .fl > .kito-browser-select:nth-child(2){grid-column:1/-1;order:3;}
+ .kito-browser-select select {display:block!important;position:static!important;width:100%!important;height:auto!important;opacity:1!important;pointer-events:auto!important;max-width:100%;min-width:0;transform:none!important;animation:none!important;}
+ .kito-browser-select .kito-browser-trigger {display:none!important;}
+ .geser {scroll-snap-type:x mandatory;overflow-x:auto;overflow-y:hidden;}
+ .slide {flex:0 0 100%;}
+ .kito-browser-popup {display:none!important;}
+}
+/* Desktop: proportional dropdown width with scrollable overlay */
+@media (min-width:769px) and (hover:hover) and (pointer:fine) {
+ header .fl {grid-template-columns:minmax(0,1fr) minmax(145px,220px)!important;}
+ header .fl>.kito-browser-select:nth-child(1){grid-column:1;order:1;}
+ header .fl>.kito-browser-select:nth-child(3){grid-column:2;order:2;}
+ header .fl>.kito-browser-select:nth-child(2){grid-column:1/-1;order:3;}
+}

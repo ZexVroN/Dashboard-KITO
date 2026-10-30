@@ -24,7 +24,7 @@ const dl = (s) => {
 const dlong = (s) =>
   new Date(s + "T00:00").toLocaleDateString("id-ID", {
     day: "2-digit",
-    month: "short",
+    month: "long",
     year: "numeric",
   });
 

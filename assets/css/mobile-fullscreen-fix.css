@@ -24,3 +24,26 @@
  header .fl>.kito-browser-select:nth-child(3){grid-column:2;order:2;}
  header .fl>.kito-browser-select:nth-child(2){grid-column:1/-1;order:3;}
 }
+
+/* Full-bleed mobile header: warna dashboard menyambung ke status bar / tepi atas. */
+@media (max-width:768px), (hover:none) and (pointer:coarse) {
+ html {background:#002060; width:100%; min-height:100%;}
+ body {background:#002060; width:100%; min-height:100vh; min-height:100dvh; padding:0;}
+ header {
+   box-sizing:border-box; position:sticky; top:0; left:0; right:0;
+   width:100%; max-width:100%; margin:0; border-radius:0;
+   padding-top:calc(12px + env(safe-area-inset-top, 0px));
+   padding-left:max(12px,env(safe-area-inset-left,0px));
+   padding-right:max(12px,env(safe-area-inset-right,0px));
+   background:linear-gradient(105deg,#002060,#1247a5);
+   background-clip:border-box;
+ }
+ /* Menutup celah di atas header ketika browser mendukung area status bar. */
+ header::before {
+   content:""; position:absolute; left:0; right:0;
+   top:calc(-1 * env(safe-area-inset-top,0px));
+   height:env(safe-area-inset-top,0px);
+   background:#002060; pointer-events:none;
+ }
+ header .geser,header .slide,header .fl {max-width:100%;box-sizing:border-box;}
+}

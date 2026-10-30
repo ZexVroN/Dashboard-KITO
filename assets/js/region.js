@@ -1,5 +1,5 @@
 /* Dashboard Region (navigasi "Region"): 12 region bankwide, fokus Region II / Sumatera 2.
-   Tiga indikator: Waktu Antri (DtD 27 Okt P95; MTD dan riwayat P90), Utilisasi NBDS, O2O & Shifting Digital.
+   Tiga indikator: Waktu Antri (DtD P95 sejak 27 Okt; MTD dan riwayat P90), Utilisasi NBDS, O2O & Shifting Digital.
    Data: assets/js/region-data.js (tools/build_region.py). Add-on non-destruktif: membungkus render().
    Pasangan gaya: assets/css/region.css (memakai juga .rg-* dari ranking.css dan .wt-* dari area-waktu.css). */
 (()=>{'use strict';
@@ -16,6 +16,11 @@ const pctR=p=>p==null?'–':(p*100).toLocaleString('id-ID',{minimumFractionDigit
 const pctT=p=>{if(p==null)return '–';const v=Math.floor(p*1000+1e-9)/10;return v.toLocaleString('id-ID',{minimumFractionDigits:1,maximumFractionDigits:1})+'%';};
 const isoShort=iso=>new Date(iso+'T00:00').toLocaleDateString('id-ID',{day:'numeric',month:'short'});
 const isoLong=iso=>new Date(iso+'T00:00').toLocaleDateString('id-ID',{day:'numeric',month:'long',year:'numeric'});
+// persentil waktu antri per tanggal (region-data.js: queueMetricByDate)
+const QM=R.queueMetricByDate||{};
+const metrikTgl=t=>QM[t]||'P90';
+const tglP95=Object.keys(QM).filter(k=>QM[k]==='P95').sort();
+const rentangP95=tglP95.length?(tglP95.length>1?`${isoShort(tglP95[0])}–${isoShort(tglP95[tglP95.length-1])}`:isoShort(tglP95[0])):'';
 const BULAN=new Date(R.bulan+'-01T00:00').toLocaleDateString('id-ID',{month:'long'});
 const util=p=>p&&p[0]+p[1]>0?p[0]/(p[0]+p[1]):null;
 const TGT=0.98;
@@ -47,13 +52,13 @@ const MET=[
   {key:'shift',g:'o2o',n:'Shifting Digital',s:'Shifting',tinggi:true,jenis:'o2o',per:['mtd'],val:e=>shift(e),fmt:pctR},
 ];
 const GRUP=[
-  {key:'waktu',ik:'⏱',n:'Waktu Antri',main:'w-all',pendek:'Waktu Antri',ket:'DtD 27 Okt: P95 · riwayat dan MTD: P90 · semakin kecil semakin baik'},
+  {key:'waktu',ik:'⏱',n:'Waktu Antri',main:'w-all',pendek:'Waktu Antri',ket:`DtD ${rentangP95}: P95 · riwayat dan MTD: P90 · semakin kecil semakin baik`},
   {key:'nbds',ik:'🖥️',n:'Utilisasi NBDS',main:'nb-agg',pendek:'NBDS',ket:'New BDS ÷ (New BDS + Old BDS) · target ≥ 98%'},
   {key:'o2o',ik:'📊',n:'O2O & Shifting Digital',main:'o2o',pendek:'O2O',ket:'Transaksi ganti kartu · semakin besar semakin baik'},
 ];
 const metOf=k=>MET.find(m=>m.key===k)||MET[0];
 const perOf=(m,per)=>m.per.includes(per)?per:m.per[0];
-const perLabel=(m,per)=>perOf(m,per)==='mtd'?(m.jenis==='o2o'?`MTD s.d. ${isoShort(R.tglO2O)}`:(m.jenis==='waktu'?`MTD ${BULAN} · P90`:`MTD ${BULAN}`)):(m.jenis==='waktu'?`DtD ${isoShort(iso())} · ${iso()==='2026-10-27'?'P95':'P90'}`:`DtD ${isoShort(iso())}`);
+const perLabel=(m,per)=>perOf(m,per)==='mtd'?(m.jenis==='o2o'?`MTD s.d. ${isoShort(R.tglO2O)}`:(m.jenis==='waktu'?`MTD ${BULAN} · P90`:`MTD ${BULAN}`)):(m.jenis==='waktu'?`DtD ${isoShort(iso())} · ${metrikTgl(iso())}`:`DtD ${isoShort(iso())}`);
 const kelas=(m,v)=>{
   if(v==null)return 'n';
   if(m.jenis==='waktu')return mp(v)[1];
@@ -91,7 +96,7 @@ function hero(){
   const opsi=[['NASIONAL','Nasional (bankwide)'],...REG.filter(e=>e!==FOKUS).map(e=>[e.id,`Region ${e.no} · ${e.nama}`])];
   return `<section class="cd rx-hero"><span class="rg-eyebrow">DASHBOARD REGION · BANKWIDE</span>
     <h3>Region ${clean(FOKUS.no)} · ${clean(FOKUS.nama)} <small>vs 11 region lain</small></h3>
-    <p class="rg-sub">Waktu Antri, Utilisasi NBDS, dan O2O. Tanggal DtD mengikuti filter Tanggal di atas · P95 pada 27 Okt, P90 pada riwayat sebelumnya · data s.d. ${isoLong(R.tanggal)}.</p>
+    <p class="rg-sub">Waktu Antri, Utilisasi NBDS, dan O2O. Tanggal DtD mengikuti filter Tanggal di atas · P95 pada ${rentangP95}, P90 pada riwayat sebelumnya · data s.d. ${isoLong(R.tanggal)}.</p>
     <div class="rx-chips">${ranks}</div>
     <div class="rx-ctrl"><div><span class="rg-g">Periode</span>${seg('per',[['dtd',`DtD ${isoShort(iso())}`],['mtd',`MTD ${BULAN}`]],ui.per)}</div>
     <label class="rx-cmp"><span class="rg-g">Bandingkan dengan</span><select data-rx-cmp aria-label="Pembanding">${opsi.map(([v,t])=>`<option value="${clean(v)}" ${v===ui.cmp?'selected':''}>${clean(t)}</option>`).join('')}</select></label></div>
@@ -215,7 +220,7 @@ function rekap(){
 }
 
 function catatan(){
-  return `<section class="cd"><p class="rg-note" style="margin:0">Sumber: ${clean(R.sumber.waktu)} · ${clean(R.sumber.nbds)} · ${clean(R.sumber.o2o)}. Waktu antri DtD 27 Okt = P95; tanggal sebelumnya dan MTD historis = P90 (tidak sebanding langsung); Utilisasi NBDS MTD = jumlah harian 1 s.d. tanggal laporan; Shifting Digital = (CSM + O2O) ÷ (CSM + O2O + Old BDS + New BDS) transaksi ganti kartu.</p></section>`;
+  return `<section class="cd"><p class="rg-note" style="margin:0">Sumber: ${clean(R.sumber.waktu)} · ${clean(R.sumber.nbds)} · ${clean(R.sumber.o2o)}. Waktu antri DtD ${rentangP95} = P95; tanggal sebelumnya dan MTD historis = P90 (tidak sebanding langsung); Utilisasi NBDS MTD = jumlah harian 1 s.d. tanggal laporan; Shifting Digital = (CSM + O2O) ÷ (CSM + O2O + Old BDS + New BDS) transaksi ganti kartu.</p></section>`;
 }
 
 const page=()=>hero()+`<div class="rx-grid">${GRUP.map(kartuGrup).join('')}</div>`+versus()+daftar()+tren()+rekap()+catatan();

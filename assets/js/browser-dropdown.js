@@ -1,15 +1,16 @@
 /* Browser desktop only: floating dropdown outside clipping/scroll ancestors. */
 (()=>{
  const desktop=()=>matchMedia('(min-width: 769px) and (hover: hover) and (pointer: fine)').matches;
- const ids=['sa','sc','sd'];let current=null;
+ const ids=['sa','sc','sm','sd'];let current=null;
  const close=()=>{if(current){current.popup.remove();current.button.setAttribute('aria-expanded','false');current=null}};
  const sync=()=>{for(const id of ids){const s=document.getElementById(id);if(!s)continue;const wrap=s.closest('.kito-browser-select');if(!wrap)continue;const b=wrap.querySelector('.kito-browser-trigger');const o=s.selectedOptions[0];const label=o?o.textContent:'Pilih…';if(b.textContent!==label)b.textContent=label;if(b.disabled!==s.disabled)b.disabled=s.disabled;}};
  const open=(s,b)=>{
   if(current?.select===s){close();return}close();
   const pop=document.createElement('div');pop.className='kito-browser-popup';pop.setAttribute('role','listbox');
   const rect=b.getBoundingClientRect();const maxH=Math.min(320,Math.max(140,innerHeight-32));
-  pop.style.width=Math.max(190,rect.width)+'px';
-  pop.style.left=Math.max(8,Math.min(rect.left,innerWidth-Math.max(190,rect.width)-8))+'px';
+  const pw=Math.max(190,Math.min(rect.width,480));
+  pop.style.width=pw+'px';
+  pop.style.left=Math.max(8,Math.min(rect.left,innerWidth-pw-8))+'px';
   const below=innerHeight-rect.bottom,above=rect.top;
   pop.style.maxHeight=Math.min(maxH,Math.max(120,Math.max(below,above)-12))+'px';
   if(below>=Math.min(250,above))pop.style.top=Math.min(innerHeight-120,rect.bottom+4)+'px';
@@ -32,7 +33,7 @@
  document.addEventListener('pointerdown',e=>{if(current&&!current.popup.contains(e.target)&&!current.button.contains(e.target))close()},true);
  document.addEventListener('keydown',e=>{if(e.key==='Escape')close()});
  window.addEventListener('scroll',e=>{if(current && e.target!==current.popup && !current.popup.contains(e.target))close()},true);window.addEventListener('resize',()=>{close();sync()});
- let pending=false;const obs=new MutationObserver(()=>{if(!desktop()||pending)return;pending=true;requestAnimationFrame(()=>{pending=false;sync()})});
+ const obs=new MutationObserver(()=>{if(desktop())sync()});
  const start=()=>{setup();for(const id of ids){const select=document.getElementById(id);if(select)obs.observe(select,{subtree:true,childList:true,characterData:true,attributes:true,attributeFilter:['disabled','selected']});}};
  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start);else start();
 })();

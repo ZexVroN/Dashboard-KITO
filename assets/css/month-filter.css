@@ -1,0 +1,15 @@
+
+/* Grid empat filter: lebar seragam, tetap nyaman pada desktop dan mobile. */
+.fl{grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important}
+.fl>select,.fl>.kito-browser-select{min-width:0;max-width:100%;width:100%;box-sizing:border-box}
+.fl select:nth-child(2){grid-column:auto!important;order:0!important}
+.fl #sc,.fl #sm,.fl #sd{min-width:0}
+.fl>.kito-browser-select:has(#sc){grid-column:auto!important;order:0!important}
+@media(max-width:480px){.fl{gap:8px!important}.fl select{font-size:13px!important;padding-left:9px!important;padding-right:24px!important}}
+
+/* Urutan visual bulan di atas tanggal untuk desktop dan mobile. */
+.fl #sm{order:1!important}
+.fl #sd{order:2!important}
+.fl #sa{order:0!important}
+.fl #sc{order:0!important}
+@media(max-width:640px){.fl #sm,.fl #sd{grid-column:1/-1!important}}

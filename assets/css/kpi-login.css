@@ -18,8 +18,17 @@ body.mode-kpi-login .nav{z-index:12}
 .kl-btn:hover,.kl-btn:focus-visible{background:#ffcd45}
 .kl-goyang{animation:kl-goyang .35s ease}
 @keyframes kl-goyang{25%{transform:translateX(-6px)}50%{transform:translateX(6px)}75%{transform:translateX(-3px)}}
+/* Mobile (portrait): naikkan sedikit kartu login dari dasar layar */
+@media (orientation:portrait){.kl{padding-bottom:calc(26vh + env(safe-area-inset-bottom))}}
 @media (orientation:landscape){.kl{align-items:center;justify-content:flex-end;padding-right:max(16px,6vw)}}
 @media (prefers-reduced-motion:reduce){.kl-goyang{animation:none}}
-.kl-aksi{display:flex;justify-content:center;margin:14px 0 4px}
-.kl-aksi .kl-keluar{background:#64748b}
-@media print{.kl,.kl-aksi{display:none}}
+@media print{.kl{display:none}}
+/* Ikon Keluar di header paling atas (.bar-atas), bergaya seperti tombol tema */
+.bar-atas .kl-keluar{margin-left:auto;display:inline-flex;align-items:center;justify-content:center;padding:0}
+.bar-atas .kl-keluar svg{width:18px;height:18px}
+.bar-atas .kl-keluar:focus-visible{outline:none;box-shadow:0 0 0 3px rgba(246,189,40,.7)}
+/* Dropdown jabatan pada kartu login */
+.kl-sel{position:relative;display:block}
+.kl-card select{display:block;width:100%;box-sizing:border-box;margin-top:4px;padding:10px 36px 10px 12px;border:1px solid rgba(255,255,255,.35);border-radius:10px;background:rgba(255,255,255,.92);color:#14213d;font:inherit;font-size:14px;appearance:none;-webkit-appearance:none;cursor:pointer}
+.kl-card select:focus{outline:2px solid #f6bd28;outline-offset:1px}
+.kl-sel::after{content:'⌄';position:absolute;right:13px;top:calc(50% + 2px);transform:translateY(-55%);font-size:18px;color:#14213d;pointer-events:none}

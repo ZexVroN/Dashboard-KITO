@@ -1,0 +1,48 @@
+/* Halaman Informasi Sales (sales.js): menampung kartu sales yang dipindahkan dari halaman Cabang */
+.sl-head{margin:4px 0 12px}
+.sl-head h2{margin:0 0 4px;font-size:20px}
+.sl-head p{margin:0;font-size:12px;color:var(--mu);line-height:1.5}
+.sl-back{margin:0 0 8px;border:1px solid var(--ln);background:var(--cd);color:var(--tx);border-radius:999px;padding:6px 13px;font:700 12px Inter,system-ui,sans-serif;cursor:pointer}
+.sl-back:hover,.sl-back:focus-visible{border-color:var(--nv,#002060);outline:none}
+.sl-note{margin:10px 0 0;font-size:12px;color:var(--mu)}
+.sl-per{display:inline-flex;align-items:center;gap:6px;margin:8px 0 0;padding:5px 11px;border:1px solid var(--ln);border-radius:999px;background:var(--cd);color:var(--tx);font-size:11.5px;font-weight:700}
+
+/* tampilkan dropdown filter header (Area/Cabang/Periode/Tanggal) di halaman sales, seperti tab Cabang.
+   Slide pencarian disembunyikan; hanya slide filter yang tampil. */
+body.mode-sales header .geser{display:flex!important}
+body.mode-sales header .geser .slide:nth-child(2){display:none!important}
+body.mode-sales header .geser .slide:first-child{display:block!important;width:100%}
+@media (min-width:769px) and (hover:hover) and (pointer:fine){
+  body.mode-sales header .geser{display:block!important;overflow:visible!important;scroll-snap-type:none!important;transform:none!important}
+  body.mode-sales header .geser .slide:first-child{display:block!important}
+}
+
+/* tombol menu "Informasi Sales" di atas halaman Cabang */
+/* gaya bersama tombol menu "Informasi Sales" & "Data Trust Index" (dti.js): pil ber-outline,
+   judul tebal + detail kecil; disorot biru saat hover/fokus */
+.sales-open{display:inline-flex;align-items:center;gap:8px;max-width:100%;box-sizing:border-box;margin:0 0 12px;padding:6px 12px 6px 10px;border:1px solid var(--nv);border-radius:999px;background:var(--cd);color:var(--nv);font:inherit;line-height:1.2;text-align:left;cursor:pointer;vertical-align:top;transition:background .15s,color .15s,border-color .15s}
+.sales-open:hover,.sales-open:focus-visible{outline:none;background:var(--nv);border-color:var(--nv);color:#fff}
+.sales-open:focus-visible{box-shadow:0 0 0 3px rgba(0,32,96,.25)}
+.sales-open:active{transform:scale(.97)}
+.sales-open-ik{font-size:15px;flex:none}
+.sales-open-tx{min-width:0}
+.sales-open-tx b{display:block;font-size:12px;font-weight:700;white-space:nowrap}
+.sales-open-tx small{display:block;font-size:10px;font-weight:500;color:var(--mu);white-space:nowrap}
+.sales-open:hover .sales-open-tx small,.sales-open:focus-visible .sales-open-tx small{color:rgba(255,255,255,.85)}
+.sales-open-go{font-size:15px;font-weight:700;line-height:1;opacity:.7;flex:none}
+[data-theme="dark"] .sales-open{color:#c9dbff;border-color:#4a6fb5}
+[data-theme="dark"] .sales-open:hover,[data-theme="dark"] .sales-open:focus-visible{background:#4a6fb5;color:#fff}
+
+/* baris tombol menu: satu baris, digeser ke samping (bukan turun) bila layar tidak cukup */
+.menu-geser{display:flex;flex-wrap:nowrap;gap:8px;margin:0 0 12px;padding:3px 3px 5px;overflow-x:auto;overscroll-behavior-x:contain;scroll-snap-type:x proximity;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+.menu-geser::-webkit-scrollbar{display:none}
+.menu-geser .sales-open{flex:none;margin:0;scroll-snap-align:start}
+@media (max-width:480px){
+  .menu-geser{gap:6px}
+  .menu-geser .sales-open{gap:6px;padding:5px 10px 5px 8px}
+  .menu-geser .sales-open-ik{font-size:13px}
+  .menu-geser .sales-open-tx b{font-size:11.5px}
+  .menu-geser .sales-open-tx small{font-size:9.5px}
+}
+
+@media print{.sl-back,.sales-open,.menu-geser{display:none}}

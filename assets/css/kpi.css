@@ -66,3 +66,18 @@
 .kp-ph.kp-sorot{animation:kp-sorot 1.4s ease-out}
 @keyframes kp-sorot{0%,40%{box-shadow:0 0 0 4px rgba(246,189,40,.85)}100%{box-shadow:0 0 0 0 rgba(246,189,40,0)}}
 @media (prefers-reduced-motion: reduce){.kp-ph.kp-sorot{animation:none}}
+/* Filter halaman KPI: dropdown jabatan + kotak pencarian papan peringkat */
+.kp-filter{margin:2px 0 4px}
+.kp-field{display:flex;flex-direction:column;gap:5px}
+.kp-field>span{font-size:11px;font-weight:700;color:var(--mu);letter-spacing:.2px}
+.kp-selwrap{position:relative}
+.kp-selwrap::after{content:'⌄';position:absolute;right:14px;top:50%;transform:translateY(-62%);font-size:18px;color:var(--c1);pointer-events:none}
+.kp-j-sel{width:100%;box-sizing:border-box;appearance:none;-webkit-appearance:none;border:1px solid var(--ln);border-radius:12px;padding:11px 36px 11px 13px;background:var(--cd);color:var(--tx);font:inherit;font-size:14px;font-weight:700;cursor:pointer}
+.kp-j-sel:focus-visible{outline:none;border-color:var(--c1);box-shadow:0 0 0 3px rgba(37,99,235,.3)}
+.kp-find{margin:0 0 10px}
+.kp-q{width:100%;box-sizing:border-box;border:1px solid var(--ln);border-radius:12px;padding:10px 13px 10px 38px;background:var(--cd) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%232563eb' stroke-width='2' stroke-linecap='round'%3E%3Ccircle cx='11' cy='11' r='7'/%3E%3Cpath d='M21 21l-4.3-4.3'/%3E%3C/svg%3E") no-repeat 13px center;color:var(--tx);font:inherit;font-size:14px}
+.kp-q::placeholder{color:var(--mu);opacity:.9}
+.kp-q:focus-visible{outline:none;border-color:var(--c1);box-shadow:0 0 0 3px rgba(37,99,235,.3)}
+.kp-q::-webkit-search-cancel-button{cursor:pointer}
+/* Jabatan tunggal (akses login terbatas ke satu tab): tampil sebagai label, bukan dropdown */
+.kp-jn.kp-solo{margin:2px 0 10px;padding:9px 13px;border:1px solid var(--ln);border-radius:12px;background:var(--cd);color:var(--tx);font-size:15px;font-weight:800}

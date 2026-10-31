@@ -1,13 +1,6 @@
 /* Halaman DTI Dana & Cendup (dti.js) */
 
-/* tombol menu di atas halaman Cabang, sejajar tombol "Informasi Sales" */
-.dti-open{display:inline-flex;align-items:center;gap:6px;max-width:100%;box-sizing:border-box;margin:0 0 12px;padding:6px 12px;border:1px solid var(--nv);border-radius:999px;background:var(--cd);color:var(--nv);font:inherit;font-size:12px;font-weight:700;line-height:normal;cursor:pointer;white-space:nowrap;vertical-align:top}
-.sales-open+.dti-open{margin-left:6px}
-.dti-open b{font-weight:700}
-.dti-open-go{font-size:14px;line-height:1;opacity:.8}
-.dti-open:hover,.dti-open:focus-visible{outline:none;background:var(--nv);color:#fff}
-.dti-open:active{transform:scale(.97)}
-[data-theme="dark"] .dti-open{color:#c9dbff;border-color:#4a6fb5}
+/* tombol menu di atas halaman Cabang: gaya bersama .sales-open & baris .menu-geser di sales.css */
 
 /* dropdown filter header tetap tampil (sama seperti halaman Informasi Sales) */
 body.mode-dti header .geser{display:flex!important}
@@ -53,6 +46,12 @@ body.mode-dti header .geser .slide:first-child{display:block!important;width:100
 .dt-col-h{display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin-bottom:4px}
 .dt-col-h b{font-size:14px;color:var(--nv)}[data-theme="dark"] .dt-col-h b{color:#8fb4ff}
 .dt-col-h small{font-size:10.5px;color:var(--mu)}
+/* kartu Progres Perbaikan Data: garis highlight per kolom (NTB biru, ETB oranye) */
+.dt-progres{border-top:3px solid var(--c1)}
+.dt-progres .dt-col{border-width:1.5px;box-shadow:inset 4px 0 0 var(--dt-hl);padding-left:14px}
+.dt-progres .dt-col-ntb{--dt-hl:var(--c1);border-color:rgba(37,99,235,.45);background:linear-gradient(135deg,rgba(37,99,235,.07),var(--bg) 60%)}
+.dt-progres .dt-col-etb{--dt-hl:var(--c2);border-color:rgba(232,113,12,.45);background:linear-gradient(135deg,rgba(232,113,12,.08),var(--bg) 60%)}
+.dt-progres .dt-col-h b{color:var(--dt-hl)}
 .dt-pr{padding:8px 0;border-top:1px solid var(--ln)}
 .dt-pr:first-of-type{border-top:0}
 .dt-pr-t{display:flex;align-items:baseline;gap:8px;font-size:12px}

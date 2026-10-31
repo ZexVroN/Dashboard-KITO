@@ -18,8 +18,11 @@ const isR2=(j,u)=>CABANG(j)?true:REGIONAL.has(j.key)?u.n===K.fokus:AREAS2.has(ak
 const LABEL={SQOR:'SQO Region',SQOA:'SQO Area',BOM:'BOM-BOS'};
 const titel=s=>s.replace(/^(REGION|AREA)\s+/,m=>m).replace(/\s*\/\s*/g,' · ').toLowerCase().replace(/(^|[\s·])([a-z])/g,(m,a,b)=>a+b.toUpperCase()).replace(/\b(Ii|Iii|Iv|Vi|Vii|Viii|Ix|Xi|Xii)\b/g,x=>x.toUpperCase());
 
-const ui={j:'ROH',unit:null,area:null};   // area: saringan papan BOM-BOS (null = area cabang terpilih)
+const ui={j:'ROH',unit:null,area:null,q:''};   // area: saringan papan BOM-BOS · q: kata kunci pencarian papan
 const jab=()=>JAB.find(j=>j.key===ui.j);
+// akses tab per jabatan login (diisi kpi-login.js lewat sessionStorage): null = semua jabatan
+function aksesSet(){try{const v=sessionStorage.getItem('kito-kpi-akses');if(!v||v==='*')return null;const a=JSON.parse(v);return Array.isArray(a)&&a.length?new Set(a):null;}catch(e){return null;}}
+const jabTampil=()=>{const s=aksesSet();return s?JAB.filter(j=>s.has(j.key)):JAB;};
 const key=u=>u.k||u.n;   // identitas unit: kode area (dari Data ASM / Data SQO) bila ada
 const kodeTxt=u=>u.k?` · Kode ${u.k}`:'';
 // bawaan BOM-BOS: cabang yang sedang dipilih di header (tab Cabang)
@@ -48,7 +51,10 @@ function hero(j,u){
   return `<section class="kp-hero"><div class="kp-h1"><span>📊 KPI ${clean(K.periode)} · ${clean(j.nama)}</span><h2>${clean(titel(u.n))}${u.k?` <small>Kode ${clean(u.k)}${u.a?' · '+clean(titel(u.a)):''}</small>`:''}</h2><p>Poin KPI per kategori perspektif. Titik di cincin = 100% bobot kategori.</p></div><div class="kp-gs">${PER.map(p=>gauge(p,u[p[0]],bw[p[0]])).join('')}</div></section>`;
 }
 function tabs(){
-  return `<div class="kp-tabs" role="tablist">${JAB.map(j=>`<button type="button" role="tab" class="${j.key===ui.j?'on':''}" data-kp-j="${j.key}">${clean(LABEL[j.key]||j.key)}</button>`).join('')}</div><p class="kp-jn">${clean(jab().nama)}</p>`;
+  const vis=jabTampil();
+  if(vis.length<=1)return `<p class="kp-jn kp-solo">${clean(jab().nama)}</p>`;
+  const opt=vis.map(j=>`<option value="${clean(j.key)}"${j.key===ui.j?' selected':''}>${clean(LABEL[j.key]||j.key)} — ${clean(j.nama)}</option>`).join('');
+  return `<div class="kp-filter"><label class="kp-field"><span>Pilih Jabatan</span><div class="kp-selwrap"><select class="kp-j-sel" aria-label="Pilih jabatan">${opt}</select></div></label></div><p class="kp-jn">${clean(jab().nama)}</p>`;
 }
 function komposisi(j,u){
   const bw=bobot(j),tot=PER.reduce((a,p)=>a+u[p[0]],0);
@@ -70,7 +76,9 @@ function papan(j){
   const ket=reg?'Baris biru = Region II.':`Nomor = peringkat dari ${j.total||j.unit.length} ${cab?'cabang':'area'} bankwide. Ketuk baris untuk melihat komposisi dan rincian KPI-nya.`;
   const areas=cab?[...new Set(j.unit.map(u=>u.a))].sort():[];
   const saring=cab?`<div class="kp-ch kp-area" role="group" aria-label="Saring area">${[['*','Semua Area']].concat(areas.map(a=>[a,titel(a).replace(/^Area\s+/,'')])).map(([v,t])=>`<button type="button" data-kp-a="${clean(v)}" class="${v===ar?'on':''}">${clean(t)}${v==='*'?'':` <small>${j.unit.filter(u=>u.a===v).length}</small>`}</button>`).join('')}</div>`:'';
-  return `<section class="cd kp-board"><h3>Peringkat ${clean(j.nama)}${reg?'':' · Region II'}${cab?` <small class="kp-cnt">${rows.length} cabang</small>`:''}</h3>${saring}<div class="kp-rl">${list||'<p class="kp-no">Tidak ada data.</p>'}</div><p class="kp-note">Garis berwarna = kontribusi tiap perspektif. ${ket}</p></section>`;
+  const apa=cab?'cabang':reg?'region':'area';
+  const cari=`<div class="kp-find"><input type="search" class="kp-q" value="${clean(ui.q)}" placeholder="Cari ${apa} atau kode…" aria-label="Cari di papan peringkat" autocomplete="off" /></div>`;
+  return `<section class="cd kp-board"><h3>Peringkat ${clean(j.nama)}${reg?'':' · Region II'}${cab?` <small class="kp-cnt">${rows.length} cabang</small>`:''}</h3>${saring}${cari}<div class="kp-rl">${list||'<p class="kp-no">Tidak ada data.</p>'}</div><p class="kp-note">Garis berwarna = kontribusi tiap perspektif. ${ket}</p></section>`;
 }
 /* ---- rincian KPI Region II ---- */
 const pendek=n=>{const m=String(n).match(/^Pencapaian Target bisnis (In-Branch)\b[^(]*\((.+)\)/i);return m?m[1]+' · '+m[2]:pendek0(n);};
@@ -115,6 +123,18 @@ function rincian(j,u){
 }
 const page=()=>{const j=jab(),u=unitAktif(j);return tabs()+hero(j,u)+komposisi(j,u)+papan(j)+rincian(j,u);};
 
+/* saring baris papan sesuai ui.q tanpa menggambar ulang halaman (fokus kotak ketik tetap) */
+function saringPapan(){
+  const board=app.querySelector('.kp-board');if(!board)return;
+  const q=ui.q.trim().toLowerCase();
+  const list=board.querySelector('.kp-rl'),rows=list?list.querySelectorAll('.kp-r'):[];
+  let tampil2=0;
+  rows.forEach(r=>{const ada=!q||r.textContent.toLowerCase().includes(q);r.hidden=!ada;if(ada)tampil2++;});
+  let no=list&&list.querySelector('.kp-noq');
+  if(q&&!tampil2){if(!no){no=document.createElement('p');no.className='kp-no kp-noq';list.appendChild(no);}no.textContent='Tidak ada hasil untuk “'+ui.q.trim()+'”.';no.hidden=false;}
+  else if(no){no.hidden=true;}
+}
+
 /* ---- bungkus render() ---- */
 const sebelumnya=render;
 render=function(){
@@ -122,14 +142,28 @@ render=function(){
   sebelumnya();
   document.body.classList.toggle('mode-kpi',tampil==='kpi');
   if(tampil!=='kpi')return;
+  // jabatan aktif harus termasuk yang diizinkan untuk jabatan login (mis. TOH hanya melihat ATOM)
+  const vis=jabTampil();
+  if(vis.length&&!vis.some(j=>j.key===ui.j)){ui.j=vis[0].key;ui.unit=null;ui.area=null;}
   app.innerHTML=page();
   // tombol jabatan / area yang aktif digeser agar terlihat (baris tombol bisa lebih lebar dari layar HP)
   app.querySelectorAll('.kp-tabs,.kp-area').forEach(el=>{const on=el.querySelector('button.on');if(on)el.scrollLeft=Math.max(0,on.offsetLeft-el.offsetLeft-12);});
+  if(ui.q)saringPapan();
   if(y!=null&&Math.abs(window.scrollY-y)>1)window.scrollTo({top:y,behavior:'instant'});
 };
+// dropdown jabatan: ganti jabatan, reset unit/area/pencarian
+app.addEventListener('change',e=>{
+  if(tampil!=='kpi')return;const s=e.target.closest('.kp-j-sel');if(!s)return;
+  if(ui.j!==s.value){ui.j=s.value;ui.unit=null;ui.area=null;ui.q='';}render();
+});
+// kotak pencarian papan: saring langsung tanpa menggambar ulang
+app.addEventListener('input',e=>{
+  if(tampil!=='kpi')return;const q=e.target.closest('.kp-q');if(!q)return;
+  ui.q=q.value;saringPapan();
+});
 app.addEventListener('click',e=>{
   if(tampil!=='kpi')return;const a=s=>e.target.closest('[data-kp-'+s+']');let x;
-  if((x=a('j'))){if(ui.j!==x.dataset.kpJ){ui.j=x.dataset.kpJ;ui.unit=null;ui.area=null;}render();return;}
+  if((x=a('j'))){if(ui.j!==x.dataset.kpJ){ui.j=x.dataset.kpJ;ui.unit=null;ui.area=null;ui.q='';}render();return;}
   if((x=a('a'))){ui.area=x.dataset.kpA;render();return;}
   // ketuk lingkaran kategori di hero -> gulir ke judul kategori yang sama di Rincian KPI
   if((x=a('p'))){const t=document.getElementById('kp-p-'+x.dataset.kpP);if(!t)return;

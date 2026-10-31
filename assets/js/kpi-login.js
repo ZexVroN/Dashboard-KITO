@@ -1,15 +1,42 @@
 /* KITO: gerbang login untuk navigasi KPI (latar memakai gambar splash).
    Add-on non-destruktif: dimuat SETELAH kpi.js dan membungkus render().
    CATATAN: ini gerbang sisi-klien (situs statis), bukan pengamanan server.
-   Ganti akun: hitung SHA-256 dari "username:password" (username huruf kecil) lalu isi KPI_AKUN. */
+   Login per jabatan: pilih jabatan (dropdown) + password. Username = kode jabatan (huruf kecil).
+   Ganti password: hitung SHA-256 dari "kode:password" (kode huruf kecil) lalu isi KPI_AKUN[kode]. */
 (() => {
   'use strict';
   if (typeof render !== 'function') return;
-  const KPI_AKUN = ['4e6e5782b4cf0d27d201ed5e20b30a756906f5b962af1fb96cdc7266938e11c5'];
-  const KUNCI = 'kito-kpi-masuk';
+  // daftar jabatan di dropdown login: [kode, label]
+  const JABATAN = [['ROH', 'ROH'], ['TOH', 'TOH'], ['SQOR', 'SQO Region'], ['ASM', 'ASM'], ['SQOA', 'SQO Area'], ['ATOM', 'ATOM'], ['BOM', 'BOM-BOS']];
+  // hash SHA-256 "kode:password" per jabatan (kode huruf kecil)
+  const KPI_AKUN = {
+    roh: '032c695954206ed50b9a46b1fe48d9987ac7af6d74306f1f16d79b1391a76c20',
+    toh: 'e0361a47dc818641e4416531b3e93e5dacdda4f2ab5e650e8f83b92e59755016',
+    sqor: '33351e7dec57007b5994aab663b8b081065ba2960e22b71b37e6af8ec6400505',
+    asm: 'b4ebbc99b49ce77bfe4076b26f296e26c5979e6b80c3f90a22c5d22f3e6cd7b0',
+    sqoa: '23f3f56febdbbd7ff579b7ddfd577928d1f99fc40856fe8e9eb72ff8683a81da',
+    atom: '24194830a2ecb9b2d9b384d0fe184d59c327e175bf59779d34551fb67794d7e0',
+    bom: '4e88c3acbfdf57bd8a6634d2d4110a8a51b00b48fe3f0609815fb63a97ac1d50',
+  };
+  // akses tab KPI per jabatan login: '*' = semua, selain itu daftar kunci jabatan (lihat kpi-data.js)
+  const AKSES = {
+    roh: '*',
+    sqor: ['SQOR', 'SQOA'],
+    toh: ['TOH', 'ATOM'],
+    asm: ['ASM', 'BOM'],
+    sqoa: ['SQOA'],
+    atom: ['ATOM'],
+    bom: ['BOM'],
+  };
+  const HASH_VALID = new Set(Object.values(KPI_AKUN));
+  const KUNCI = 'kito-kpi-masuk', KUNCI_AKSES = 'kito-kpi-akses';
+  const simpanAkses = (kode) => {
+    const a = AKSES[kode] || [String(kode).toUpperCase()];
+    try { sessionStorage.setItem(KUNCI_AKSES, a === '*' ? '*' : JSON.stringify(a)); } catch (e) {}
+  };
 
   const sudahMasuk = () => {
-    try { return KPI_AKUN.includes(sessionStorage.getItem(KUNCI)); } catch (e) { return false; }
+    try { return HASH_VALID.has(sessionStorage.getItem(KUNCI)); } catch (e) { return false; }
   };
   const sha256 = async (teks) => {
     const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(teks));
@@ -25,8 +52,13 @@
       </picture>
       <form class="kl-card" id="kl-form" novalidate>
         <h2>Login KPI</h2>
-        <p>Masuk untuk melihat halaman KPI.</p>
-        <label>Username<input id="kl-u" type="text" autocomplete="username" autocapitalize="none" spellcheck="false" required /></label>
+        <p>Pilih jabatan lalu masukkan password untuk melihat halaman KPI.</p>
+        <label>Jabatan
+          <span class="kl-sel"><select id="kl-u" autocomplete="username" required>
+            <option value="" selected disabled>— Pilih jabatan —</option>
+            ${JABATAN.map(([k, t]) => `<option value="${k}">${t}</option>`).join('')}
+          </select></span>
+        </label>
         <label>Password
           <span class="kl-pw"><input id="kl-p" type="password" autocomplete="current-password" required /><button type="button" id="kl-lihat" aria-label="Tampilkan password">👁</button></span>
         </label>
@@ -47,11 +79,12 @@
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
       err.textContent = '';
-      if (!u.value.trim() || !p.value) { err.textContent = 'Username dan password wajib diisi.'; return; }
+      if (!u.value.trim() || !p.value) { err.textContent = 'Jabatan dan password wajib diisi.'; return; }
       if (!window.crypto || !crypto.subtle) { err.textContent = 'Browser tidak mendukung login (butuh HTTPS).'; return; }
-      const h = await sha256(u.value.trim().toLowerCase() + ':' + p.value);
-      if (!KPI_AKUN.includes(h)) {
-        err.textContent = 'Username atau password salah.';
+      const kode = u.value.trim().toLowerCase();
+      const h = await sha256(kode + ':' + p.value);
+      if (KPI_AKUN[kode] !== h) {
+        err.textContent = 'Jabatan atau password salah.';
         p.value = '';
         p.focus();
         form.classList.remove('kl-goyang');
@@ -60,31 +93,38 @@
         return;
       }
       try { sessionStorage.setItem(KUNCI, h); } catch (e2) {}
+      simpanAkses(kode);
       render();
     });
   }
 
-  // tombol Keluar di bawah halaman KPI
+  const keluar = () => { try { sessionStorage.removeItem(KUNCI); sessionStorage.removeItem(KUNCI_AKSES); } catch (e) {} render(); };
+  // ikon Keluar di header paling atas (.bar-atas), di sebelah tombol tema
   function pasangKeluar() {
-    const app = document.querySelector('#app');
-    if (!app || app.querySelector('#kl-keluar')) return;
-    const div = document.createElement('div');
-    div.className = 'kl-aksi';
-    div.innerHTML = '<button type="button" class="btn kl-keluar" id="kl-keluar">🔒 Keluar dari KPI</button>';
-    div.querySelector('button').addEventListener('click', () => {
-      try { sessionStorage.removeItem(KUNCI); } catch (e) {}
-      render();
-    });
-    app.appendChild(div);
+    const bar = document.querySelector('header .bar-atas');
+    if (!bar || document.getElementById('kl-keluar')) return;
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.id = 'kl-keluar';
+    b.className = 'tema kl-keluar';   // samakan gaya dengan tombol tema di header
+    b.title = 'Keluar dari KPI';
+    b.setAttribute('aria-label', 'Keluar dari KPI');
+    b.innerHTML =
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+      '<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>';
+    b.addEventListener('click', keluar);
+    bar.insertBefore(b, bar.querySelector('#tema'));   // sebelum tombol tema (bulan)
   }
+  const lepasKeluar = () => { const b = document.getElementById('kl-keluar'); if (b) b.remove(); };
 
   const renderSebelumnya = render;
   render = function (...args) {
     renderSebelumnya.apply(this, args);
     const kunci = tampil === 'kpi' && !sudahMasuk();
     document.body.classList.toggle('mode-kpi-login', kunci);
-    if (tampil !== 'kpi') return;
+    if (tampil !== 'kpi') { lepasKeluar(); return; }
     if (kunci) {
+      lepasKeluar();
       document.querySelector('#app').innerHTML = halamanLogin();
       pasangLogin();
     } else {

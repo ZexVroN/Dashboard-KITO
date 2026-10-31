@@ -59,8 +59,8 @@ function barProg(nama,p,ref,ket=''){
 function kartuProgres(c){
   const A=T.area[c.a]||{};
   const tot=o=>Object.values(o).reduce((s,p)=>[s[0]+(p[0]||0),s[1]+(p[1]||0)],[0,0]);
-  const kolom=(judul,sub,isi)=>`<div class="dt-col"><div class="dt-col-h"><b>${judul}</b><small>${sub}</small></div>${isi}</div>`;
-  return `<section class="cd"><h2>Progres Perbaikan Data</h2>
+  const kolom=(judul,sub,isi)=>`<div class="dt-col dt-col-${judul.toLowerCase()}"><div class="dt-col-h"><b>${judul}</b><small>${sub}</small></div>${isi}</div>`;
+  return `<section class="cd dt-progres"><h2>Progres Perbaikan Data</h2>
     <div class="dt-cols">
       ${kolom('NTB','Nasabah baru · Oktober 2026',barProg('Data Error CIF Dana',c.ntb.err,A.ntb?.err)+barProg('D01 Slik emas Reporting',c.ntb.slik,A.ntb?.slik)+barProg('Cendup Weekly',c.ntb.cd,A.ntb?.cd)+barProg('Total NTB',tot(c.ntb),A.ntb&&tot(A.ntb)))}
       ${kolom('ETB','Nasabah lama · Oktober 2026',barProg('Data Error CIF Dana',c.etb.err,A.etb?.err)+barProg('Cendup Weekly',c.etb.cd,A.etb?.cd)+barProg('Total ETB',tot(c.etb),A.etb&&tot(A.etb))+barProg('User SSIM',c.ssim,A.ssim))}
@@ -143,7 +143,7 @@ function page(){
   const kd=kodeCab(),c=T.cabang[kd];
   if(kd!==kodeSebelum){kodeSebelum=kd;ui.semuaNtb=ui.semuaCd=false;}
   const head=`<section class="dt-head"><button type="button" class="dt-back" data-v="cabang">‹ Kembali ke Cabang</button>
-    <h2>🛡️ DTI Dana &amp; Cendup</h2>
+    <h2>📋 DTI Dana &amp; Cendup</h2>
     <p>Data Trust Index, perbaikan Data Error CIF Dana dan Cendup (CIF duplikat) cabang terpilih.</p>
     <p class="dt-per">📅 Data error CIF s.d. ${tgl(T.periode.ntb)} · Cendup s.d. ${tgl(T.periode.cendup)}</p></section>`;
   if(!c)return head+'<p class="dt-kosong">Data DTI tidak tersedia untuk cabang ini.</p>';
@@ -154,10 +154,11 @@ function page(){
 /* tombol menu di atas halaman Cabang (di samping tombol Informasi Sales) */
 function kartuDtiLink(){
   if(!D.B[st.b])return '';
-  return `<button type="button" class="dti-open" data-v="dti"><span>🛡️</span><b>DTI Dana &amp; Cendup</b><span class="dti-open-go">›</span></button>`;
+  return `<button type="button" class="sales-open dti-open" data-v="dti"><span class="sales-open-ik">📋</span><span class="sales-open-tx"><b>Data Trust Index</b><small>Dana &amp; Cendup</small></span><span class="sales-open-go">›</span></button>`;
 }
-const iSales=URUTAN.findIndex(f=>f.name==='kartuSalesLink');
-URUTAN.splice(iSales>=0?iSales+1:0,0,kartuDtiLink);
+// digabung ke baris menu .menu-geser milik sales.js; tanpa sales.js, pasang sendiri di atas halaman Cabang
+if(URUTAN.some(f=>f.name==='kartuSalesLink'))(window.KITO_MENU_LINKS=window.KITO_MENU_LINKS||[]).push(kartuDtiLink);
+else URUTAN.splice(0,0,kartuDtiLink);
 
 /* bungkus render() */
 const sebelumnya=render;
@@ -167,6 +168,8 @@ render=function(){
   sebelumnya();
   document.body.classList.toggle('mode-dti',tampil==='dti');
   if(tampil!=='dti')return;
+  // halaman DTI bagian dari Cabang: tandai tab Cabang di navigasi bawah (teks putih di atas kapsul)
+  document.querySelector('#nav button[data-v="cabang"]')?.classList.add('on');
   document.body.classList.remove('maint');
   app.innerHTML=page();
   if(y!=null&&Math.abs(window.scrollY-y)>1)window.scrollTo({top:y,behavior:'instant'});

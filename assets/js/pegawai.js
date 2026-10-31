@@ -60,9 +60,11 @@ function ringkas(list,k){
   return {a,t,bal,tbal,seri,n,pct:K.pct(ag),gap:a-t,gapBal:bal-tbal};
 }
 
+const meter=(p,label)=>{const w=Math.min(1,p??0)*100;return `<div class="sp-pct"><div class="sp-meter"><i style="width:${w}%"></i></div><b>${pc(p)}</b><small>${label}</small></div>`;};
 function blok(k,R,aktif){
   const K=KAT[k],total=R.n.BUGAR+R.n['RAWAT JALAN']+R.n.IGD+R.n.lain;
-  const lebar=Math.min(1,R.pct??0)*100;
+  const pctBal=R.tbal>0&&R.bal!=null?R.bal/R.tbal:null;    // Balance ÷ Target Balance
+  const bars=meter(pctBal,'Balance ÷ Target Balance');    // hanya bar Balance; bar Akuisisi ÷ Target dihapus
   const dt=R.seri.length>1?R.seri[R.seri.length-1]-R.seri[R.seri.length-2]:null;
   const tren=S.update.map((d,j)=>`<span><small>${tg(d)}</small><b>${nf(R.seri[j])}</b></span>`).join('<i>→</i>');
   const bar=URUT_ST.map(s=>R.n[s]?`<i class="${ST[s][1]}" style="flex:${R.n[s]}" title="${ST[s][0]}: ${R.n[s]}"></i>`:'').join('');
@@ -72,7 +74,7 @@ function blok(k,R,aktif){
     <div class="sp-angka"><strong>${nf(R.a)}</strong><span>dari target <b>${nf(R.t)}</b></span><em class="${gapCls(R.gap)}">Gap ${gapTxt(R.gap)}</em></div>
     <div class="sp-tren">${tren}${dt!=null?`<small class="${dt>0?'pos':dt<0?'neg':''}">${dt>0?'▲ +':dt<0?'▼ ':''}${dt===0?'tetap':nf(dt)} sejak ${tg(S.update[S.update.length-2])}</small>`:''}</div>
     <div class="sp-bal"><span>Balance <b>${nb(R.bal)}</b> / target <b>${nb(R.tbal)}</b></span><em class="${gapCls(R.gapBal)}">Gap ${gapTxt(R.gapBal)}</em></div>
-    <div class="sp-pct"><div class="sp-meter"><i style="width:${lebar}%"></i></div><b>${pc(R.pct)}</b><small>${K.dasar}</small></div>
+    ${bars}
     <div class="sp-sts"><div class="sp-stbar">${bar}</div><div class="sp-leg">${leg}</div><small>Status ${total} pegawai${R.n.lain?` · ${R.n.lain} tanpa data`:''}</small></div>
   </section>`;
 }
@@ -110,7 +112,7 @@ function isiKartu(){
   const kode=kodeCabang();
   if(kode!==kodeSebelum){kodeSebelum=kode;ui.st='all';}
   const list=(byKode.get(kode)||[]).slice();
-  const judul=`<h2>Informasi Sales Pegawai & Akuisisi · ${tg(S.tanggal,{day:'numeric',month:'long',year:'numeric'})}</h2>`;
+  const judul=`<h2>Informasi Sales Pegawai & Akuisisi</h2>`;
   if(!list.length)return `${judul}<p class="pg-desc">Tidak ada data pegawai inbranch untuk kode cabang ${esc(kode)}.</p>`;
   const Re=ringkas(list,'e'),Ri=ringkas(list,'i');
   const tabs=[['e','Ekstensifikasi'],['i','Intensifikasi'],['p','Profil Pegawai']].map(([v,t])=>`<button type="button" class="pg-tab ${ui.tab===v?'on':''}" data-sp-tab="${v}">${t}</button>`).join('');
@@ -118,8 +120,6 @@ function isiKartu(){
   const filter=ui.tab==='p'?'':`<div class="sp-filter" role="group" aria-label="Saring status">${[['all','Semua',list.length]].concat(URUT_ST.map(s=>[s,ST[s][0],R.n[s]])).map(([v,t,n])=>`<button type="button" class="${ui.st===v?'on':''} ${v==='all'?'':ST[v][1]}" data-sp-st="${v}">${t} <b>${n}</b></button>`).join('')}</div>`;
   return `${judul}
     <p class="pg-desc"><b>${esc(b[1])}</b> · Kode ${esc(kode)} · update ${S.update.map(d=>tg(d)).join(', ')}</p>
-    ${profil(list)}
-    <div class="sp-grid">${blok('e',Re,ui.tab==='e')}${blok('i',Ri,ui.tab==='i')}</div>
     <div class="pg-tabs" role="tablist">${tabs}</div>${filter}
     ${tabel(list)}
     <p class="pg-desc sp-note">Status: <b>Bugar</b> ≥ target · <b>Rawat Jalan</b> di bawah target · <b>IGD</b> belum ada realisasi. Ekstensifikasi dinilai dari jumlah akuisisi, Intensifikasi dari balance. Gap = nilai − target, memakai update ${tg(S.tanggal)}. NIP disamarkan.</p>`;
@@ -128,11 +128,25 @@ function kartuPegawai(){
   if(!D.B[st.b])return '';
   return `<section class="cd pg-card sp-card" id="pegawai-cabang">${isiKartu()}</section>`;
 }
-function gambarUlang(){const el=document.getElementById('pegawai-cabang');if(el)el.innerHTML=isiKartu();}
+/* Grid Ekstensifikasi/Intensifikasi: dipindahkan ke kartu "Informasi Sales Akuisisi Cabang"
+   (dirender oleh infografis.js lewat window.KITO_SP_RINGKAS). Kartu yang sesuai tab aktif diberi kelas .on. */
+function ringkasGrid(){
+  const b=D.B[st.b];if(!b)return '';
+  const list=byKode.get(kodeCabang())||[];
+  if(!list.length)return '';
+  const Re=ringkas(list,'e'),Ri=ringkas(list,'i');
+  return `<div class="sp-grid">${blok('e',Re,ui.tab==='e')}${blok('i',Ri,ui.tab==='i')}</div>`;
+}
+window.KITO_SP_RINGKAS=ringkasGrid;
+function gambarUlang(){const el=document.getElementById('pegawai-cabang');if(el)el.innerHTML=isiKartu();
+  // segarkan juga grid Eksten/Inten agar sorotan kartu terpilih ikut berpindah
+  const g=document.querySelector('.info-cabang .sp-grid');if(g)g.outerHTML=ringkasGrid();}
 
-URUTAN.splice(URUTAN.indexOf(kartuDetailAntrian),0,kartuPegawai);
+// dipindahkan dari halaman Cabang ke halaman Informasi Sales (dirender oleh sales.js)
+(window.KITO_SALES_CARDS=window.KITO_SALES_CARDS||[]).push(kartuPegawai);
 app.addEventListener('click',e=>{
-  if(!e.target.closest('#pegawai-cabang'))return;
+  // tangkap juga klik pada grid Eksten/Inten yang kini berada di kartu .info-cabang
+  if(!e.target.closest('#pegawai-cabang, .info-cabang'))return;
   const t=e.target.closest('[data-sp-tab]');if(t){ui.tab=t.dataset.spTab;ui.st='all';gambarUlang();return;}
   const s=e.target.closest('[data-sp-st]');if(s){ui.st=s.dataset.spSt;gambarUlang();return;}
   const f=e.target.closest('[data-sp-f]');if(f){const [k,v]=f.dataset.spF.split('|');ui.tab=k;ui.st=v;gambarUlang();

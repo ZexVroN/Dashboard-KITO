@@ -53,3 +53,8 @@
 .kp-warn{margin:0 0 8px;padding:8px 10px;border-radius:10px;background:rgba(232,113,12,.12);color:var(--wr);font-size:11px}
 .kp-n small{margin-left:6px;font-size:10px;font-weight:600;color:var(--mu)}
 .kp-static{cursor:default}
+/* BOM-BOS: saringan area pada papan peringkat cabang */
+.kp-ch.kp-area{display:flex;gap:6px;overflow-x:auto;padding:2px 0 8px;scrollbar-width:none}
+.kp-ch.kp-area::-webkit-scrollbar{display:none}
+.kp-ch.kp-area small{opacity:.7;font-weight:600;margin-left:2px}
+.kp-board h3 .kp-cnt{font-size:11px;font-weight:600;color:var(--mu);margin-left:4px}

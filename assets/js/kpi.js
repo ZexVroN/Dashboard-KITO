@@ -41,7 +41,7 @@ const WARNA_HERO={c:'#6db0ff',i:'#3fe0c8',f:'#ffd54a',d:'#c3aeff'};
 function gauge(p,val,bw){
   const r=34,C=2*Math.PI*r,rasio=bw?val/bw:0,fill=Math.min(rasio/1.3,1)*C,tick=100/130*2*Math.PI;
   const tx=40+r*Math.sin(tick),ty=40-r*Math.cos(tick);
-  return `<div class="kp-g"><svg viewBox="0 0 80 80" aria-hidden="true"><circle cx="40" cy="40" r="${r}" class="kp-gb"/><circle cx="40" cy="40" r="${r}" class="kp-gf" style="stroke:${WARNA_HERO[p[0]]}" stroke-dasharray="${fill} ${C}" transform="rotate(-90 40 40)"/><circle cx="${tx}" cy="${ty}" r="2.6" class="kp-gt"/><text x="40" y="45" text-anchor="middle">${f2(val)}</text></svg><b>${clean(p[1])}</b><small>${bw?`${pc(rasio)} dari bobot ${f1(bw)}`:''}</small></div>`;
+  return `<button type="button" class="kp-g" data-kp-p="${p[0]}" aria-label="Lihat rincian ${clean(p[1])}"><svg viewBox="0 0 80 80" aria-hidden="true"><circle cx="40" cy="40" r="${r}" class="kp-gb"/><circle cx="40" cy="40" r="${r}" class="kp-gf" style="stroke:${WARNA_HERO[p[0]]}" stroke-dasharray="${fill} ${C}" transform="rotate(-90 40 40)"/><circle cx="${tx}" cy="${ty}" r="2.6" class="kp-gt"/><text x="40" y="45" text-anchor="middle">${f2(val)}</text></svg><b>${clean(p[1])}</b><small>${bw?`${pc(rasio)} dari bobot ${f1(bw)}`:''}</small></button>`;
 }
 function hero(j,u){
   const bw=bobot(j)||{};
@@ -106,7 +106,7 @@ function rincian(j,u){
   const beda=!reg&&Math.abs(total-u.s)>0.5?`<p class="kp-warn">⚠ Skor di rekap Excel (${f2(u.s)}) berbeda dari jumlah rincian kode ${clean(u.k)} (${f2(total)})${dup?`: nama area ini dipakai oleh ${dup.length} kode (${dup.map(clean).join(', ')}) di sheet Data ${clean(LABEL[j.key]||j.key)}`:''}.</p>`:'';
   let h='',grp=null;
   d.forEach(x=>{
-    if(x.p){const pp=PER.find(p=>x.p.toLowerCase().startsWith(p[1].toLowerCase().slice(0,5)))||PER[0];grp=null;h+=`<div class="kp-ph" style="--pc:${pp[2]}"><span>${clean(x.p)}</span><b>${f2(x.tot)}</b></div>`;return;}
+    if(x.p){const pp=PER.find(p=>x.p.toLowerCase().startsWith(p[1].toLowerCase().slice(0,5)))||PER[0];grp=null;h+=`<div class="kp-ph" id="kp-p-${pp[0]}" style="--pc:${pp[2]}"><span>${clean(x.p)}</span><b>${f2(x.tot)}</b></div>`;return;}
     if(x.g!==grp){grp=x.g;h+=`<div class="kp-gh">${clean(grp||'')}</div>`;}
     const a=x.a,w=Math.min(a/1.3,1)*100,k=a>=1?'kp-ok':a>=0.9?'kp-md':'kp-bd';
     h+=`<div class="kp-it ${k}" title="${clean(x.n)}"><div class="kp-t"><span>${clean(pendek(x.n))}</span><em>${f1(x.w*100)}%</em></div><div class="kp-m"><i style="width:${w}%"></i><u style="left:${100/1.3}%"></u></div><div class="kp-v"><span>${x.kosong?'Data belum tersedia':`Real ${fmtV(x,x.r)} · Target ${fmtV(x,x.t)}`}</span><b>${x.kosong?'–':pc(a)}</b><small>nilai ${f2(x.v)}</small></div></div>`;
@@ -131,6 +131,10 @@ app.addEventListener('click',e=>{
   if(tampil!=='kpi')return;const a=s=>e.target.closest('[data-kp-'+s+']');let x;
   if((x=a('j'))){if(ui.j!==x.dataset.kpJ){ui.j=x.dataset.kpJ;ui.unit=null;ui.area=null;}render();return;}
   if((x=a('a'))){ui.area=x.dataset.kpA;render();return;}
+  // ketuk lingkaran kategori di hero -> gulir ke judul kategori yang sama di Rincian KPI
+  if((x=a('p'))){const t=document.getElementById('kp-p-'+x.dataset.kpP);if(!t)return;
+    t.scrollIntoView({behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth',block:'start'});
+    t.classList.remove('kp-sorot');void t.offsetWidth;t.classList.add('kp-sorot');return;}
   if((x=a('u'))&&!REGIONAL.has(ui.j)){ui.unit=x.dataset.kpU;render();document.querySelector(REGIONAL.has(ui.j)?'.kp-comp':'#kp-det')?.scrollIntoView({behavior:'smooth',block:'start'});}
 });
 if(tampil==='kpi')render();

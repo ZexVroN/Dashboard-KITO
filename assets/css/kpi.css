@@ -58,3 +58,11 @@
 .kp-ch.kp-area::-webkit-scrollbar{display:none}
 .kp-ch.kp-area small{opacity:.7;font-weight:600;margin-left:2px}
 .kp-board h3 .kp-cnt{font-size:11px;font-weight:600;color:var(--mu);margin-left:4px}
+/* lingkaran kategori di hero bisa diketuk -> gulir ke kategori di Rincian KPI */
+.kp-g{transition:transform .15s,background .15s}
+.kp-g:hover,.kp-g:focus-visible{background:rgba(255,255,255,.16);transform:translateY(-1px)}
+.kp-g:active{transform:scale(.97)}
+.kp-ph{scroll-margin-top:calc(env(safe-area-inset-top,0px) + 88px)}
+.kp-ph.kp-sorot{animation:kp-sorot 1.4s ease-out}
+@keyframes kp-sorot{0%,40%{box-shadow:0 0 0 4px rgba(246,189,40,.85)}100%{box-shadow:0 0 0 0 rgba(246,189,40,0)}}
+@media (prefers-reduced-motion: reduce){.kp-ph.kp-sorot{animation:none}}

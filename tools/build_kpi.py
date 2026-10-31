@@ -88,7 +88,7 @@ def butir(sheet):
     for r in range(7, wv.max_row + 1):
         b, d, j = (wv[f"{x}{r}"].value for x in "BDJ")
         fF = str(wf[f"F{r}"].value or "")
-        if isinstance(b, str) and b.strip().isupper() and "SUMIF" not in fF:
+        if isinstance(b, str) and b.strip().isupper() and "SUMIF" not in fF and b.strip() != "PERSPECTIVES":
             items.append({"p": b.strip().title()})
             grp = None
             continue

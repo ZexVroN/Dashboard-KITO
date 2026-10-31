@@ -380,7 +380,11 @@ def main():
             W["region"]["d"][t] = baris(v)
     tulis_js(JS + "area-waktu-data.js", "window.KITO_AREA_WAKTU=", W, nl_w)
 
-    print(f"data.js            : tanggal {tgl} ditambah (P95) · M O2O/CSM/OldBDS/NBDS-kanal berubah {beda_m} cabang · bw {D['bw']:.4%} · mdate {D['mdate']}")
+    # P100 dan jumlah Antrian / Reservasi Nasabah (kotak Waktu Antrian sejak 27 Okt 2026)
+    from update_p100_antrian import terapkan
+    terapkan(a.antrian)
+
+    print(f"data.js           : tanggal {tgl} ditambah (P95) · M O2O/CSM/OldBDS/NBDS-kanal berubah {beda_m} cabang · bw {D['bw']:.4%} · mdate {D['mdate']}")
     print(f"area-waktu-data.js : {len(W['areas'])} area + Region II, tanggal {W['tanggal']}")
     if diperbaiki:
         for t, lama, baru in diperbaiki:

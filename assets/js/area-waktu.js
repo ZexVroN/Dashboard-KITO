@@ -7,7 +7,8 @@ const views=window.KITO_AREA_VIEWS;
 if(!src||!views||typeof D==='undefined'||typeof st==='undefined'||typeof render!=='function')return;
 
 const ALL='Semua Area Region II';
-const IDX={teller:2,cs:5,all:6};                         // indeks nilai P90 pada data
+const IDX={teller:2,cs:5,all:6};
+const P100_MULAI='2026-10-27';                    // mulai tanggal ini: Antrian & P100 menggantikan Single/Multipel                         // indeks nilai P90 pada data
 const SVC=[['all','All Trx'],['teller','Teller'],['cs','Customer Service']];
 const CAT=[['Under 5 Menit','ok'],['5 - 10 Menit','md'],['10 - 15 Menit','wr'],['Over 15 Menit','bd']];
 const ui={svc:'all',per:'dtd',catPer:'dtd',kelSvc:'all',trend:'gab',tip:null};
@@ -48,8 +49,10 @@ function tile(name,per,e,isRegion,svc){
   const refArr=per==='mtd'?region.m:region.d[dtdIso()];
   if(!arr)return `<div class="wt-tile"><b class="wt-nm">${name}</b><div class="wt-v n">–</div><span class="chip n">Tidak ada data</span></div>`;
   const i=IDX[svc],v=arr[i];
-  // format sama dengan kotak kanal di tab Cabang: dua baris Single / Multipel
-  const sub=svc==='all'?'Gabungan<br>Teller + CS'
+  // format sama dengan kotak kanal di tab Cabang: sejak 27 Okt Antrian / Reservasi Nasabah + P100, sebelumnya Single / Multipel
+  const x=per==='dtd'&&dtdIso()>=P100_MULAI?(e.x?.[dtdIso()]||{}):null,xi={teller:0,cs:1,all:2}[svc];
+  const sub=x?`Antrian / Reservasi Nasabah <b>${x.n?.[xi]==null?'–':x.n[xi].toLocaleString('id-ID')}</b><br>P100 <b>${clock(x.p?.[xi])}</b>`
+    :svc==='all'?'Gabungan<br>Teller + CS'
     :`Single <b>${clock(arr[i-2])}</b><br>Multipel <b>${clock(arr[i-1])}</b>`;
   const ft=delta(v,refArr?refArr[i]:null,isRegion);
   // struktur seragam: nama · nilai · kategori · info · footer pembanding (footer selalu di dasar kotak)

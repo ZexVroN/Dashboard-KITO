@@ -94,6 +94,7 @@ function fill() {
 /* ===== 3. GRAFIK DAN KOMPONEN ===== */
 
 // kotak kecil Teller / CS / Semua TRX di kartu Waktu Antrian
+const P100_MULAI = "2026-10-27"; // mulai tanggal ini: P100 & jumlah antrian menggantikan MtD & Single/Multipel
 function qcard(name, k) {
   const s = D.Q[st.b],
     cur = s[st.d]?.[k];
@@ -118,7 +119,14 @@ function qcard(name, k) {
         : dd > 0
           ? `<span class="bad">▼ Memburuk ${dd} detik</span>`
           : '<span class="mu">Tetap</span>';
-  // rincian Single / Multipel tanggal terpilih (D.QD: [Teller single, Teller multipel, CS single, CS multipel])
+  // sejak 27 Okt 2026: Antrian / Reservasi Nasabah dan P100 (D.QN, D.QP: [Teller, CS, Semua TRX])
+  if (D.dates[st.d] >= P100_MULAI) {
+    const n = D.QN?.[st.b]?.[st.d]?.[k],
+      p = D.QP?.[st.b]?.[st.d]?.[k];
+    const rinci = `Antrian / Reservasi Nasabah<br><b>${n == null ? "–" : n.toLocaleString("id-ID")}</b>`;
+    return `<div class="q"><div class="t">${name}</div><div class="v">${f(cur)}</div>${chip(m, c)}<div class="s">${rinci}</div><div class="d">${dh}</div><div class="m">P100 ${f(p)}</div></div>`;
+  }
+  // tanggal sebelum 27 Okt: rincian Single / Multipel (D.QD: [Teller single, Teller multipel, CS single, CS multipel])
   const r = D.QD?.[st.b]?.[st.d];
   const rinci =
     k === 2

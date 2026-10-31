@@ -69,3 +69,13 @@
   table.mt tbody { width: 100% !important; }
   table.mt tr { padding: 10px 12px; }
 }
+/* label/chip di kartu: satu baris, rapi; selnya memakai 2 kolom agar tidak terpotong */
+@media (max-width: 640px) {
+  table.mt td .chip, table.mt td .pg-chip, table.mt td .dt-grp {
+    display: inline-flex; align-items: center; width: auto; max-width: 100%;
+    white-space: nowrap !important; overflow: hidden; text-overflow: ellipsis;
+    padding: 3px 9px; border-radius: 999px; font-size: 11px; line-height: 1.35; margin: 1px 0 0;
+  }
+  table.mt td[data-label]:has(.chip, .pg-chip) { grid-column: span 2; }
+}
+@media (max-width: 640px) { table.mt td.mt-w { grid-column: span 2; } }

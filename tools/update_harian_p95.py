@@ -380,7 +380,7 @@ def main():
             W["region"]["d"][t] = baris(v)
     tulis_js(JS + "area-waktu-data.js", "window.KITO_AREA_WAKTU=", W, nl_w)
 
-    # P100 dan jumlah Antrian / Reservasi Nasabah (kotak Waktu Antrian sejak 27 Okt 2026)
+    # P100 dan jumlah Reservasi (kotak Waktu Antrian sejak 27 Okt 2026)
     from update_p100_antrian import terapkan
     terapkan(a.antrian)
 

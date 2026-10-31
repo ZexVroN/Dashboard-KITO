@@ -122,11 +122,11 @@ function qcard(name, k) {
         : dd > 0
           ? `<span class="bad">▼ Memburuk ${dd} detik</span>`
           : '<span class="mu">Tetap</span>';
-  // sejak 27 Okt 2026: Antrian / Reservasi Nasabah dan P100 (D.QN, D.QP: [Teller, CS, Semua TRX])
+  // sejak 27 Okt 2026: Reservasi dan P100 (D.QN, D.QP: [Teller, CS, Semua TRX])
   if (D.dates[st.d] >= P100_MULAI) {
     const n = D.QN?.[st.b]?.[st.d]?.[k],
       p = D.QP?.[st.b]?.[st.d]?.[k];
-    const rinci = `Antrian / Reservasi Nasabah<br><b>${n == null ? "–" : n.toLocaleString("id-ID")}</b>`;
+    const rinci = `Reservasi<br><b>${n == null ? "–" : n.toLocaleString("id-ID")}</b>`;
     return `<div class="q"><div class="t">${name}</div><div class="v">${f(cur)}</div>${chip(m, c)}<div class="s">${rinci}</div><div class="d">${dh}</div><div class="m">P100 ${f(p)}</div></div>`;
   }
   // tanggal sebelum 27 Okt: rincian Single / Multipel (D.QD: [Teller single, Teller multipel, CS single, CS multipel])

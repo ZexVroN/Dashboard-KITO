@@ -224,12 +224,12 @@ function rekap(){
   return `<section class="cd" id="rx-rekap"><h2>Rekap Peringkat 12 Region</h2><p class="rg-sub">${ui.per==='mtd'?`MTD ${BULAN}`:`DtD ${isoShort(iso())}`} (O2O & Shifting MTD). Angka di sel = peringkat region pada indikator tersebut; baris diurutkan menurut nomor region (I → XII).${info}</p><div class="tw rg-tw"><table class="rg-tbl">${head}${body}</table></div><div class="rg-leg"><span><i class="q1"></i>25% teratas</span><span><i class="q2"></i>25–50%</span><span><i class="q3"></i>50–75%</span><span><i class="q4"></i>25% terbawah</span></div><p class="rg-note">Ketuk baris untuk menjadikan region tersebut pembanding.</p></section>`;
 }
 
-/* ===== 7. Antrian / Reservasi Nasabah, P100 & Wait < 10 detik per region (sejak 27 Okt) ===== */
+/* ===== 7. Reservasi, P100 & Wait < 10 detik per region (sejak 27 Okt) ===== */
 function antrian(){
   const t=iso();
   if(t<'2026-10-27')return '';
   const ents=[...REG,NAS];
-  if(!ents.some(e=>e.waktu.p?.[t]||e.waktu.w?.[t]))return `<section class="cd"><h2>Antrian, P100 & Wait &lt; 10 Detik</h2><p class="rg-warn">Data antrian, P100 dan wait &lt; 10 detik untuk ${isoLong(t)} belum ada di laporan.</p></section>`;
+  if(!ents.some(e=>e.waktu.p?.[t]||e.waktu.w?.[t]))return `<section class="cd"><h2>Reservasi, P100 & Wait &lt; 10 Detik</h2><p class="rg-warn">Data reservasi, P100 dan wait &lt; 10 detik untuk ${isoLong(t)} belum ada di laporan.</p></section>`;
   const pc=v=>v==null?'–':(v*100).toLocaleString('id-ID',{minimumFractionDigits:1,maximumFractionDigits:1})+'%';
   const wp=e=>{const w=e.waktu.w?.[t];return w&&w[0]?w[1]/w[0]:null;};
   const urut=REG.map(e=>({e,p:wp(e)})).filter(r=>r.p!=null).sort((a,b)=>b.p-a.p);
@@ -239,9 +239,9 @@ function antrian(){
   // cabang Region II dengan persentase wait < 10 detik tertinggi (data cabang di data.js)
   const j=st.d,cab=D.B.map((b,i)=>({b,w:D.QW?.[i]?.[j]})).filter(r=>r.w&&r.w[1]>0).map(r=>({...r,p:r.w[1]/r.w[0]})).sort((a,b)=>b.p-a.p||b.w[1]-a.w[1]);
   const top=cab.slice(0,10).map((r,k)=>`<tr><td class="mu">${k+1}</td><td style="text-align:left"><button type="button" class="wt-lnk" data-ak-code="${clean(r.b[0])}"><b>${clean(r.b[1])}</b><small>${clean(r.b[2])}</small></button></td><td>${num(r.w[0])}</td><td>${num(r.w[1])}</td><td><b>${pc(r.p)}</b></td></tr>`).join('');
-  return `<section class="cd"><h2>Antrian, P100 & Wait &lt; 10 Detik · ${isoLong(t)}</h2>
-    <p class="rg-sub">Antrian / Reservasi Nasabah = reservasi unik; P95 dan P100 dalam mm:ss; Wait &lt; 10 detik = reservasi dengan waktu tunggu di bawah 10 detik (sheet Wait &lt;10 Detik). # = peringkat persentase tertinggi.</p>
-    <div class="tw rg-tw"><table class="rg-tbl rx-ant"><tr><th class="rg-sticky2" style="left:0">Region</th><th>Antrian</th><th>P95 All</th><th>P100 Teller</th><th>P100 CS</th><th>P100 All</th><th>&lt; 10 dtk</th><th>%</th></tr>${ents.map(row).join('')}</table></div>
+  return `<section class="cd"><h2>Reservasi, P100 & Wait &lt; 10 Detik · ${isoLong(t)}</h2>
+    <p class="rg-sub">Reservasi = jumlah reservasi unik nasabah; P95 dan P100 dalam mm:ss; Wait &lt; 10 detik = reservasi dengan waktu tunggu di bawah 10 detik (sheet Wait &lt;10 Detik). # = peringkat persentase tertinggi.</p>
+    <div class="tw rg-tw"><table class="rg-tbl rx-ant"><tr><th class="rg-sticky2" style="left:0">Region</th><th>Reservasi</th><th>P95 All</th><th>P100 Teller</th><th>P100 CS</th><th>P100 All</th><th>&lt; 10 dtk</th><th>%</th></tr>${ents.map(row).join('')}</table></div>
     ${top?`<h2 style="margin-top:16px">Cabang Region ${clean(FOKUS.no)} · Wait &lt; 10 Detik Tertinggi</h2><div class="tw"><table class="rx-ant"><tr><th>#</th><th style="text-align:left">Cabang</th><th>Reservasi</th><th>&lt; 10 dtk</th><th>%</th></tr>${top}</table></div><p class="rg-note">${cab.length} cabang Region ${clean(FOKUS.no)} memiliki reservasi wait &lt; 10 detik. Daftar lengkap per area ada di tab Area · Dashboard Waktu Tunggu. Ketuk nama cabang untuk membuka detailnya.</p>`:''}</section>`;
 }
 

@@ -56,9 +56,9 @@ function tile(name,per,e,isRegion,svc){
   const refArr=per==='mtd'?region.m:region.d[dtdIso()];
   if(!arr)return `<div class="wt-tile"><b class="wt-nm">${name}</b><div class="wt-v n">–</div><span class="chip n">Tidak ada data</span></div>`;
   const i=IDX[svc],v=arr[i];
-  // format sama dengan kotak kanal di tab Cabang: sejak 27 Okt Antrian / Reservasi Nasabah + P100, sebelumnya Single / Multipel
+  // format sama dengan kotak kanal di tab Cabang: sejak 27 Okt Reservasi + P100, sebelumnya Single / Multipel
   const x=per==='dtd'&&baru()?(xOf(e)||{}):null;
-  const sub=x?`Antrian / Reservasi Nasabah<br><b>${nfmt(x.n?.[XI[svc]])}</b>`
+  const sub=x?`Reservasi<br><b>${nfmt(x.n?.[XI[svc]])}</b>`
     :svc==='all'?'Gabungan<br>Teller + CS'
     :`Single <b>${clock(arr[i-2])}</b><br>Multipel <b>${clock(arr[i-1])}</b>`;
   const ft=delta(v,refArr?refArr[i]:null,isRegion);
@@ -71,7 +71,7 @@ function p100Card(e,isRegion){
   const x=xOf(e),rx=xOf(region);
   const t=(name,svc)=>{
     const v=x?.p?.[XI[svc]]??null,ft=delta(v,rx?.p?.[XI[svc]]??null,isRegion);
-    return `<div class="wt-tile"><b class="wt-nm">${name}</b><div class="wt-v ${tk(v)}">${clock(v)}</div><span class="chip ${tk(v)}">${catText(v)}</span><div class="wt-info"><small>Waktu tunggu terlama<br>dari <b>${nfmt(x?.n?.[XI[svc]])}</b> antrian</small></div>${ft?`<div class="wt-foot">${ft}</div>`:''}</div>`;
+    return `<div class="wt-tile"><b class="wt-nm">${name}</b><div class="wt-v ${tk(v)}">${clock(v)}</div><span class="chip ${tk(v)}">${catText(v)}</span><div class="wt-info"><small>Waktu tunggu terlama<br>dari <b>${nfmt(x?.n?.[XI[svc]])}</b> reservasi</small></div>${ft?`<div class="wt-foot">${ft}</div>`:''}</div>`;
   };
   return `<section class="cd wt-period"><h2>P100 · ${isoLong(dtdIso())}</h2>${x?'':`<p class="wt-warn">Data P100 untuk tanggal ini belum ada di laporan.</p>`}<div class="wt-tiles">${t('Teller','teller')}${t('CS','cs')}${t('All Trx','all')}</div>${isRegion?'':'<p class="wt-note">▲ lebih cepat · ▼ lebih lambat dibanding Region II.</p>'}</section>`;
 }

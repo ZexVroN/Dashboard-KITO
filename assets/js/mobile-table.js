@@ -29,7 +29,10 @@
         if (span >= label.length) c.classList.add('mt-full');
         else if (pos === 0 && noCol) c.classList.add('mt-no');
         else if (!judul) { c.classList.add('mt-t'); judul = true; }
-        else c.dataset.label = label[pos] || '';
+        else {
+          c.dataset.label = label[pos] || '';
+          if (teks(c).length > 20) c.classList.add('mt-w'); // teks panjang memakai 2 kolom kartu
+        }
         pos += span;
       });
     });

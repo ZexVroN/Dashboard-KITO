@@ -1,4 +1,4 @@
-"""Tambah P100 dan jumlah Antrian / Reservasi Nasabah dari laporan antrian format P95 (satu hari).
+"""Tambah P100 dan jumlah Reservasi dari laporan antrian format P95 (satu hari).
 
 Pemakaian (dari folder Dashboard-KITO):
     python tools/update_p100_antrian.py <DDMMYYYY_Dashboard_Antrian_Cabang.xlsx>
@@ -7,7 +7,7 @@ Dipanggil otomatis oleh update_harian_p95.py; bisa juga dijalankan sendiri untuk
 tanggal yang sudah ada (mis. 27 Okt) tanpa file O2O / NBDS.
 
 Sejak 27 Oktober 2026 kotak Waktu Antrian menampilkan:
-  - Antrian / Reservasi Nasabah (menggantikan Single / Multipel)
+  - Reservasi (menggantikan Single / Multipel)
   - P100 = waktu tunggu maksimum (menggantikan MtD rata-rata)
 
 Yang ditulis:

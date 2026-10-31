@@ -1,0 +1,71 @@
+/* Tabel versi mobile (assets/js/mobile-table.js): baris tabel menjadi kartu */
+@media (max-width: 640px) {
+  table.mt, table.mt tbody { display: block; width: 100% !important; min-width: 0 !important; max-width: 100%; }
+  table.mt thead, table.mt tr.mt-h { display: none; }
+  table.mt tr {
+    position: relative;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(86px, 1fr));
+    gap: 8px 10px;
+    margin: 0 0 8px;
+    padding: 10px 12px;
+    border: 1px solid var(--ln, #e3e8f2);
+    border-radius: 12px;
+    background: var(--cd, #fff);
+  }
+  table.mt tr.on { border-color: var(--c1, #1f4fd1); box-shadow: inset 3px 0 0 var(--c1, #1f4fd1); }
+  table.mt td {
+    display: block;
+    position: static !important;
+    left: auto !important;
+    min-width: 0 !important;
+    padding: 0 !important;
+    border: 0 !important;
+    text-align: left !important;
+    white-space: normal !important;
+    font-variant-numeric: tabular-nums;
+    overflow-wrap: anywhere;
+    background-clip: padding-box;
+  }
+  table.mt td[data-label]::before {
+    content: attr(data-label);
+    display: block;
+    margin-bottom: 2px;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: .3px;
+    text-transform: uppercase;
+    color: var(--mu, #6b7690);
+  }
+  table.mt td[data-label=""]::before { display: none; }
+  /* sel judul (kolom pertama) melebar penuh; nomor urut di pojok kanan */
+  table.mt td.mt-t, table.mt td.mt-full { grid-column: 1 / -1; font-size: 13.5px; }
+  table.mt tr:has(td.mt-no) td.mt-t { padding-right: 34px !important; }
+  table.mt td.mt-no { position: absolute !important; top: 10px; right: 12px; left: auto !important; font-size: 11px; font-weight: 700; color: var(--mu, #6b7690); }
+  /* sel berwarna (peta peringkat) tampil sebagai chip */
+  table.mt td.rg-c, table.mt td.rg-na { border-radius: 8px; padding: 4px 6px !important; text-align: center !important; }
+  table.mt td.rg-c::before, table.mt td.rg-na::before { color: inherit; opacity: .75; }
+  /* wadah tabel tidak perlu digeser lagi */
+  .tw:has(> table.mt) { overflow: visible; max-height: none; }
+  .wt-w10-tw:has(> table.mt) { max-height: 520px; overflow-y: auto; }
+}
+@media (max-width: 640px) {
+  table.mt td.mt-t, table.mt td.mt-full { width: auto !important; max-width: none !important; background: none !important; box-shadow: none !important; }
+  table.mt td { width: auto !important; max-width: none !important; }
+}
+@media (max-width: 640px) {
+  table.mt tr { grid-template-columns: repeat(auto-fill, minmax(78px, 1fr)); }
+  table.mt tr.on td:not(.rg-c) { background: none !important; }
+  table.mt tr.on { background: color-mix(in srgb, var(--c1, #1f4fd1) 6%, var(--cd, #fff)); }
+}
+@media (max-width: 640px) {
+  table.mt td:not(.rg-c):not(.rg-na) { background: transparent !important; }
+  table.mt td * { max-width: 100%; white-space: normal !important; overflow-wrap: normal; word-break: normal; }
+  .tw:has(> table.mt) { border: 0 !important; padding: 0 !important; background: none !important; box-shadow: none !important; }
+}
+/* kartu memakai lebar penuh kotak: tanpa padding tabel bawaan, sedikit melebar ke padding kartu induk */
+@media (max-width: 640px) {
+  table.mt { padding: 0 !important; margin: 0 -6px !important; width: calc(100% + 12px) !important; max-width: none !important; border: 0 !important; }
+  table.mt tbody { width: 100% !important; }
+  table.mt tr { padding: 10px 12px; }
+}

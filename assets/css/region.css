@@ -71,3 +71,9 @@ body.mode-region .fl { grid-template-columns: 1fr; }
 
 @media (min-width: 720px) { .rx-hero h3 { font-size: 26px; } }
 @media print { .rx-ctrl select { border: 0; } }
+
+/* Antrian, P100 & Wait < 10 detik (sejak 27 Okt 2026) */
+.rx-ant td,.rx-ant th{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+.rx-ant td small{display:block;font-size:10px;color:var(--mu)}
+.rx-ant td.rg-sticky2,.rx-ant th.rg-sticky2{text-align:left}
+.rx-ant .ok{color:var(--ok)}.rx-ant .mid{color:#b7791f}.rx-ant .warn{color:#dd6b20}.rx-ant .bad{color:var(--bd)}

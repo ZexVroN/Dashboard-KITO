@@ -10,7 +10,7 @@ const app=document.getElementById('app');if(!app)return;
 /* ----- utilitas ----- */
 const clean=x=>String(x??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const num=n=>Number(n||0).toLocaleString('id-ID');
-const clock=s=>s==null?'–':String(Math.floor(Math.round(s)/60)).padStart(2,'0')+':'+String(Math.round(s)%60).padStart(2,'0');
+const clock=s=>{if(s==null)return '–';const t=Math.round(Math.abs(s)),h=Math.floor(t/3600),m=Math.floor(t/60)%60,d=t%60,p=x=>String(x).padStart(2,'0');return (s<0?'-':'')+(h?h+':'+p(m):p(m))+':'+p(d);};
 const pctR=p=>p==null?'–':(p*100).toLocaleString('id-ID',{minimumFractionDigits:1,maximumFractionDigits:1})+'%';
 // NBDS: dipotong ke 1 desimal agar 97,96% tidak tampil 98,0% (target 98%)
 const pctT=p=>{if(p==null)return '–';const v=Math.floor(p*1000+1e-9)/10;return v.toLocaleString('id-ID',{minimumFractionDigits:1,maximumFractionDigits:1})+'%';};
@@ -41,18 +41,23 @@ const WK={teller:0,cs:1,all:2};
 const waktu=(k,n,s)=>({key:'w-'+k,g:'waktu',n,s,tinggi:false,jenis:'waktu',per:['dtd','mtd'],
   val:(e,per)=>per==='mtd'?e.waktu.m?.[WK[k]]??null:(wIdx()<0?null:e.waktu.d[iso()]?.[WK[k]]??null),
   seri:e=>R.tglWaktu.map(t=>e.waktu.d[t]?.[WK[k]]??null),tgl:R.tglWaktu,fmt:clock});
+// P100 (waktu tunggu terlama) sejak 27 Okt: hanya DtD
+const p100=(k,n,s)=>({key:'p-'+k,g:'waktu',n,s,tinggi:false,jenis:'waktu',per:['dtd'],
+  val:e=>e.waktu.p?.[iso()]?.[WK[k]]??null,
+  seri:e=>R.tglWaktu.map(t=>e.waktu.p?.[t]?.[WK[k]]??null),tgl:R.tglWaktu,fmt:clock});
 const nbds=(k,n,s)=>({key:'nb-'+k,g:'nbds',n,s,tinggi:true,jenis:'nbds',per:['dtd','mtd'],
   val:(e,per)=>{const b=e.nbds[k];if(!b)return null;return util(per==='mtd'?b.m:(nIdx()<0?null:b.d[nIdx()]));},
   seri:e=>(e.nbds[k]?.d||[]).map(util),tgl:R.tglNbds,fmt:pctT});
 const shift=e=>{const c=e.ch;if(!c||c.o2o==null)return null;const t=c.csm+c.o2o+c.old+c.new;return t?(c.csm+c.o2o)/t:null;};
 const MET=[
   waktu('all','Semua Transaksi','All Trx'),waktu('teller','Teller','Teller'),waktu('cs','Customer Service','CS'),
+  p100('all','P100 Semua Transaksi','P100 All'),p100('teller','P100 Teller','P100 T'),p100('cs','P100 Customer Service','P100 CS'),
   nbds('agg','Agregat (semua transaksi)','NBDS Agregat'),nbds('fp','Teller Perorangan','NBDS T. Prg'),nbds('fnp','Teller Badan','NBDS T. Bdn'),nbds('nf','Customer Service','NBDS CS'),
   {key:'o2o',g:'o2o',n:'Overall O2O',s:'O2O',tinggi:true,jenis:'o2o',per:['mtd'],val:e=>util(e.o2o?.overall),fmt:pctR},
   {key:'shift',g:'o2o',n:'Shifting Digital',s:'Shifting',tinggi:true,jenis:'o2o',per:['mtd'],val:e=>shift(e),fmt:pctR},
 ];
 const GRUP=[
-  {key:'waktu',ik:'⏱',n:'Waktu Antri',main:'w-all',pendek:'Waktu Antri',ket:`DtD ${rentangP95}: P95 · riwayat dan MTD: P90 · semakin kecil semakin baik`},
+  {key:'waktu',ik:'⏱',n:'Waktu Antri',main:'w-all',pendek:'Waktu Antri',ket:`DtD ${rentangP95}: P95 & P100 · riwayat dan MTD: P90 · semakin kecil semakin baik`},
   {key:'nbds',ik:'🖥️',n:'Utilisasi NBDS',main:'nb-agg',pendek:'NBDS',ket:'New BDS ÷ (New BDS + Old BDS) · target ≥ 98%'},
   {key:'o2o',ik:'📊',n:'O2O & Shifting Digital',main:'o2o',pendek:'O2O',ket:'Transaksi ganti kartu · semakin besar semakin baik'},
 ];
@@ -219,11 +224,32 @@ function rekap(){
   return `<section class="cd" id="rx-rekap"><h2>Rekap Peringkat 12 Region</h2><p class="rg-sub">${ui.per==='mtd'?`MTD ${BULAN}`:`DtD ${isoShort(iso())}`} (O2O & Shifting MTD). Angka di sel = peringkat region pada indikator tersebut; baris diurutkan menurut nomor region (I → XII).${info}</p><div class="tw rg-tw"><table class="rg-tbl">${head}${body}</table></div><div class="rg-leg"><span><i class="q1"></i>25% teratas</span><span><i class="q2"></i>25–50%</span><span><i class="q3"></i>50–75%</span><span><i class="q4"></i>25% terbawah</span></div><p class="rg-note">Ketuk baris untuk menjadikan region tersebut pembanding.</p></section>`;
 }
 
+/* ===== 7. Antrian / Reservasi Nasabah, P100 & Wait < 10 detik per region (sejak 27 Okt) ===== */
+function antrian(){
+  const t=iso();
+  if(t<'2026-10-27')return '';
+  const ents=[...REG,NAS];
+  if(!ents.some(e=>e.waktu.p?.[t]||e.waktu.w?.[t]))return `<section class="cd"><h2>Antrian, P100 & Wait &lt; 10 Detik</h2><p class="rg-warn">Data antrian, P100 dan wait &lt; 10 detik untuk ${isoLong(t)} belum ada di laporan.</p></section>`;
+  const pc=v=>v==null?'–':(v*100).toLocaleString('id-ID',{minimumFractionDigits:1,maximumFractionDigits:1})+'%';
+  const wp=e=>{const w=e.waktu.w?.[t];return w&&w[0]?w[1]/w[0]:null;};
+  const urut=REG.map(e=>({e,p:wp(e)})).filter(r=>r.p!=null).sort((a,b)=>b.p-a.p);
+  const rk=new Map(urut.map((r,i)=>[r.e,i+1]));
+  const row=e=>{const n=e.waktu.n?.[t],v=e.waktu.d?.[t],p=e.waktu.p?.[t],w=e.waktu.w?.[t];
+    return `<tr class="${e===FOKUS?'on':''}"><td class="rg-sticky2" style="left:0"><b>${clean(nama(e))}</b><small>${clean(e===NAS?'bankwide':e.nama)}</small></td><td>${n?num(n[2]):'–'}</td><td class="${kelas(MET[0],v?.[2])}">${clock(v?.[2])}</td><td class="${kelas(MET[0],p?.[0])}">${clock(p?.[0])}</td><td class="${kelas(MET[0],p?.[1])}">${clock(p?.[1])}</td><td class="${kelas(MET[0],p?.[2])}"><b>${clock(p?.[2])}</b></td><td>${w?num(w[1]):'–'}</td><td><b>${pc(wp(e))}</b>${rk.has(e)?`<small>#${rk.get(e)}</small>`:''}</td></tr>`;};
+  // cabang Region II dengan persentase wait < 10 detik tertinggi (data cabang di data.js)
+  const j=st.d,cab=D.B.map((b,i)=>({b,w:D.QW?.[i]?.[j]})).filter(r=>r.w&&r.w[1]>0).map(r=>({...r,p:r.w[1]/r.w[0]})).sort((a,b)=>b.p-a.p||b.w[1]-a.w[1]);
+  const top=cab.slice(0,10).map((r,k)=>`<tr><td class="mu">${k+1}</td><td style="text-align:left"><button type="button" class="wt-lnk" data-ak-code="${clean(r.b[0])}"><b>${clean(r.b[1])}</b><small>${clean(r.b[2])}</small></button></td><td>${num(r.w[0])}</td><td>${num(r.w[1])}</td><td><b>${pc(r.p)}</b></td></tr>`).join('');
+  return `<section class="cd"><h2>Antrian, P100 & Wait &lt; 10 Detik · ${isoLong(t)}</h2>
+    <p class="rg-sub">Antrian / Reservasi Nasabah = reservasi unik; P95 dan P100 dalam mm:ss; Wait &lt; 10 detik = reservasi dengan waktu tunggu di bawah 10 detik (sheet Wait &lt;10 Detik). # = peringkat persentase tertinggi.</p>
+    <div class="tw rg-tw"><table class="rg-tbl rx-ant"><tr><th class="rg-sticky2" style="left:0">Region</th><th>Antrian</th><th>P95 All</th><th>P100 Teller</th><th>P100 CS</th><th>P100 All</th><th>&lt; 10 dtk</th><th>%</th></tr>${ents.map(row).join('')}</table></div>
+    ${top?`<h2 style="margin-top:16px">Cabang Region ${clean(FOKUS.no)} · Wait &lt; 10 Detik Tertinggi</h2><div class="tw"><table class="rx-ant"><tr><th>#</th><th style="text-align:left">Cabang</th><th>Reservasi</th><th>&lt; 10 dtk</th><th>%</th></tr>${top}</table></div><p class="rg-note">${cab.length} cabang Region ${clean(FOKUS.no)} memiliki reservasi wait &lt; 10 detik. Daftar lengkap per area ada di tab Area · Dashboard Waktu Tunggu. Ketuk nama cabang untuk membuka detailnya.</p>`:''}</section>`;
+}
+
 function catatan(){
   return `<section class="cd"><p class="rg-note" style="margin:0">Sumber: ${clean(R.sumber.waktu)} · ${clean(R.sumber.nbds)} · ${clean(R.sumber.o2o)}. Waktu antri DtD ${rentangP95} = P95; tanggal sebelumnya dan MTD historis = P90 (tidak sebanding langsung); Utilisasi NBDS MTD = jumlah harian 1 s.d. tanggal laporan; Shifting Digital = (CSM + O2O) ÷ (CSM + O2O + Old BDS + New BDS) transaksi ganti kartu.</p></section>`;
 }
 
-const page=()=>hero()+`<div class="rx-grid">${GRUP.map(kartuGrup).join('')}</div>`+versus()+daftar()+tren()+rekap()+catatan();
+const page=()=>hero()+`<div class="rx-grid">${GRUP.map(kartuGrup).join('')}</div>`+versus()+antrian()+daftar()+tren()+rekap()+catatan();
 
 /* ----- bungkus render() ----- */
 const sebelumnya=render;

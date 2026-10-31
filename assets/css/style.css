@@ -716,3 +716,12 @@ body.maint .geser, body.maint .tab-geser, body.maint #hasil { display: none; }
 footer .kredit{display:flex;flex-direction:column;align-items:center;text-align:center;gap:2px}
 .credit-property,.credit-attribution{display:block;text-align:center}
 .kredit a,.kito-credit a{color:inherit;text-decoration:underline;text-underline-offset:2px}
+
+/* Wait < 10 detik di kartu Waktu Antrian (sejak 27 Okt 2026) */
+.w10 { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; margin-top: 10px; padding: 9px 12px; border-radius: 10px; background: #f4f6fb; font-size: 12px; }
+.w10 > span { font-weight: 700; color: var(--mu); }
+.w10 b { font-variant-numeric: tabular-nums; }
+.w10 b small { font-weight: 500; color: var(--mu); }
+.w10 .w10-p { margin-left: auto; font-size: 15px; }
+.w10 > small { flex-basis: 100%; color: var(--mu); font-size: 10.5px; }
+[data-theme="dark"] .w10 { background: #1b2744; }

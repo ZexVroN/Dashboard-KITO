@@ -17,7 +17,7 @@ const KEL_ISO=src.tanggal;
 
 const clean=x=>String(x??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const norm=s=>String(s||'').toLowerCase().replace(/^area\s+/,'').replace(/[^a-z0-9]/g,'');
-const clock=s=>s==null?'–':String(Math.floor(Math.round(s)/60)).padStart(2,'0')+':'+String(Math.round(s)%60).padStart(2,'0');
+const clock=s=>{if(s==null)return '–';const t=Math.round(Math.abs(s)),h=Math.floor(t/3600),m=Math.floor(t/60)%60,d=t%60,p=x=>String(x).padStart(2,'0');return (s<0?'-':'')+(h?h+':'+p(m):p(m))+':'+p(d);};
 const cls=s=>s==null?'n':s<300?'ok':s<600?'md':s<900?'wr':'bd';   // kelas warna kategori (untuk bar)
 const K={ok:'ok',md:'mid',wr:'warn',bd:'bad',n:'n'};              // padanan kelas teks/chip bawaan aplikasi
 const tk=s=>K[cls(s)];
@@ -31,7 +31,14 @@ function current(){
   return{e:areas.find(a=>norm(a.name)===norm(st.a)),isRegion:false};
 }
 const dtdIso=()=>D.dates[st.d];                         // tanggal DtD mengikuti filter Tanggal di header
+const baru=()=>dtdIso()>=P100_MULAI;                    // sejak 27 Okt: P95 + P100 + Antrian
+const XI={teller:0,cs:1,all:2};
+const xOf=e=>e?.x?.[dtdIso()]||null;                   // {p: P100, n: Antrian, w: [reservasi, wait<10 dtk]}
+const pct1=v=>v==null?'–':(v*100).toLocaleString('id-ID',{minimumFractionDigits:1,maximumFractionDigits:1})+'%';
+const nfmt=v=>v==null?'–':Number(v).toLocaleString('id-ID');
+const pctl=()=>baru()?'P95':'P90';
 const valOf=(e,per,svc)=>{
+  if(per==='p100')return xOf(e)?.p?.[XI[svc]]??null;
   const arr=per==='mtd'?e.m:e.d[dtdIso()];
   return arr?arr[IDX[svc]]:null;
 };
@@ -50,8 +57,8 @@ function tile(name,per,e,isRegion,svc){
   if(!arr)return `<div class="wt-tile"><b class="wt-nm">${name}</b><div class="wt-v n">–</div><span class="chip n">Tidak ada data</span></div>`;
   const i=IDX[svc],v=arr[i];
   // format sama dengan kotak kanal di tab Cabang: sejak 27 Okt Antrian / Reservasi Nasabah + P100, sebelumnya Single / Multipel
-  const x=per==='dtd'&&dtdIso()>=P100_MULAI?(e.x?.[dtdIso()]||{}):null,xi={teller:0,cs:1,all:2}[svc];
-  const sub=x?`Antrian / Reservasi Nasabah <b>${x.n?.[xi]==null?'–':x.n[xi].toLocaleString('id-ID')}</b><br>P100 <b>${clock(x.p?.[xi])}</b>`
+  const x=per==='dtd'&&baru()?(xOf(e)||{}):null;
+  const sub=x?`Antrian / Reservasi Nasabah<br><b>${nfmt(x.n?.[XI[svc]])}</b>`
     :svc==='all'?'Gabungan<br>Teller + CS'
     :`Single <b>${clock(arr[i-2])}</b><br>Multipel <b>${clock(arr[i-1])}</b>`;
   const ft=delta(v,refArr?refArr[i]:null,isRegion);
@@ -59,18 +66,29 @@ function tile(name,per,e,isRegion,svc){
   return `<div class="wt-tile"><b class="wt-nm">${name}</b><div class="wt-v ${tk(v)}">${clock(v)}</div><span class="chip ${tk(v)}">${catText(v)}</span><div class="wt-info"><small>${sub}</small></div>${ft?`<div class="wt-foot">${ft}</div>`:''}</div>`;
 }
 
+// sejak 27 Okt kartu MTD diganti kartu P100 (waktu tunggu terlama) tanggal terpilih, seperti tab Cabang
+function p100Card(e,isRegion){
+  const x=xOf(e),rx=xOf(region);
+  const t=(name,svc)=>{
+    const v=x?.p?.[XI[svc]]??null,ft=delta(v,rx?.p?.[XI[svc]]??null,isRegion);
+    return `<div class="wt-tile"><b class="wt-nm">${name}</b><div class="wt-v ${tk(v)}">${clock(v)}</div><span class="chip ${tk(v)}">${catText(v)}</span><div class="wt-info"><small>Waktu tunggu terlama<br>dari <b>${nfmt(x?.n?.[XI[svc]])}</b> antrian</small></div>${ft?`<div class="wt-foot">${ft}</div>`:''}</div>`;
+  };
+  return `<section class="cd wt-period"><h2>P100 · ${isoLong(dtdIso())}</h2>${x?'':`<p class="wt-warn">Data P100 untuk tanggal ini belum ada di laporan.</p>`}<div class="wt-tiles">${t('Teller','teller')}${t('CS','cs')}${t('All Trx','all')}</div>${isRegion?'':'<p class="wt-note">▲ lebih cepat · ▼ lebih lambat dibanding Region II.</p>'}</section>`;
+}
+
 function periodCard(per,e,isRegion){
-  const title=per==='dtd'?`DtD · ${isoLong(dtdIso())}`:'MTD · Oktober 2026';
+  if(per==='mtd'&&baru())return p100Card(e,isRegion);
+  const title=per==='dtd'?`DtD ${pctl()} · ${isoLong(dtdIso())}`:'MTD · Oktober 2026';
   const has=per==='mtd'||e.d[dtdIso()];
   return `<section class="cd wt-period"><h2>${title}</h2>${has?'':`<p class="wt-warn">Data area untuk tanggal ini belum ada di laporan. Pilih tanggal lain di filter atas (tersedia: ${src.dates.map(isoShort).join(', ')}).</p>`}<div class="wt-tiles">${tile('Teller',per,e,isRegion,'teller')}${tile('CS',per,e,isRegion,'cs')}${tile('All Trx',per,e,isRegion,'all')}</div>${isRegion?'':'<p class="wt-note">▲ lebih cepat · ▼ lebih lambat dibanding Region II (semakin kecil semakin baik).</p>'}</section>`;
 }
 
 function hero(e,isRegion){
-  return `<section class="cd wt-hero"><span class="wt-eyebrow">DASHBOARD WAKTU TUNGGU · ${isRegion?'REGION II':'AREA'}</span><h3>${clean(dispName(e))}</h3><p class="wt-sub">P90 waktu tunggu nasabah (mm:ss) · DtD dan MTD Oktober 2026 · update ${isoLong(src.tanggal)}</p><p class="wt-sub">Tanggal DtD mengikuti filter Tanggal di bagian atas. Target waktu tunggu: di bawah 5 menit.</p></section>`;
+  return `<section class="cd wt-hero"><span class="wt-eyebrow">DASHBOARD WAKTU TUNGGU · ${isRegion?'REGION II':'AREA'}</span><h3>${clean(dispName(e))}</h3><p class="wt-sub">${baru()?'P95 dan P100 waktu tunggu nasabah (mm:ss) · DtD':'P90 waktu tunggu nasabah (mm:ss) · DtD dan MTD Oktober 2026'} · update ${isoLong(src.tanggal)}</p><p class="wt-sub">Tanggal DtD mengikuti filter Tanggal di bagian atas. Target waktu tunggu: di bawah 5 menit.</p></section>`;
 }
 
 function ranking(e,isRegion){
-  const svc=ui.svc,per=ui.per;
+  const svc=ui.svc;if(ui.per==='p100'&&!baru())ui.per='dtd';const per=ui.per;
   const rows=areas.map(a=>({a,v:valOf(a,per,svc)})).filter(r=>r.v!=null).sort((x,y)=>x.v-y.v);
   const reg=valOf(region,per,svc);
   const max=Math.max(600,...rows.map(r=>r.v),reg||0)*1.08;
@@ -80,8 +98,8 @@ function ranking(e,isRegion){
     return `<button type="button" class="wt-row ${me?'me':''}" data-wt-area="${clean(r.a.name)}" aria-label="Buka ${clean(r.a.name)}"><span class="wt-no">${i+1}</span><span class="wt-mid"><span class="wt-nm">${clean(r.a.name)}</span><span class="wt-bar"><i class="${cls(r.v)}" style="width:${r.v/max*100}%"></i><u class="t5" style="left:${300/max*100}%"></u>${reg!=null?`<u class="rg" style="left:${reg/max*100}%"></u>`:''}</span></span><span class="wt-val ${tk(r.v)}">${clock(r.v)}</span></button>`;
   }).join('');
   const svcName=SVC.find(x=>x[0]===svc)[1];
-  const perName=per==='dtd'?`DtD ${isoShort(dtdIso())}`:'MTD Oktober';
-  return `<section class="cd"><h2>Ranking Area · ${svcName} · ${perName}</h2>${seg('per',[['dtd','DtD'],['mtd','MTD']],per)}${seg('svc',SVC,svc)}${rows.length?`<div>${list}</div>`:'<p class="wt-warn">Belum ada data untuk periode ini.</p>'}<div class="wt-legend"><span><i class="ok"></i>&lt; 5 mnt</span><span><i class="md"></i>5–10</span><span><i class="wr"></i>10–15</span><span><i class="bd"></i>&gt; 15</span><span><u class="t5"></u>Batas 5 menit</span><span><u class="rg"></u>Region II ${clock(reg)}</span></div><p class="wt-note">Urut dari tercepat. Ketuk area untuk membuka dashboard-nya.</p></section>`;
+  const perName=per==='dtd'?`DtD ${pctl()} ${isoShort(dtdIso())}`:per==='p100'?`P100 ${isoShort(dtdIso())}`:'MTD Oktober';
+  return `<section class="cd"><h2>Ranking Area · ${svcName} · ${perName}</h2>${seg('per',baru()?[['dtd','DtD P95'],['p100','P100'],['mtd','MTD P90']]:[['dtd','DtD'],['mtd','MTD']],per)}${seg('svc',SVC,svc)}${rows.length?`<div>${list}</div>`:'<p class="wt-warn">Belum ada data untuk periode ini.</p>'}<div class="wt-legend"><span><i class="ok"></i>&lt; 5 mnt</span><span><i class="md"></i>5–10</span><span><i class="wr"></i>10–15</span><span><i class="bd"></i>&gt; 15</span><span><u class="t5"></u>Batas 5 menit</span><span><u class="rg"></u>Region II ${clock(reg)}</span></div><p class="wt-note">Urut dari tercepat. Ketuk area untuk membuka dashboard-nya.</p></section>`;
 }
 
 const TCOL={teller:'var(--c1)',cs:'var(--c2)',all:'var(--c3)'};
@@ -181,6 +199,24 @@ function kelompok(e,isRegion){
   return `<section class="cd"><h2>Kelompok Waktu Tunggu Cabang</h2>${perSeg(per)}${svcTabs}<p class="wt-sub">${perName(per)} · ${rows.length} cabang · P90 ${SVC.find(x=>x[0]===svc)[1]}. Ketuk nama cabang untuk membuka detailnya.</p>${summary}${grid}${foot}</section>`;
 }
 
+/* ----- cabang dengan reservasi wait < 10 detik (sheet "Wait <10 Detik") ----- */
+function wait10(e,isRegion){
+  if(!baru())return '';
+  const j=st.d,x=xOf(e)?.w;
+  const rows=D.B.map((b,i)=>({b,w:D.QW?.[i]?.[j]})).filter(r=>r.w&&(isRegion||norm(r.b[2])===norm(st.a)));
+  if(!rows.length)return `<section class="cd"><h2>Cabang dengan Wait &lt; 10 Detik</h2><p class="wt-warn">Data wait &lt; 10 detik untuk ${isoLong(dtdIso())} belum ada di laporan.</p></section>`;
+  rows.forEach(r=>{r.p=r.w[0]?r.w[1]/r.w[0]:null;});
+  const ada=rows.filter(r=>r.w[1]>0).sort((a,b)=>b.p-a.p||b.w[1]-a.w[1]);
+  const nol=rows.length-ada.length;
+  const tot=x||[rows.reduce((a,r)=>a+r.w[0],0),rows.reduce((a,r)=>a+r.w[1],0)];
+  const rx=xOf(region)?.w,rp=rx&&rx[0]?rx[1]/rx[0]:null;
+  const body=ada.map((r,k)=>`<tr><td class="mu">${k+1}</td><td><button type="button" class="wt-lnk" data-ak-code="${clean(r.b[0])}"><b>${clean(r.b[1])}</b><small>${clean(r.b[0])}${isRegion?' · '+clean(r.b[2]):''}</small></button></td><td>${nfmt(r.w[0])}</td><td><b>${nfmt(r.w[1])}</b></td><td class="${rp!=null&&r.p>rp?'bad':''}"><b>${pct1(r.p)}</b></td></tr>`).join('');
+  return `<section class="cd"><h2>Cabang dengan Wait &lt; 10 Detik · ${isoLong(dtdIso())}</h2>
+    <div class="wt-w10"><div><small>Reservasi</small><b>${nfmt(tot[0])}</b></div><div><small>Wait &lt; 10 detik</small><b>${nfmt(tot[1])}</b></div><div><small>Persentase</small><b>${pct1(tot[0]?tot[1]/tot[0]:null)}</b></div><div><small>Cabang</small><b>${ada.length}</b></div></div>
+    <div class="tw wt-w10-tw"><table><tr><th>#</th><th>Cabang</th><th>Reservasi</th><th>&lt; 10 dtk</th><th>%</th></tr>${body}</table></div>
+    <p class="wt-note">Reservasi unik (semua status) yang waktu tunggunya di bawah 10 detik, diurutkan dari persentase tertinggi. ${rp!=null?`Merah = di atas rata-rata Region II (${pct1(rp)}). `:''}${nol?`${nol} cabang tanpa reservasi wait &lt; 10 detik tidak ditampilkan. `:''}Ketuk nama cabang untuk membuka detailnya.</p></section>`;
+}
+
 function tabel(e){
   const rowHtml=(label,arr,ref,on)=>`<tr class="${on?'on':''}"><td>${label}</td>${[2,5,6].map(i=>`<td class="${tk(arr?arr[i]:null)}"><b>${clock(arr?arr[i]:null)}</b></td>`).join('')}<td class="mu">${e===region?'–':clock(ref?ref[6]:null)}</td></tr>`;
   const body=[rowHtml('<b>MTD Oktober</b>',e.m,region.m,false)].concat(src.dates.slice().reverse().map(d=>rowHtml(isoLong(d),e.d[d],region.d[d],d===dtdIso()))).join('');
@@ -190,7 +226,7 @@ function tabel(e){
 function page(){
   const {e,isRegion}=current();
   if(!e)return `<section class="cd"><p class="wt-warn">Data waktu tunggu untuk <b>${clean(st.a)}</b> tidak ditemukan pada sheet Area.</p></section>`;
-  return `${hero(e,isRegion)}<div class="wt-pair">${periodCard('dtd',e,isRegion)}${periodCard('mtd',e,isRegion)}</div>${ranking(e,isRegion)}${trend(e)}${kategori(e,isRegion)}${kelompok(e,isRegion)}${tabel(e)}`;
+  return `${hero(e,isRegion)}<div class="wt-pair">${periodCard('dtd',e,isRegion)}${periodCard('mtd',e,isRegion)}</div>${ranking(e,isRegion)}${trend(e)}${kategori(e,isRegion)}${wait10(e,isRegion)}${kelompok(e,isRegion)}${tabel(e)}`;
 }
 
 views.push({key:'waktu',order:10,label:'⏱ Dashboard Waktu Tunggu',html:page});

@@ -11,7 +11,10 @@ const esc = (t) =>
 const f = (s) => {
   if (s == null) return "–";
   s = Math.round(s);
-  return String(Math.floor(s / 60)).padStart(2, "0") + ":" + String(s % 60).padStart(2, "0");
+  const p = (x) => String(x).padStart(2, "0");
+  // di atas 1 jam (mis. P100) ditulis j:mm:ss
+  if (s >= 3600) return Math.floor(s / 3600) + ":" + p(Math.floor(s / 60) % 60) + ":" + p(s % 60);
+  return p(Math.floor(s / 60)) + ":" + p(s % 60);
 };
 
 const pc = (a, b) => (a == null || b == null || a + b === 0 ? null : a / (a + b));
@@ -315,7 +318,19 @@ function kartuCabang() {
 
 // Tiga kotak: Teller, CS, Semua TRX pada tanggal terpilih
 function kartuAntrian() {
-  return `<div class="cd"><h2>Waktu Antrian · ${dlong(D.dates[st.d])}</h2><div class="g3">${qcard("TELLER", 0)}${qcard("CS", 1)}${qcard("SEMUA TRX", 2)}</div></div>`;
+  return `<div class="cd"><h2>Waktu Antrian · ${dlong(D.dates[st.d])}</h2><div class="g3">${qcard("TELLER", 0)}${qcard("CS", 1)}${qcard("SEMUA TRX", 2)}</div>${wait10()}</div>`;
+}
+
+// sejak 27 Okt: reservasi dengan waktu tunggu < 10 detik (sheet "Wait <10 Detik"), peringkat di Region II
+function wait10() {
+  if (D.dates[st.d] < P100_MULAI) return "";
+  const w = D.QW?.[st.b]?.[st.d];
+  if (!w) return `<div class="w10"><span>Wait &lt; 10 detik</span><b>–</b><small>Data belum ada untuk tanggal ini</small></div>`;
+  const p = w[0] ? w[1] / w[0] : null;
+  const semua = D.QW.map((s) => s?.[st.d]).filter((x) => x && x[0]),
+    rk = p == null ? null : 1 + semua.filter((x) => x[1] / x[0] > p).length;
+  const pc = (v) => (v * 100).toLocaleString("id-ID", { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + "%";
+  return `<div class="w10"><span>Wait &lt; 10 detik</span><b>${w[1].toLocaleString("id-ID")} <small>dari ${w[0].toLocaleString("id-ID")} reservasi</small></b><b class="w10-p">${p == null ? "–" : pc(p)}</b>${rk ? `<small>Peringkat ${rk} dari ${semua.length} cabang Region II (persentase tertinggi = 1)</small>` : ""}</div>`;
 }
 
 // Grafik tren yang bisa digeser: Gabungan, Teller, CS, Semua TRX

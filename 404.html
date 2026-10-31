@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+    <meta name="theme-color" content="#002060" />
+    <meta name="robots" content="noindex" />
+    <title>KITO — Mengalihkan…</title>
+    <!-- Halaman tidak ditemukan: alihkan ke halaman awal dashboard.
+         GitHub Pages (situs proyek) berada di /<nama-repo>/, domain lain di root "/". -->
+    <script>
+      (function () {
+        var bagian = location.pathname.split('/').filter(Boolean);
+        var awal = /\.github\.io$/i.test(location.hostname) && bagian.length ? '/' + bagian[0] + '/' : '/';
+        location.replace(awal);
+      })();
+    </script>
+    <noscript><meta http-equiv="refresh" content="0; url=/Dashboard-KITO/" /></noscript>
+    <style>
+      html,body{height:100%;margin:0}
+      body{display:flex;align-items:center;justify-content:center;padding:0 16px;background:#0057ae;color:#fff;font:500 14px/1.5 "Inter",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;text-align:center}
+      a{color:#f6bd28;font-weight:700}
+    </style>
+  </head>
+  <body>
+    <p>Halaman tidak ditemukan. Mengalihkan ke <a href="/Dashboard-KITO/">halaman awal</a>…</p>
+  </body>
+</html>

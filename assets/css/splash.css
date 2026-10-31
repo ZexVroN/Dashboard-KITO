@@ -23,3 +23,32 @@
 
 .kito-credit{display:flex;flex-direction:column;align-items:center;gap:2px;pointer-events:auto}
 .kito-credit a{pointer-events:auto}
+
+/* Splash & loading hanya untuk browser: mode aplikasi (html.pwa) sudah punya layar pembuka sendiri */
+html.pwa .kito-splash{display:none!important}
+/* Selama splash/loading tampil: halaman tidak bisa digulir dan scrollbar disembunyikan */
+html:not(.pwa):has(#kito-splash:not(.is-hidden)),
+html:not(.pwa):has(#kito-splash:not(.is-hidden)) body{overflow:hidden!important;scrollbar-width:none}
+html:not(.pwa):has(#kito-splash:not(.is-hidden))::-webkit-scrollbar,
+html:not(.pwa):has(#kito-splash:not(.is-hidden)) body::-webkit-scrollbar{display:none}
+
+/* Kartu loading tampil utuh: selalu di atas gambar & kredit, tidak terpotong / tertumpuk */
+.kito-load{z-index:3;box-sizing:border-box;max-width:calc(100vw - 24px);bottom:calc(52px + env(safe-area-inset-bottom))}
+.kito-load-txt{white-space:normal}
+@media (max-height:520px){.kito-load{bottom:calc(44px + env(safe-area-inset-bottom));padding:10px 14px 9px}.kito-load-top{margin-bottom:6px}.kito-load-eta{margin-top:5px}}
+
+/* Pemberitahuan pindah alamat (splash.js, alamat lama zexvron.github.io): splash tetap tampil, juga di mode aplikasi */
+html.kito-pindah .kito-splash{display:block!important}
+html.kito-pindah,html.kito-pindah body{overflow:hidden!important}
+html.kito-pindah .kito-splash::before{content:"";position:absolute;inset:0;z-index:1;background:rgba(0,25,80,.45)}
+.kito-update{position:absolute;left:50%;top:50%;z-index:3;transform:translate(-50%,-50%);box-sizing:border-box;width:min(calc(100vw - 32px),440px);max-height:calc(100dvh - 90px);overflow:auto;padding:22px 22px 18px;border-radius:18px;background:rgba(0,20,70,.62);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.25);box-shadow:0 14px 40px rgba(0,0,0,.35);color:#fff;text-align:center;font:500 14px/1.5 "Inter",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;animation:kito-update-masuk .5s ease both}
+.kito-update-lencana{display:inline-block;padding:3px 10px;border-radius:99px;background:#f6bd28;color:#062a66;font-size:11px;font-weight:800;letter-spacing:1px}
+.kito-update-judul{margin:10px 0 6px;font-size:20px;font-weight:800;line-height:1.3}
+.kito-update-teks{margin:0 0 12px;opacity:.9}
+.kito-update-url{display:block;margin:0 0 14px;color:#7fd3ff;font-weight:700;font-size:15px;word-break:break-all;text-decoration:none}
+.kito-update-btn{display:inline-block;padding:11px 22px;border-radius:12px;background:#fff;color:#0057ae;font-weight:800;text-decoration:none;box-shadow:0 4px 14px rgba(0,0,0,.25);transition:transform .15s ease}
+.kito-update-btn:hover,.kito-update-btn:focus-visible{transform:translateY(-1px);outline:2px solid #7fd3ff;outline-offset:3px}
+.kito-update-eta{display:block;margin-top:12px;font-size:11.5px;opacity:.8;font-variant-numeric:tabular-nums}
+@keyframes kito-update-masuk{from{opacity:0;transform:translate(-50%,-46%)}to{opacity:1;transform:translate(-50%,-50%)}}
+@media (prefers-reduced-motion:reduce){.kito-update{animation:none}}
+@media (max-height:520px){.kito-update{padding:14px 16px 12px}.kito-update-judul{font-size:17px;margin:6px 0 4px}.kito-update-teks{margin-bottom:8px}.kito-update-url{margin-bottom:10px}}

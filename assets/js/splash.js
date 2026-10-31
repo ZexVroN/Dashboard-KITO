@@ -1,4 +1,4 @@
-/* Splash KITO dengan animasi loading (perkiraan ± 6 detik).
+/* Splash KITO dengan animasi loading (perkiraan ± 6 detik), hanya saat dibuka di browser.
    - Bilah progres 0 → 100% dalam ±6 detik, persentase, tahapan muat, dan sisa waktu.
    - Splash ditutup setelah progres 100% DAN dashboard sudah tergambar.
      Jika dashboard belum siap tepat 6 detik, progres ditahan di 95% sampai siap (paling lama 12 detik).
@@ -10,6 +10,42 @@
   var root = document.documentElement;
   var splash = document.getElementById('kito-splash');
   if (!splash) { root.classList.add('kito-siap'); return; }
+
+  // Alamat lama (GitHub Pages): splash tetap tampil sebagai pemberitahuan pindah alamat
+  var ALAMAT_BARU = 'https://inbranch.region2.co.id/';
+  var DETIK_ALIH = 10;     // hitung mundur sebelum dialihkan otomatis
+  var jalur = location.pathname.replace(/\/+$/, '/');
+  if (location.hostname === 'zexvron.github.io' && (jalur === '/' || /^\/Dashboard-KITO(\/|$)/i.test(jalur))) {
+    root.classList.add('kito-pindah');
+    splash.setAttribute('aria-label', 'Dashboard KITO telah pindah alamat');
+    splash.setAttribute('role', 'alertdialog');
+    var info = document.createElement('div');
+    info.className = 'kito-update';
+    info.innerHTML =
+      '<span class="kito-update-lencana">UPDATE</span>' +
+      '<h2 class="kito-update-judul">Dashboard KITO telah pindah alamat</h2>' +
+      '<p class="kito-update-teks">Mulai sekarang dashboard diakses melalui alamat baru. Alamat ini tidak diperbarui lagi.</p>' +
+      '<a class="kito-update-url" href="' + ALAMAT_BARU + '">inbranch.region2.co.id</a>' +
+      '<a class="kito-update-btn" href="' + ALAMAT_BARU + '">Buka Dashboard Baru →</a>' +
+      '<small class="kito-update-eta">Dialihkan otomatis dalam <b>' + DETIK_ALIH + '</b> detik</small>';
+    splash.appendChild(info);
+    var elDetik = info.querySelector('.kito-update-eta b');
+    var sisaAlih = DETIK_ALIH;
+    var hitung = setInterval(function () {
+      sisaAlih--;
+      if (sisaAlih <= 0) { clearInterval(hitung); location.replace(ALAMAT_BARU); return; }
+      elDetik.textContent = sisaAlih;
+    }, 1000);
+    info.querySelector('.kito-update-btn').focus();
+    return;
+  }
+
+  // mode aplikasi (PWA): lewati splash, sistem sudah menampilkan layar pembuka sendiri
+  if (root.classList.contains('pwa')) {
+    if (splash.parentNode) splash.parentNode.removeChild(splash);
+    root.classList.add('kito-siap');
+    return;
+  }
 
   var TAHAP = [
     [0, 'Menyiapkan dashboard…'],

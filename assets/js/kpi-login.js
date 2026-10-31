@@ -5,7 +5,7 @@
 (() => {
   'use strict';
   if (typeof render !== 'function') return;
-  const KPI_AKUN = ['5e514543e803aa00929d4dc835524b1961e6869d88fe33ec76a420614f114a8b'];
+  const KPI_AKUN = ['4e6e5782b4cf0d27d201ed5e20b30a756906f5b962af1fb96cdc7266938e11c5'];
   const KUNCI = 'kito-kpi-masuk';
 
   const sudahMasuk = () => {

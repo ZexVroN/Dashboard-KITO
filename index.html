@@ -14,14 +14,16 @@
     <meta name="apple-mobile-web-app-title" content="KITO" />
     <meta name="format-detection" content="telephone=no" />
     <link rel="manifest" href="manifest.json" />
-    <!-- Deteksi offline: tampilkan halaman offline jika tidak ada koneksi -->
+    <!-- Deteksi offline: halaman offline hanya bila belum ada salinan tersimpan (service worker belum aktif).
+         Bila sudah tersimpan, dashboard tetap tampil dengan data terakhir (lihat sw.js & assets/js/offline.js). -->
     <script>
-      if (!navigator.onLine) {
-        document.location.href = 'offline.html';
-      }
-      window.addEventListener('offline', () => {
-        document.location.href = 'offline.html';
-      });
+      (function () {
+        var tersimpan = 'serviceWorker' in navigator && navigator.serviceWorker.controller;
+        if (!navigator.onLine && !tersimpan) document.location.href = 'offline.html';
+        window.addEventListener('offline', function () {
+          if (!('serviceWorker' in navigator && navigator.serviceWorker.controller)) document.location.href = 'offline.html';
+        });
+      })();
     </script>
     <title>Dashboard Monitoring Inbranch</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -31,7 +33,7 @@
       rel="stylesheet"
     />
     <link rel="stylesheet" href="assets/css/style.css?v=9" />
-    <link rel="stylesheet" href="assets/css/splash.css?v=9" />
+    <link rel="stylesheet" href="assets/css/splash.css?v=10" />
     <script>
       try {
         if (localStorage.getItem("tema") === "dark")
@@ -154,7 +156,7 @@
     <script src="assets/js/dti.js?v=6"></script>
     <link rel="stylesheet" href="assets/css/area.css?v=1" />
     <script src="assets/js/area.js?v=1"></script>
-    <script src="assets/js/splash.js?v=4"></script>
+    <script src="assets/js/splash.js?v=5"></script>
     <link rel="stylesheet" href="assets/css/area-kelompok.css?v=1" />
     <script src="assets/js/area-kelompok-data.js?v=20261101-27okt"></script>
     <script src="assets/js/area-kelompok.js?v=20261030"></script>
@@ -228,5 +230,5 @@ body.dark .kito-pctl-close,[data-theme="dark"] .kito-pctl-close{color:#fff}
   });
 })();
 </script>
-<script src="assets/js/mobile-table.js?v=2"></script><script src="assets/js/push-config.js?v=4"></script><script src="assets/js/push.js?v=4"></script><script src="assets/js/month-filter.js?v=20261030"></script><script src="assets/js/browser-dropdown.js?v=20261030-v5"></script></body>
+<script src="assets/js/mobile-table.js?v=2"></script><script src="assets/js/push-config.js?v=4"></script><script src="assets/js/offline.js?v=1"></script><script src="assets/js/push.js?v=5"></script><script src="assets/js/month-filter.js?v=20261030"></script><script src="assets/js/browser-dropdown.js?v=20261030-v5"></script></body>
 </html>

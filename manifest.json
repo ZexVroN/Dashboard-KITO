@@ -7,6 +7,7 @@
   "dir": "auto",
   "start_url": "/index.html",
   "scope": "/",
+  "scope_extensions": [],
   "display": "fullscreen",
   "display_override": [
     "fullscreen",

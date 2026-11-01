@@ -1,4 +1,4 @@
-/* Splash KITO dengan animasi loading (perkiraan ± 6 detik), hanya saat dibuka di browser.
+/* Splash KITO dengan animasi loading (perkiraan ± 6 detik), di browser maupun aplikasi (APK/PWA).
    - Bilah progres 0 → 100% dalam ±6 detik, persentase, tahapan muat, dan sisa waktu.
    - Splash ditutup setelah progres 100% DAN dashboard sudah tergambar.
      Jika dashboard belum siap tepat 6 detik, progres ditahan di 95% sampai siap (paling lama 12 detik).
@@ -40,12 +40,7 @@
     return;
   }
 
-  // mode aplikasi (PWA): lewati splash, sistem sudah menampilkan layar pembuka sendiri
-  if (root.classList.contains('pwa')) {
-    if (splash.parentNode) splash.parentNode.removeChild(splash);
-    root.classList.add('kito-siap');
-    return;
-  }
+  // mode aplikasi (APK/PWA terpasang) juga menampilkan splash + loading, sama seperti di browser
 
   var TAHAP = [
     [0, 'Menyiapkan dashboard…'],

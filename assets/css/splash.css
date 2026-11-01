@@ -24,13 +24,12 @@
 .kito-credit{display:flex;flex-direction:column;align-items:center;gap:2px;pointer-events:auto}
 .kito-credit a{pointer-events:auto}
 
-/* Splash & loading hanya untuk browser: mode aplikasi (html.pwa) sudah punya layar pembuka sendiri */
-html.pwa .kito-splash{display:none!important}
+/* Splash & loading tampil di browser maupun mode aplikasi (APK/PWA) */
 /* Selama splash/loading tampil: halaman tidak bisa digulir dan scrollbar disembunyikan */
-html:not(.pwa):has(#kito-splash:not(.is-hidden)),
-html:not(.pwa):has(#kito-splash:not(.is-hidden)) body{overflow:hidden!important;scrollbar-width:none}
-html:not(.pwa):has(#kito-splash:not(.is-hidden))::-webkit-scrollbar,
-html:not(.pwa):has(#kito-splash:not(.is-hidden)) body::-webkit-scrollbar{display:none}
+html:has(#kito-splash:not(.is-hidden)),
+html:has(#kito-splash:not(.is-hidden)) body{overflow:hidden!important;scrollbar-width:none}
+html:has(#kito-splash:not(.is-hidden))::-webkit-scrollbar,
+html:has(#kito-splash:not(.is-hidden)) body::-webkit-scrollbar{display:none}
 
 /* Kartu loading tampil utuh: selalu di atas gambar & kredit, tidak terpotong / tertumpuk */
 .kito-load{z-index:3;box-sizing:border-box;max-width:calc(100vw - 24px);bottom:calc(52px + env(safe-area-inset-bottom))}

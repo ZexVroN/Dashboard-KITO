@@ -24,7 +24,16 @@
   const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const keyBytes = (b64) => { const r = atob(b64.replace(/-/g, '+').replace(/_/g, '/')); return Uint8Array.from(r, (c) => c.charCodeAt(0)); };
   const api = async (method, path, body) => {
-    const r = await fetch(API + path, { method, headers: { 'Content-Type': 'application/json' }, body: body ? JSON.stringify(body) : undefined });
+    let r;
+    try {
+      r = await fetch(API + path, { method, headers: { 'Content-Type': 'application/json' }, body: body ? JSON.stringify(body) : undefined });
+    } catch (e) {
+      // offline: perubahan pengaturan (simpan topik / matikan) diantre dan dikirim otomatis lewat Background Sync
+      const bisaAntre = (method === 'PUT' || method === 'DELETE') && navigator.serviceWorker?.controller;
+      if (!bisaAntre) throw new Error(navigator.onLine ? 'server tidak bisa dihubungi' : 'perangkat sedang offline');
+      navigator.serviceWorker.controller.postMessage({ type: 'kito-antre', item: { url: API + path, method, body: body ? JSON.stringify(body) : null } });
+      return { ok: true, diantre: true, topics: body?.topics || [] };
+    }
     const j = await r.json().catch(() => ({}));
     if (!r.ok) throw new Error(j.error || 'server tidak merespons (' + r.status + ')');
     return j;
@@ -133,8 +142,9 @@
       } else if (jenis === 'simpan') {
         const topics = topikDipilih();
         if (!topics.length) throw new Error('pilih minimal satu, atau ketuk "Matikan notifikasi"');
-        await api('PUT', '/api/subscriptions/topics', { endpoint: sub.endpoint, topics });
-        await segarkanStatus(); pesan = 'Pilihan disimpan.';
+        const r = await api('PUT', '/api/subscriptions/topics', { endpoint: sub.endpoint, topics });
+        if (r.diantre) { server = { terdaftar: true, topics }; pesan = 'Sedang offline: pilihan disimpan dan dikirim otomatis saat online.'; }
+        else { await segarkanStatus(); pesan = 'Pilihan disimpan.'; }
       } else if (jenis === 'tes') {
         const r = await api('POST', '/api/subscriptions/test', { endpoint: sub.endpoint });
         pesan = r.ok ? 'Notifikasi tes dikirim. Periksa notifikasi perangkat.' : 'Tes gagal dikirim; coba matikan lalu aktifkan lagi.';

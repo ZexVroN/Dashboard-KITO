@@ -113,6 +113,13 @@ def ident(nama):
     return (m.group(1).upper(), m.group(2).strip().title()) if m else (None, str(nama).strip().title())
 
 
+def tgl_teks(v):
+    """Tanggal RAW berupa teks: '2026-10-27...' atau '27/10/2026' -> '2026-10-27'."""
+    t = str(v).strip()
+    m = re.match(r"(\d{1,2})[/-](\d{1,2})[/-](\d{4})", t)
+    return f"{m.group(3)}-{int(m.group(2)):02d}-{int(m.group(1)):02d}" if m else t[:10]
+
+
 def nama_file(p):
     return re.sub(r".*[\\/]", "", p)
 
@@ -125,7 +132,7 @@ def baca_antrian(path):
     if isinstance(v, (dt.datetime, dt.date)):
         tgl = v.date().isoformat() if isinstance(v, dt.datetime) else v.isoformat()
     else:
-        tgl = str(v)[:10]
+        tgl = tgl_teks(v)
     m = re.match(r"(\d{2})(\d{2})(\d{4})", nama_file(path))
     if m and f"{m.group(3)}-{m.group(2)}-{m.group(1)}" != tgl:
         sys.exit(f"Tanggal RAW ({tgl}) tidak sama dengan tanggal pada nama file ({nama_file(path)}).")
@@ -393,6 +400,14 @@ def main():
     print(f"area-o2o-data.js   : {len(AO['areas'])} area, tanggal {AO['tanggal']}")
     print(f"region-data.js     : {len(R['regions'])} region + nasional · waktu {tgl} · NBDS s.d. {tgl_nbds[-1]} · O2O {R['tglO2O']}")
     print("Selesai. Naikkan angka ?v= pada file data di index.html agar browser memuat data baru.")
+
+    # notifikasi push (opsional): hanya bila KITO_PUSH_URL & KITO_PUSH_TOKEN diisi
+    if os.environ.get("KITO_PUSH_URL") and os.environ.get("KITO_PUSH_TOKEN"):
+        try:
+            from kirim_notifikasi import jalankan as kirim_notifikasi
+            kirim_notifikasi(tgl)
+        except Exception as e:  # update data tetap dianggap berhasil
+            print("PERINGATAN: notifikasi push gagal dikirim:", e)
 
 
 if __name__ == "__main__":

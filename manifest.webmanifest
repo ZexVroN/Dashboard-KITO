@@ -1,18 +1,49 @@
 {
-  "name": "KITO · Dashboard Monitoring Inbranch Region II",
-  "short_name": "KITO",
+  "id": "/",
+  "name": "Dashboard KITO",
+  "short_name": "Dashboard KITO",
   "description": "Key Inbranch Tracking & Overview — waktu antri, utilisasi NBDS, O2O dan ranking Region II.",
   "lang": "id",
-  "start_url": "./index.html",
-  "scope": "./",
-  "display": "standalone",
-  "display_override": ["fullscreen", "standalone"],
-  "orientation": "portrait",
+  "dir": "auto",
+  "start_url": "/index.html",
+  "scope": "/",
+  "display": "fullscreen",
+  "display_override": [
+    "fullscreen",
+    "standalone"
+  ],
+  "orientation": "any",
   "background_color": "#0057ae",
   "theme_color": "#002060",
+  "prefer_related_applications": false,
+  "categories": [
+    "business",
+    "productivity"
+  ],
   "icons": [
-    { "src": "assets/images/ios/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
-    { "src": "assets/images/ios/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
-    { "src": "assets/images/ios/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+    {
+      "src": "/assets/images/ios/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/assets/images/ios/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/assets/images/ios/icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/assets/images/ios/apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png",
+      "purpose": "any"
+    }
   ]
 }

@@ -1,0 +1,14 @@
+# Dashboard KITO di Hostinger (inbranch.region2.co.id)
+# Manifest PWA harus disajikan dengan tipe yang benar agar Chrome, PWABuilder, dan APK TWA mengenalinya.
+AddType application/manifest+json .webmanifest
+AddType application/json .json
+# file verifikasi aplikasi Android (TWA): /.well-known/assetlinks.json
+<IfModule mod_headers.c>
+  <FilesMatch "assetlinks\.json$">
+    Header set Access-Control-Allow-Origin "*"
+  </FilesMatch>
+  # service worker & konfigurasi selalu diperiksa ulang agar pembaruan cepat sampai
+  <FilesMatch "^(sw\.js|manifest\.webmanifest)$">
+    Header set Cache-Control "no-cache"
+  </FilesMatch>
+</IfModule>

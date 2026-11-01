@@ -2,7 +2,7 @@
    Topik: "semua" (update data harian & ringkasan Region II), "area:<nama area>", "cabang:<kode>".
    Website & desktop: Chrome/Edge/Firefox/Safari. Android: Chrome (juga saat dipasang).
    iOS/iPadOS 16.4+: hanya dari aplikasi yang sudah ditambahkan ke Layar Utama (aturan Apple).
-   Server: folder push-php/, alamat diatur di assets/js/push-config.js. Gaya: assets/css/push.css */
+   Server: folder push-server/, alamat diatur di assets/js/push-config.js. Gaya: assets/css/push.css */
 (() => {
   'use strict';
   const API = (window.KITO_PUSH?.api || '').replace(/\/+$/, '');
@@ -11,8 +11,16 @@
 
   const ua = navigator.userAgent;
   const isIOS = /iPhone|iPad|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-  const standalone = window.matchMedia('(display-mode: standalone)').matches || window.matchMedia('(display-mode: fullscreen)').matches || navigator.standalone === true;
+  // aplikasi Android TWA (Chrome di dalam APK KITO): push didukung penuh
+  const isTWA = document.referrer.startsWith('android-app://') || sessionStorage.getItem('kitoTWA') === '1';
+  if (isTWA) { try { sessionStorage.setItem('kitoTWA', '1'); } catch (e) {} }
+  const standalone = isTWA || window.matchMedia('(display-mode: standalone)').matches || window.matchMedia('(display-mode: fullscreen)').matches || navigator.standalone === true;
   const didukung = 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
+  // APK lama berbasis Android WebView: tidak mendukung Web Push sama sekali
+  const isAndroid = /Android/.test(ua);
+  const isWebView = isAndroid && !isTWA && (/; wv\)/.test(ua) || (/Version\/[\d.]+ Chrome\//.test(ua)) || !didukung);
+  // buka halaman ini di Chrome dari dalam WebView (intent Android)
+  const urlChrome = () => { const u = new URL(location.href); return `intent://${u.host}${u.pathname}${u.search}#Intent;scheme=https;package=com.android.chrome;S.browser_fallback_url=${encodeURIComponent(u.href)};end`; };
   const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const keyBytes = (b64) => { const r = atob(b64.replace(/-/g, '+').replace(/_/g, '/')); return Uint8Array.from(r, (c) => c.charCodeAt(0)); };
   const api = async (method, path, body) => {
@@ -81,6 +89,11 @@
     if (isIOS && !standalone) {
       h = `<p class="knp-lead">Di iPhone/iPad, notifikasi hanya bisa diterima dari <b>aplikasi KITO di Layar Utama</b> (iOS 16.4 ke atas).</p>
         <ol class="knp-steps"><li>Buka dashboard ini di <b>Safari</b>.</li><li>Ketuk tombol <b>Bagikan</b> <span aria-hidden="true">⬆︎</span>.</li><li>Pilih <b>Tambah ke Layar Utama</b>, lalu <b>Tambah</b>.</li><li>Buka <b>KITO</b> dari Layar Utama, lalu ketuk 🔔 lagi.</li></ol>`;
+    } else if (isWebView && !didukung) {
+      h = `<p class="knp-lead">Aplikasi KITO versi ini (berbasis WebView) <b>belum mendukung notifikasi</b>.</p>
+        <ol class="knp-steps"><li>Pasang <b>aplikasi KITO versi baru</b> dari pengelola (sudah mendukung notifikasi), <b>atau</b></li><li>Buka dashboard di <b>Chrome</b>, lalu ketuk 🔔 di sana.</li></ol>
+        <div class="knp-act"><a class="knp-btn" href="${urlChrome()}">Buka di Chrome</a></div>
+        <p class="knp-note">Setelah dibuka di Chrome, ketuk menu ⋮ › <b>Tambahkan ke layar utama</b> agar terasa seperti aplikasi.</p>`;
     } else if (!didukung) {
       h = '<p class="knp-lead">Browser ini belum mendukung notifikasi push. Gunakan Chrome, Edge, Firefox, atau Safari versi terbaru.</p>';
     } else if (izin === 'denied') {

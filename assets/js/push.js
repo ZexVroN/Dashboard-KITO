@@ -2,7 +2,7 @@
    Topik: "semua" (update data harian & ringkasan Region II), "area:<nama area>", "cabang:<kode>".
    Website & desktop: Chrome/Edge/Firefox/Safari. Android: Chrome (juga saat dipasang).
    iOS/iPadOS 16.4+: hanya dari aplikasi yang sudah ditambahkan ke Layar Utama (aturan Apple).
-   Server: folder push-server/, alamat diatur di assets/js/push-config.js. Gaya: assets/css/push.css */
+   Server: folder push-php/, alamat diatur di assets/js/push-config.js. Gaya: assets/css/push.css */
 (() => {
   'use strict';
   const API = (window.KITO_PUSH?.api || '').replace(/\/+$/, '');

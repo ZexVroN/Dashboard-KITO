@@ -1,5 +1,5 @@
 /* Service worker KITO: menerima & menampilkan push notification (website, desktop, Android, iOS PWA).
-   Didaftarkan oleh assets/js/push.js sebagai sw.js?api=<alamat push-server>.
+   Didaftarkan oleh assets/js/push.js sebagai sw.js?api=<alamat push-php>.
    Tidak menyimpan cache halaman, supaya data dashboard selalu yang terbaru. */
 'use strict';
 const API = new URL(self.location).searchParams.get('api') || '';

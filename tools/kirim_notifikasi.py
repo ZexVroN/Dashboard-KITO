@@ -1,12 +1,12 @@
-"""Kirim notifikasi push setelah data waktu tunggu diperbarui (ke KITO Push Server, folder push-server/).
+"""Kirim notifikasi push setelah data waktu tunggu diperbarui (ke backend KITO Push, folder push-php/).
 
 Pemakaian (dari folder Dashboard-KITO):
     python tools/kirim_notifikasi.py                 # tanggal terbaru di data.js
     python tools/kirim_notifikasi.py --tanggal 2026-10-28 --uji   # tampilkan saja, tidak dikirim
 
 Butuh environment variable:
-    KITO_PUSH_URL    alamat push-server, mis. https://push.domain-anda.id
-    KITO_PUSH_TOKEN  ADMIN_TOKEN push-server
+    KITO_PUSH_URL    alamat push-php, mis. https://domain-anda/push-php
+    KITO_PUSH_TOKEN  token admin push-php
     KITO_DASH_URL    (opsional) alamat dashboard untuk tautan notifikasi, default ./index.html
 
 Yang dikirim (satu permintaan batch):

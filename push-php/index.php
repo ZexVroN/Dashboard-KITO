@@ -3,7 +3,7 @@
  * KITO Push (PHP): backend push notification untuk website, desktop, Android, dan iOS (Web Push/VAPID).
  * Cukup unggah folder ini ke hosting PHP mana pun (Hostinger, cPanel, dll.) lalu buka setup.php.
  *
- * Rute (sama dengan versi Node, jadi dashboard tidak perlu diubah):
+ * Rute:
  *   /api/health · /api/vapid-public-key · /api/subscriptions (POST/DELETE) · /api/subscriptions/topics (PUT)
  *   /api/subscriptions/status · /api/subscriptions/test · /api/notifications (POST/GET, admin) · /api/notifications/batch
  *   /api/stats · /api/scheduled (GET) · /api/scheduled/<id> (DELETE) · /admin

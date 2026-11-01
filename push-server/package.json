@@ -3,12 +3,20 @@
   "version": "1.0.0",
   "private": true,
   "description": "Backend push notification KITO (Web Push/VAPID) untuk website, desktop, Android, dan iOS. Tanpa dependensi luar.",
+<<<<<<< HEAD
   "main": "server.js",
+=======
+  "main": "src/server.js",
+>>>>>>> b131f11426a8e56bd4894ea31a637dd69b90539d
   "engines": {
     "node": ">=22.13"
   },
   "scripts": {
+<<<<<<< HEAD
     "start": "node --disable-warning=ExperimentalWarning server.js",
+=======
+    "start": "node --disable-warning=ExperimentalWarning src/server.js",
+>>>>>>> b131f11426a8e56bd4894ea31a637dd69b90539d
     "vapid": "node scripts/generate-vapid.js",
     "send": "node scripts/send.js",
     "test": "node --disable-warning=ExperimentalWarning --test test/*.test.js",

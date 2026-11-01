@@ -59,10 +59,16 @@ function post(url, headers) {
   console.log('\n3. Database');
   try {
     if (config.dbPath !== ':memory:') fs.mkdirSync(path.dirname(config.dbPath), { recursive: true });
+<<<<<<< HEAD
     const r = require('../src/db').open(config.dbPath);
     const st = r.db.stats(); r.db.close();
     r.peringatan.forEach(warn);
     ok(`${r.path} dapat dibuka (penyimpanan ${r.driver}) · ${st.total} langganan · ${st.notifikasi} notifikasi`);
+=======
+    const db = require('../src/db').open(config.dbPath);
+    const st = db.stats(); db.close();
+    ok(`${config.dbPath} dapat dibuka · ${st.total} langganan · ${st.notifikasi} notifikasi`);
+>>>>>>> b131f11426a8e56bd4894ea31a637dd69b90539d
   } catch (e) { bad('database tidak bisa dibuka/ditulis: ' + e.message); }
 
   console.log('\n4. Koneksi ke push service resmi (dari server ini)');

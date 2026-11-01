@@ -32,6 +32,7 @@ const { detect, normTopics, hostAllowed, safeEqual, rateLimiter } = require('./u
 const MAX_BODY = 64 * 1024;
 const ADMIN_HTML = path.join(__dirname, '..', 'public', 'admin.html');
 
+<<<<<<< HEAD
 /* ---------- diagnosis: /status (tanpa nilai rahasia) ---------- */
 function statusInfo({ mode, store, errs = [], galat = null }) {
   const c = defaultConfig;
@@ -75,6 +76,12 @@ function createServer(config = defaultConfig, { log = console } = {}) {
   const store = open(config.dbPath);
   const db = store.db;
   store.peringatan.forEach((p) => log.warn?.('[db] ' + p));
+=======
+class HttpError extends Error { constructor(status, msg) { super(msg); this.status = status; } }
+
+function createServer(config = defaultConfig, { log = console } = {}) {
+  const db = open(config.dbPath);
+>>>>>>> b131f11426a8e56bd4894ea31a637dd69b90539d
   const sender = createSender({ db, config, log });
   const limitPublic = rateLimiter(60);  // per IP per menit
   const limitTest = rateLimiter(5);
@@ -167,7 +174,10 @@ function createServer(config = defaultConfig, { log = console } = {}) {
 
   const routes = {
     'GET /api/health': async () => ({ ok: true, waktu: new Date().toISOString() }),
+<<<<<<< HEAD
     'GET /api/status': async () => statusInfo({ mode: 'normal', store }),
+=======
+>>>>>>> b131f11426a8e56bd4894ea31a637dd69b90539d
     'GET /api/vapid-public-key': async () => ({ publicKey: config.vapid.publicKey }),
 
     'POST /api/subscriptions': async (req, body) => {
@@ -229,11 +239,16 @@ function createServer(config = defaultConfig, { log = console } = {}) {
     'GET /api/scheduled': async (req, body, url) => { requireAdmin(req); return { jadwal: db.listScheduled(Number(url.searchParams.get('limit')) || 50) }; },
   };
 
+<<<<<<< HEAD
   let terakhirTick = 0;
   const server = http.createServer(async (req, res) => {
     const url = new URL(req.url, 'http://x');
     // hosting yang menidurkan aplikasi saat sepi (mis. Hostinger): setiap permintaan ikut mengecek jadwal
     if (Date.now() - terakhirTick > 30000) { terakhirTick = Date.now(); setImmediate(() => tick().catch(() => {})); }
+=======
+  const server = http.createServer(async (req, res) => {
+    const url = new URL(req.url, 'http://x');
+>>>>>>> b131f11426a8e56bd4894ea31a637dd69b90539d
     try {
       cors(req, res);
       if (req.method === 'OPTIONS') { res.writeHead(204); return res.end(); }
@@ -242,8 +257,11 @@ function createServer(config = defaultConfig, { log = console } = {}) {
           'Content-Security-Policy': "default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; connect-src 'self'; img-src 'self' https: data:" });
         return fs.createReadStream(ADMIN_HTML).pipe(res);
       }
+<<<<<<< HEAD
       if (req.method === 'GET' && url.pathname === '/status') return halamanStatus(res, statusInfo({ mode: 'normal', store }));
       if (req.method === 'GET' && url.pathname === '/') { res.writeHead(302, { Location: '/admin' }); return res.end(); }
+=======
+>>>>>>> b131f11426a8e56bd4894ea31a637dd69b90539d
       const m = url.pathname.match(/^\/api\/scheduled\/(\d+)$/);
       if (m && req.method === 'DELETE') {
         requireAdmin(req);
@@ -284,6 +302,7 @@ function createServer(config = defaultConfig, { log = console } = {}) {
   }
   const timer = setInterval(tick, config.schedulerMs || 15000);
   timer.unref();
+<<<<<<< HEAD
   setTimeout(() => tick().catch(() => {}), 1000).unref(); // jadwal yang terlewat saat server tidur langsung dikirim
   server.on('close', () => { clearInterval(timer); db.close(); });
   return { server, db, sender, tick, store };
@@ -352,3 +371,19 @@ function start() {
 if (require.main === module) start();
 
 module.exports = { createServer, start };
+=======
+  server.on('close', () => { clearInterval(timer); db.close(); });
+  return { server, db, sender, tick };
+}
+
+if (require.main === module) {
+  const errs = validate();
+  if (errs.length) { console.error('Konfigurasi belum lengkap:\n - ' + errs.join('\n - ')); process.exit(1); }
+  const { server } = createServer();
+  server.listen(defaultConfig.port, defaultConfig.host, () => console.log(`KITO Push Server berjalan di http://${defaultConfig.host}:${defaultConfig.port} (admin: /admin)`));
+  const stop = () => server.close(() => process.exit(0));
+  process.on('SIGTERM', stop); process.on('SIGINT', stop);
+}
+
+module.exports = { createServer };
+>>>>>>> b131f11426a8e56bd4894ea31a637dd69b90539d

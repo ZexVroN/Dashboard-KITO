@@ -37,6 +37,7 @@ npm run vapid          # salin 3 baris hasilnya ke .env
 Lengkapi juga `VAPID_SUBJECT` (email pengelola) dan `ALLOWED_ORIGINS` (alamat dashboard, mis. `https://zexvron.github.io`).
 **Jangan ganti kunci VAPID setelah ada pelanggan**: semua langganan lama akan berhenti berlaku.
 
+<<<<<<< HEAD
 ### 2a. Hostinger (paket Business / Cloud, menu Node.js web app)
 
 1. **Buat subdomain** untuk server, mis. `push.domain-anda.id`. Di Hostinger, subdomain dibuat sebagai website tersendiri.
@@ -75,6 +76,9 @@ Untuk update kode: unggah zip baru › Redeploy. Langganan dan riwayat aman sela
 Kalau memakai **VPS Hostinger**, ikuti opsi Docker (2b) atau tanpa Docker (2c).
 
 ### 2b. Docker (VPS, sudah termasuk HTTPS otomatis)
+=======
+### 2a. Docker (disarankan, sudah termasuk HTTPS otomatis)
+>>>>>>> b131f11426a8e56bd4894ea31a637dd69b90539d
 
 Arahkan subdomain (mis. `push.domain-anda.id`) ke IP server, ganti nama domain di `Caddyfile`, lalu:
 
@@ -82,7 +86,11 @@ Arahkan subdomain (mis. `push.domain-anda.id`) ke IP server, ganti nama domain d
 docker compose up -d
 ```
 
+<<<<<<< HEAD
 ### 2c. Tanpa Docker
+=======
+### 2b. Tanpa Docker
+>>>>>>> b131f11426a8e56bd4894ea31a637dd69b90539d
 
 ```bash
 npm start              # port 8080; pasang di belakang Nginx/Caddy dengan HTTPS

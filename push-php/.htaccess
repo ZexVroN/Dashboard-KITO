@@ -1,0 +1,24 @@
+# KITO Push (PHP)
+Options -Indexes
+DirectoryIndex index.php
+
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  # teruskan header Authorization ke PHP (sebagian hosting membuangnya)
+  RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
+  # /api/... dan /admin dilayani index.php
+  RewriteCond %{REQUEST_FILENAME} !-f
+  RewriteCond %{REQUEST_FILENAME} !-d
+  RewriteRule ^(api/.*|admin/?)$ index.php [QSA,L]
+</IfModule>
+
+# berkas sensitif tidak boleh diunduh
+<FilesMatch "\.(sqlite|sqlite-wal|sqlite-shm|tmp|md|log)$">
+  <IfModule mod_authz_core.c>
+    Require all denied
+  </IfModule>
+  <IfModule !mod_authz_core.c>
+    Order allow,deny
+    Deny from all
+  </IfModule>
+</FilesMatch>

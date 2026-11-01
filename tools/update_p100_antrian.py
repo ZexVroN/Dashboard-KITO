@@ -26,7 +26,7 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import openpyxl  # noqa: E402
 
-from update_harian_p95 import JS, R2, angka, baca_js, detik, nama_file, norm, tulis_js  # noqa: E402
+from update_harian_p95 import JS, R2, angka, baca_js, detik, nama_file, norm, tgl_teks, tulis_js  # noqa: E402
 
 import datetime as dt  # noqa: E402
 import re  # noqa: E402
@@ -39,7 +39,7 @@ def _p(nilai, jumlah):
 def baca_p100(path):
     wb = openpyxl.load_workbook(path, read_only=True, data_only=True)
     v = next(wb["RAW"].iter_rows(min_row=2, max_row=2, values_only=True))[0]
-    tgl = v.date().isoformat() if isinstance(v, dt.datetime) else (v.isoformat() if isinstance(v, dt.date) else str(v)[:10])
+    tgl = v.date().isoformat() if isinstance(v, dt.datetime) else (v.isoformat() if isinstance(v, dt.date) else tgl_teks(v))
     m = re.match(r"(\d{2})(\d{2})(\d{4})", nama_file(path))
     if m and f"{m.group(3)}-{m.group(2)}-{m.group(1)}" != tgl:
         sys.exit(f"Tanggal RAW ({tgl}) tidak sama dengan tanggal pada nama file ({nama_file(path)}).")

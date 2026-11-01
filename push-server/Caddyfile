@@ -1,0 +1,5 @@
+# Ganti dengan subdomain Anda yang sudah diarahkan (DNS A record) ke IP server.
+push.domain-anda.id {
+	encode gzip
+	reverse_proxy push:8080
+}

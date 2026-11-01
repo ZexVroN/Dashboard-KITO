@@ -1,0 +1,240 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="robots" content="noindex" />
+<title>KITO Push Admin</title>
+<style>
+  :root { --bg:#f3f5fa; --cd:#fff; --tx:#13203d; --mu:#66728c; --ln:#e1e6f0; --c1:#002060; --ok:#12a150; --bd:#d92d20; --wr:#b7791f; }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --bg:#0e1527; --cd:#16213b; --tx:#e8edf8; --mu:#9aa6c2; --ln:#26324f; --c1:#7aa2ff; } }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg); color:var(--tx); font:14px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; }
+  header { background:#002060; color:#fff; padding:18px 16px; }
+  header h1 { margin:0; font-size:18px; } header p { margin:4px 0 0; opacity:.8; font-size:12.5px; }
+  main { max-width:1080px; margin:0 auto; padding:16px; display:grid; gap:14px; }
+  .cd { background:var(--cd); border:1px solid var(--ln); border-radius:14px; padding:16px; min-width:0; }
+  h2 { margin:0 0 12px; font-size:13px; letter-spacing:.5px; text-transform:uppercase; color:var(--mu); }
+  label.f { display:block; font-weight:600; font-size:12.5px; margin:10px 0 4px; }
+  label.f small { font-weight:400; color:var(--mu); }
+  input[type=text], input[type=password], input[type=datetime-local], textarea, select { width:100%; padding:9px 11px; border:1px solid var(--ln); border-radius:10px; background:var(--bg); color:var(--tx); font:inherit; }
+  textarea { min-height:70px; resize:vertical; }
+  .row { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  .chips { display:flex; flex-wrap:wrap; gap:8px; } .chips label { display:inline-flex; gap:6px; align-items:center; font-weight:500; margin:0; padding:6px 10px; border:1px solid var(--ln); border-radius:999px; cursor:pointer; }
+  .chips button { padding:5px 10px; font-size:12.5px; }
+  button { border:0; border-radius:10px; padding:10px 16px; font:600 14px inherit; background:var(--c1); color:#fff; cursor:pointer; }
+  button.sec { background:transparent; color:var(--tx); border:1px solid var(--ln); }
+  button.del { background:transparent; color:var(--bd); border:1px solid var(--ln); padding:5px 10px; font-size:12.5px; }
+  button:disabled { opacity:.5; cursor:default; }
+  .stats { display:grid; grid-template-columns:repeat(auto-fill,minmax(120px,1fr)); gap:10px; }
+  .stat { background:var(--bg); border-radius:10px; padding:10px 12px; } .stat small { color:var(--mu); display:block; font-size:11px; } .stat b { font-size:20px; }
+  .msg { margin-top:10px; font-weight:600; } .ok { color:var(--ok); } .err { color:var(--bd); }
+  table { width:100%; border-collapse:collapse; font-size:13px; } th, td { text-align:left; padding:7px 6px; border-bottom:1px solid var(--ln); vertical-align:top; } th { color:var(--mu); font-size:11px; text-transform:uppercase; }
+  .mu { color:var(--mu); font-size:12px; } .hidden { display:none !important; }
+  .grid2 { display:grid; grid-template-columns:minmax(0,1.35fr) minmax(0,1fr); gap:14px; align-items:start; }
+  .tpl { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:6px; }
+  /* pratinjau notifikasi */
+  .pv-wrap { position:sticky; top:12px; }
+  .pv-lbl { font-size:11px; font-weight:700; color:var(--mu); text-transform:uppercase; letter-spacing:.4px; margin:0 0 6px; }
+  .pv { background:#fff; color:#1f1f1f; border-radius:16px; padding:12px; box-shadow:0 4px 18px rgba(0,0,0,.12); border:1px solid #e6e6e6; }
+  .pv-top { display:flex; align-items:center; gap:8px; font-size:12px; color:#5f6368; }
+  .pv-ic { width:20px; height:20px; border-radius:5px; background:#002060 url() center/cover; flex:none; }
+  .pv-t { font-weight:700; font-size:14px; margin:6px 0 2px; word-break:break-word; }
+  .pv-b { font-size:13px; color:#3c4043; white-space:pre-wrap; word-break:break-word; }
+  .pv-img { margin-top:8px; width:100%; max-height:160px; object-fit:cover; border-radius:10px; display:block; background:#eee; }
+  .pv-act { display:flex; gap:14px; margin-top:10px; padding-top:8px; border-top:1px solid #eee; }
+  .pv-act span { font-size:13px; font-weight:600; color:#1a73e8; }
+  .pv-ios { margin-top:12px; background:rgba(245,245,245,.95); border-radius:18px; padding:10px 12px; display:flex; gap:10px; color:#111; }
+  .pv-ios .pv-ic { width:34px; height:34px; border-radius:8px; }
+  .pv-ios b { font-size:13.5px; } .pv-ios p { margin:1px 0 0; font-size:13px; color:#333; white-space:pre-wrap; word-break:break-word; }
+  .st { font-size:11.5px; font-weight:700; padding:2px 8px; border-radius:999px; background:var(--bg); }
+  .st.menunggu { color:var(--wr); } .st.terkirim { color:var(--ok); } .st.dibatalkan, .st.gagal { color:var(--bd); }
+  @media (max-width:820px) { .grid2 { grid-template-columns:1fr; } .pv-wrap { position:static; } }
+  @media (max-width:560px) { .row { grid-template-columns:1fr; } }
+</style>
+</head>
+<body>
+<header><h1>KITO · Push Notification Admin</h1><p>Buat dan kirim notifikasi custom ke website, desktop, Android, dan iOS (PWA): langsung atau terjadwal.</p></header>
+<main>
+  <section class="cd" id="login">
+    <h2>Masuk</h2>
+    <label class="f" for="tok">Token admin (ADMIN_TOKEN)</label>
+    <input id="tok" type="password" autocomplete="current-password" placeholder="tempel token admin" />
+    <p class="mu">Token hanya disimpan di tab ini (sessionStorage) dan hilang saat tab ditutup.</p>
+    <button id="btnLogin">Masuk</button> <span id="loginMsg" class="msg"></span>
+  </section>
+
+  <section class="cd hidden" id="statsCd"><h2>Statistik langganan</h2><div class="stats" id="stats"></div><p class="mu" id="topics"></p></section>
+
+  <section class="cd hidden" id="formCd">
+    <h2>Buat notifikasi</h2>
+    <div class="grid2">
+      <div>
+        <div class="tpl" id="tpl">
+          <button type="button" class="sec" data-tpl="update">Template: Update data</button>
+          <button type="button" class="sec" data-tpl="alert">Template: Peringatan cabang</button>
+          <button type="button" class="sec" data-tpl="info">Template: Pengumuman</button>
+        </div>
+        <label class="f" for="title">Judul * <small>(maks 120)</small></label><input id="title" type="text" maxlength="120" />
+        <label class="f" for="body">Isi <small>(maks 500)</small></label><textarea id="body" maxlength="500"></textarea>
+        <div class="row">
+          <div><label class="f" for="url">Tautan saat diketuk</label><input id="url" type="text" placeholder="./index.html" /></div>
+          <div><label class="f" for="image">Gambar besar <small>(URL https, opsional)</small></label><input id="image" type="text" placeholder="https://…/banner.png" /></div>
+        </div>
+        <label class="f">Tombol aksi <small>(opsional, maks 2 · tampil di Chrome/Edge & Android)</small></label>
+        <div class="row"><input id="a0t" type="text" maxlength="40" placeholder="Teks tombol 1, mis. Buka dashboard" /><input id="a0u" type="text" placeholder="Tautan tombol 1" /></div>
+        <div class="row" style="margin-top:8px"><input id="a1t" type="text" maxlength="40" placeholder="Teks tombol 2" /><input id="a1u" type="text" placeholder="Tautan tombol 2" /></div>
+
+        <label class="f">Target</label>
+        <div class="chips"><label><input type="radio" name="tg" value="topics" checked /> Topik</label><label><input type="radio" name="tg" value="all" /> Semua perangkat</label></div>
+        <div id="topicBox">
+          <label class="f" for="tp">Topik <small>(pisahkan koma: semua, area:jambi, cabang:11000)</small></label>
+          <input id="tp" type="text" value="semua" list="tpList" />
+          <datalist id="tpList"></datalist>
+          <div class="chips" id="tpChips" style="margin-top:6px"></div>
+          <p class="mu" id="reach"></p>
+        </div>
+        <label class="f">Platform <small>(kosong = semua)</small></label>
+        <div class="chips" id="plat">
+          <label><input type="checkbox" value="android" /> Android</label><label><input type="checkbox" value="ios" /> iOS</label>
+          <label><input type="checkbox" value="windows" /> Windows</label><label><input type="checkbox" value="macos" /> macOS</label><label><input type="checkbox" value="linux" /> Linux</label>
+        </div>
+        <div class="row">
+          <div><label class="f" for="urg">Urgensi</label><select id="urg"><option value="normal">Normal</option><option value="high">Tinggi (segera tampil)</option><option value="low">Rendah</option></select></div>
+          <div><label class="f" for="tag">Tag <small>(tag sama saling mengganti)</small></label><input id="tag" type="text" placeholder="update-harian" /></div>
+        </div>
+        <div class="row">
+          <div><label class="f" for="ttl">Berlaku bila perangkat offline <small>(jam)</small></label><input id="ttl" type="text" value="24" /></div>
+          <div><label class="f"><input type="checkbox" id="sticky" /> Tetap tampil sampai diketuk <small>(desktop)</small></label></div>
+        </div>
+        <label class="f">Waktu kirim</label>
+        <div class="chips"><label><input type="radio" name="when" value="now" checked /> Kirim sekarang</label><label><input type="radio" name="when" value="later" /> Jadwalkan</label></div>
+        <div id="whenBox" class="hidden"><label class="f" for="sendAt">Tanggal & jam <small>(waktu perangkat ini · <span id="tz"></span>)</small></label><input id="sendAt" type="datetime-local" /></div>
+        <p style="margin-top:14px"><button id="btnSend">Kirim</button> <span id="sendMsg" class="msg"></span></p>
+      </div>
+      <div class="pv-wrap">
+        <p class="pv-lbl">Pratinjau · Android / Desktop</p>
+        <div class="pv"><div class="pv-top"><span class="pv-ic"></span><span>KITO · sekarang</span></div><div class="pv-t" id="pvT"></div><div class="pv-b" id="pvB"></div><img class="pv-img hidden" id="pvI" alt="" /><div class="pv-act hidden" id="pvA"></div></div>
+        <p class="pv-lbl" style="margin-top:14px">Pratinjau · iPhone</p>
+        <div class="pv-ios"><span class="pv-ic"></span><div style="min-width:0"><b id="pvT2"></b><p id="pvB2"></p></div></div>
+        <p class="mu" style="margin-top:10px">Tampilan sebenarnya mengikuti sistem operasi masing-masing. iPhone tidak menampilkan tombol aksi dan gambar besar.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="cd hidden" id="schedCd"><h2>Terjadwal</h2><div style="overflow-x:auto"><table><thead><tr><th>#</th><th>Kirim pada</th><th>Judul</th><th>Target</th><th>Status</th><th></th></tr></thead><tbody id="sched"></tbody></table></div></section>
+  <section class="cd hidden" id="histCd"><h2>Riwayat terkirim</h2><div style="overflow-x:auto"><table><thead><tr><th>#</th><th>Waktu</th><th>Judul</th><th>Target</th><th>Hasil</th></tr></thead><tbody id="hist"></tbody></table></div></section>
+</main>
+<script>
+(() => {
+  const $ = (s) => document.querySelector(s);
+  const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const lokal = (iso) => { if (!iso) return ''; const d = new Date(/Z$|[+-]\d\d:?\d\d$/.test(iso) ? iso : iso.replace(' ', 'T') + 'Z'); return d.toLocaleString('id-ID', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }); };
+  const tgtTxt = (t) => t.all ? 'semua perangkat' : t.topics ? t.topics.join(', ') : (t.endpoints || []).length + ' perangkat';
+  let token = ''; try { token = sessionStorage.getItem('kitoPushToken') || ''; } catch {}
+  let topikMap = {};
+  $('#tz').textContent = Intl.DateTimeFormat().resolvedOptions().timeZone;
+  const api = async (method, path, body) => {
+    const r = await fetch(path, { method, headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token }, body: body ? JSON.stringify(body) : undefined });
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(j.error || r.status);
+    return j;
+  };
+
+  /* ---------- template ---------- */
+  const hariIni = new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'short' });
+  const TPL = {
+    update: { title: `Data waktu tunggu ${hariIni} sudah diperbarui`, body: 'P95 Region II … · … dari 214 cabang di bawah 5 menit', tp: 'semua', tag: 'kito-update', urg: 'normal', a0t: 'Buka dashboard', a0u: './index.html' },
+    alert: { title: '⚠️ Waktu tunggu tinggi · KCP …', body: `${hariIni}: P95 … · P100 …. Mohon dicek.`, tp: 'cabang:', tag: 'kito-cabang', urg: 'high' },
+    info: { title: 'Pengumuman Operation Region II', body: '', tp: 'semua', tag: '', urg: 'normal' },
+  };
+  document.querySelectorAll('[data-tpl]').forEach((b) => b.onclick = () => {
+    const t = TPL[b.dataset.tpl];
+    $('#title').value = t.title; $('#body').value = t.body; $('#tp').value = t.tp; $('#tag').value = t.tag; $('#urg').value = t.urg;
+    $('#a0t').value = t.a0t || ''; $('#a0u').value = t.a0u || ''; $('#a1t').value = ''; $('#a1u').value = '';
+    document.querySelector('input[name=tg][value=topics]').checked = true; $('#topicBox').classList.remove('hidden');
+    pratinjau(); $('#title').focus();
+  });
+
+  /* ---------- pratinjau ---------- */
+  function pratinjau() {
+    const t = $('#title').value || 'Judul notifikasi', b = $('#body').value;
+    $('#pvT').textContent = t; $('#pvB').textContent = b; $('#pvT2').textContent = t; $('#pvB2').textContent = b;
+    const img = $('#image').value.trim();
+    $('#pvI').classList.toggle('hidden', !/^https:\/\//.test(img)); if (/^https:\/\//.test(img)) $('#pvI').src = img;
+    const acts = [['#a0t'], ['#a1t']].map(([s]) => $(s).value.trim()).filter(Boolean);
+    $('#pvA').classList.toggle('hidden', !acts.length); $('#pvA').innerHTML = acts.map((a) => `<span>${esc(a)}</span>`).join('');
+    jangkauan();
+  }
+  ['#title', '#body', '#image', '#a0t', '#a1t', '#tp'].forEach((s) => $(s).addEventListener('input', pratinjau));
+
+  // perkiraan jumlah perangkat yang dijangkau topik (dari statistik; satu perangkat bisa punya beberapa topik)
+  function jangkauan() {
+    const all = document.querySelector('input[name=tg]:checked').value === 'all';
+    if (all) return;
+    const t = $('#tp').value.split(',').map((s) => s.trim().toLowerCase()).filter(Boolean);
+    const n = t.reduce((a, x) => a + (topikMap[x] || 0), 0);
+    $('#reach').textContent = t.length ? `Perkiraan jangkauan: hingga ${n.toLocaleString('id-ID')} perangkat` + (t.some((x) => !(x in topikMap)) ? ' · ada topik yang belum punya pelanggan' : '') : '';
+  }
+
+  document.querySelectorAll('input[name=tg]').forEach((r) => r.onchange = () => { $('#topicBox').classList.toggle('hidden', document.querySelector('input[name=tg]:checked').value === 'all'); });
+  document.querySelectorAll('input[name=when]').forEach((r) => r.onchange = () => {
+    const later = document.querySelector('input[name=when]:checked').value === 'later';
+    $('#whenBox').classList.toggle('hidden', !later); $('#btnSend').textContent = later ? 'Jadwalkan' : 'Kirim';
+    if (later && !$('#sendAt').value) { const d = new Date(Date.now() + 3600000); d.setMinutes(0, 0, 0); $('#sendAt').value = new Date(d - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16); }
+  });
+
+  /* ---------- data ---------- */
+  async function load() {
+    const s = await api('GET', '/api/stats');
+    const pl = Object.fromEntries(s.perPlatform.map((x) => [x.platform, x.n]));
+    $('#stats').innerHTML = [['Total perangkat', s.total], ['Android', pl.android || 0], ['iOS', pl.ios || 0], ['Windows', pl.windows || 0], ['macOS', pl.macos || 0], ['Linux', pl.linux || 0], ['Terpasang (PWA)', s.terpasang], ['Notifikasi dibuat', s.notifikasi]]
+      .map(([k, v]) => `<div class="stat"><small>${k}</small><b>${Number(v).toLocaleString('id-ID')}</b></div>`).join('');
+    topikMap = Object.fromEntries(s.perTopic.map((t) => [t.topic, t.n]));
+    $('#topics').textContent = s.perTopic.length ? 'Topik: ' + s.perTopic.map((t) => `${t.topic} (${t.n})`).join(' · ') : 'Belum ada langganan.';
+    $('#tpList').innerHTML = s.perTopic.map((t) => `<option value="${esc(t.topic)}">${t.n} perangkat</option>`).join('');
+    $('#tpChips').innerHTML = s.perTopic.slice(0, 12).map((t) => `<button type="button" class="sec" data-add="${esc(t.topic)}">+ ${esc(t.topic)}</button>`).join('');
+    const j = await api('GET', '/api/scheduled?limit=30');
+    $('#sched').innerHTML = j.jadwal.map((x) => `<tr><td>${x.id}</td><td>${esc(lokal(x.sendAt))}</td><td><b>${esc(x.title)}</b><div class="mu">${esc(x.body)}</div></td><td class="mu">${esc(tgtTxt(x.target))}</td><td><span class="st ${esc(x.status)}">${esc(x.status)}</span>${x.result && x.result.sent != null ? `<div class="mu">${x.result.sent} terkirim</div>` : ''}</td><td>${x.status === 'menunggu' ? `<button class="del" data-cancel="${x.id}">Batalkan</button>` : ''}</td></tr>`).join('') || '<tr><td colspan="6" class="mu">Belum ada jadwal.</td></tr>';
+    const h = await api('GET', '/api/notifications?limit=30');
+    $('#hist').innerHTML = h.riwayat.map((n) => `<tr><td>${n.id}</td><td class="mu">${esc(lokal(n.created_at))}<div>${esc(n.source || '')}</div></td><td><b>${esc(n.title)}</b><div class="mu">${esc(n.body)}</div></td><td class="mu">${esc(tgtTxt(n.target))}</td><td>${n.sent} ✓ · ${n.failed} ✗${n.removed ? ` · ${n.removed} dihapus` : ''}</td></tr>`).join('') || '<tr><td colspan="5" class="mu">Belum ada.</td></tr>';
+    jangkauan();
+  }
+  document.addEventListener('click', async (e) => {
+    const add = e.target.closest('[data-add]');
+    if (add) { const cur = $('#tp').value.split(',').map((s) => s.trim()).filter(Boolean); if (!cur.includes(add.dataset.add)) cur.push(add.dataset.add); $('#tp').value = cur.join(', '); jangkauan(); }
+    const c = e.target.closest('[data-cancel]');
+    if (c && confirm('Batalkan jadwal #' + c.dataset.cancel + '?')) { try { await api('DELETE', '/api/scheduled/' + c.dataset.cancel); load(); } catch (er) { alert('Gagal: ' + er.message); } }
+  });
+
+  async function login() {
+    try { await load(); ['#statsCd', '#formCd', '#schedCd', '#histCd'].forEach((s) => $(s).classList.remove('hidden')); $('#login').classList.add('hidden'); try { sessionStorage.setItem('kitoPushToken', token); } catch {} pratinjau(); }
+    catch (e) { $('#loginMsg').className = 'msg err'; $('#loginMsg').textContent = 'Gagal: ' + e.message; }
+  }
+  $('#btnLogin').onclick = () => { token = $('#tok').value.trim(); login(); };
+  $('#tok').addEventListener('keydown', (e) => { if (e.key === 'Enter') $('#btnLogin').click(); });
+
+  $('#btnSend').onclick = async () => {
+    const m = $('#sendMsg'); m.className = 'msg'; m.textContent = 'Memproses…'; $('#btnSend').disabled = true;
+    try {
+      const all = document.querySelector('input[name=tg]:checked').value === 'all';
+      const later = document.querySelector('input[name=when]:checked').value === 'later';
+      const actions = [['#a0t', '#a0u'], ['#a1t', '#a1u']].map(([t, u]) => ({ title: $(t).value.trim(), url: $(u).value.trim() || undefined })).filter((a) => a.title);
+      const b = { title: $('#title').value, body: $('#body').value || undefined, url: $('#url').value || undefined, image: $('#image').value.trim() || undefined,
+        actions: actions.length ? actions : undefined, urgency: $('#urg').value, tag: $('#tag').value || undefined, requireInteraction: $('#sticky').checked,
+        ttl: Math.round((parseFloat($('#ttl').value) || 24) * 3600), platforms: [...document.querySelectorAll('#plat input:checked')].map((x) => x.value) };
+      if (all) b.all = true; else b.topics = $('#tp').value.split(',').map((s) => s.trim()).filter(Boolean);
+      if (later) { if (!$('#sendAt').value) throw new Error('isi tanggal & jam'); b.sendAt = new Date($('#sendAt').value).toISOString(); }
+      if (all && !later && !confirm('Kirim ke SEMUA perangkat sekarang?')) throw new Error('dibatalkan');
+      const r = await api('POST', '/api/notifications', b);
+      m.className = 'msg ok';
+      m.textContent = r.dijadwalkan ? `Dijadwalkan #${r.scheduledId} untuk ${lokal(r.sendAt)}` : `Terkirim ke ${r.sent} dari ${r.targets} perangkat` + (r.removed ? ` · ${r.removed} langganan kedaluwarsa dihapus` : '') + (r.failed ? ` · ${r.failed} gagal` : '');
+      load();
+    } catch (e) { m.className = 'msg err'; m.textContent = 'Gagal: ' + e.message; }
+    $('#btnSend').disabled = false;
+  };
+  if (token) login();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,30 @@
+# Jalankan: docker compose up -d   (isi .env dulu: npm run vapid > .env, lalu lengkapi)
+# Caddy membuat sertifikat HTTPS otomatis untuk domain di Caddyfile (Web Push wajib HTTPS).
+services:
+  push:
+    build: .
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      DB_PATH: /app/data/push.db
+      TRUST_PROXY: "1"
+    volumes:
+      - push-data:/app/data
+    expose:
+      - "8080"
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+    depends_on:
+      - push
+
+volumes:
+  push-data:
+  caddy-data:

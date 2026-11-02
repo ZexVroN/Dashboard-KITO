@@ -64,9 +64,10 @@ const GRUP=[
 const metOf=k=>MET.find(m=>m.key===k)||MET[0];
 const perOf=(m,per)=>m.per.includes(per)?per:m.per[0];
 const perLabel=(m,per)=>perOf(m,per)==='mtd'?(m.jenis==='o2o'?`MTD s.d. ${isoShort(R.tglO2O)}`:(m.jenis==='waktu'?`MTD ${BULAN} · P90`:`MTD ${BULAN}`)):(m.jenis==='waktu'?`DtD ${isoShort(iso())} · ${metrikTgl(iso())}`:`DtD ${isoShort(iso())}`);
-const kelas=(m,v)=>{
+// tgl: tanggal nilai waktu (bawaan: DtD terpilih bila periode DtD); P95 memakai batas 20 menit, P90 & P100 15 menit
+const kelas=(m,v,tgl=perOf(m,ui.per)==='dtd'?iso():null)=>{
   if(v==null)return 'n';
-  if(m.jenis==='waktu')return mp(v)[1];
+  if(m.jenis==='waktu')return mp(v,m.key.startsWith('w-')&&!!tgl&&metrikTgl(tgl)==='P95')[1];
   if(m.jenis==='nbds')return v>=TGT?'ok':v>=.9?'mid':v>=.8?'warn':'bad';
   const ref=m.val(NAS,'mtd');return ref==null?'n':v>=ref?'ok':'bad';
 };
@@ -131,7 +132,8 @@ function kartuGrup(g){
 /* ===== 3. Head-to-head: Region II vs pembanding ===== */
 function versus(){
   const cmp=cmpEnt();let unggul=0,total=0;
-  const rows=MET.map(m=>{
+  // P100 tidak ditampilkan di tabel head-to-head
+  const rows=MET.filter(m=>m.key.slice(0,2)!=='p-').map(m=>{
     const p=perOf(m,ui.per),a=m.val(FOKUS,p),b=m.val(cmp,p),s=selisih(m,a,b);
     if(s&&!s.sama){total++;if(s.baik)unggul++;}else if(s)total++;
     const grp=GRUP.find(g=>g.key===m.g);
@@ -146,6 +148,12 @@ function versus(){
 function pilihMetrik(){
   return GRUP.map(g=>`<div class="seg rg-seg"><span class="rg-g">${g.ik} ${clean(g.n)}</span>${MET.filter(m=>m.g===g.key).map(m=>`<button type="button" data-rx-m="${m.key}" class="${m.key===ui.m?'on':''}">${clean(m.n)}</button>`).join('')}</div>`).join('');
 }
+// kotak ringkasan ke-3 mengikuti pembanding terpilih (bawaan: Nasional), lengkap dengan selisih Region II
+function kotakCmp(m,per,rows,me,cmp){
+  const v=m.val(cmp,per),r=rows.find(x=>x.e===cmp),s=selisih(m,me?.v,v);
+  const sel=s?`<em class="${s.sama?'mu':s.baik?'ok':'bad'}">Reg. ${clean(FOKUS.no)} ${s.sama?'≈ setara':(s.baik?'▲ ':'▼ ')+s.kata}</em>`:'';
+  return `<div class="rx-sum-cmp"><small>${cmp===NAS?'Nasional':'Pembanding'}</small><b class="${kelas(m,v)}">${m.fmt(v)}</b><span>${cmp===NAS?'bankwide':`${clean(nama(cmp))} · ${r?`peringkat #${r.rk}`:'tidak ada data'}`}</span>${sel}</div>`;
+}
 function daftar(){
   const m=metOf(ui.m),per=perOf(m,ui.per),rows=peringkat(m,ui.per),cmp=cmpEnt(),ref=m.val(NAS,per);
   if(!rows.length)return `<section class="cd" id="rx-daftar"><h2>Perbandingan Region</h2>${pilihMetrik()}<p class="rg-warn">Data ${clean(m.n)} belum tersedia untuk ${perLabel(m,ui.per)}.</p></section>`;
@@ -157,7 +165,7 @@ function daftar(){
   const x=v=>Math.max(0,Math.min(100,(v-min)/(max-min)*100));
   const list=rows.map(r=>{const k=kelas(m,r.v),me=r.e===FOKUS,c=r.e===cmp;return `<button type="button" class="rg-row rx-row ${me?'me':''} ${c?'cmp':''}" data-rx-pilih="${clean(r.e.id)}" aria-label="Bandingkan dengan ${clean(namaPanjang(r.e))}"><span class="rg-no ${r.rk<=3?'top':''}">${r.rk<=3?['🥇','🥈','🥉'][r.rk-1]:r.rk}</span><span class="rg-mid"><span class="rg-nm">${clean(nama(r.e))}<small>${clean(r.e.nama)}${me?' · fokus':c?' · pembanding':''}</small></span><span class="rg-bar"><i class="${me?k:'rx-grey'}" style="width:${x(r.v)}%"></i>${ref!=null?`<u style="left:${x(ref)}%"></u>`:''}${m.jenis==='nbds'?`<u class="tgt" style="left:${x(TGT)}%"></u>`:''}</span></span><span class="rg-val ${me?k:''}">${m.fmt(r.v)}</span></button>`;}).join('');
   const me=rows.find(r=>r.e===FOKUS),best=rows[0],worst=rows[rows.length-1];
-  const ringkas=`<div class="rg-sum"><div><small>Terbaik</small><b>${m.fmt(best.v)}</b><span>${clean(nama(best.e))} · ${clean(best.e.nama)}</span></div><div class="rx-sum-me"><small>Region ${clean(FOKUS.no)}</small><b class="${kelas(m,me?.v)}">${me?m.fmt(me.v):'–'}</b><span>${me?`peringkat #${me.rk} dari ${rows.length}`:'tidak ada data'}</span></div><div><small>Nasional</small><b>${m.fmt(ref)}</b><span>bankwide</span></div></div>`;
+  const ringkas=`<div class="rg-sum"><div><small>Terbaik</small><b>${m.fmt(best.v)}</b><span>${clean(nama(best.e))} · ${clean(best.e.nama)}</span></div><div class="rx-sum-me"><small>Region ${clean(FOKUS.no)}</small><b class="${kelas(m,me?.v)}">${me?m.fmt(me.v):'–'}</b><span>${me?`peringkat #${me.rk} dari ${rows.length}`:'tidak ada data'}</span></div>${kotakCmp(m,per,rows,me,cmp)}</div>`;
   const lg=`<div class="wt-legend"><span><i class="rx-dot-me"></i>Region ${clean(FOKUS.no)}</span><span><i class="rx-dot-cmp"></i>Pembanding</span><span><u class="rg"></u>Nasional ${m.fmt(ref)}</span>${m.jenis==='nbds'?`<span><u class="t5"></u>Target ${pctT(TGT)}</span>`:''}</div>`;
   return `<section class="cd" id="rx-daftar"><h2>Perbandingan Region · ${clean(m.n)} · ${perLabel(m,ui.per)}<button type="button" class="unduh" data-rx-csv="1">⬇ CSV</button></h2>${pilihMetrik()}${ringkas}<div>${list}</div>${lg}<p class="rg-note">${m.jenis==='waktu'?'Semakin kecil semakin baik.':'Semakin besar semakin baik.'} Nilai sama = peringkat sama. Ketuk region untuk menjadikannya pembanding.</p></section>`;
 }
@@ -201,7 +209,7 @@ function tipHtml(m,i){
   const t=m.tgl[i],cmp=cmpEnt();
   const rows=REG.map(e=>({e,v:m.seri(e)[i]})).filter(r=>r.v!=null).sort((a,b)=>m.tinggi?b.v-a.v:a.v-b.v);
   const me=rows.findIndex(r=>r.e===FOKUS);
-  const it=(e,warna)=>{const v=m.seri(e)[i];return `<span><i style="background:${warna}"></i>${clean(nama(e))}<b class="${e===FOKUS?kelas(m,v):''}">${m.fmt(v)}</b></span>`;};
+  const it=(e,warna)=>{const v=m.seri(e)[i];return `<span><i style="background:${warna}"></i>${clean(nama(e))}<b class="${e===FOKUS?kelas(m,v,t):''}">${m.fmt(v)}</b></span>`;};
   return `<b>${isoLong(t)}${me>=0?` · Region ${clean(FOKUS.no)} peringkat #${me+1} dari ${rows.length}`:''}</b><div class="wt-tip-g">${it(FOKUS,'var(--c1)')}${cmp!==NAS?it(cmp,'var(--c2)'):''}<span><u class="dash"></u>Nasional<b>${m.fmt(m.seri(NAS)[i])}</b></span>${rows[0]?`<span>Terbaik ${clean(nama(rows[0].e))}<b>${m.fmt(rows[0].v)}</b></span>`:''}</div>`;
 }
 
@@ -229,19 +237,19 @@ function antrian(){
   const t=iso();
   if(t<'2026-10-27')return '';
   const ents=[...REG,NAS];
-  if(!ents.some(e=>e.waktu.p?.[t]||e.waktu.w?.[t]))return `<section class="cd"><h2>Reservasi, P100 & Wait &lt; 10 Detik</h2><p class="rg-warn">Data reservasi, P100 dan wait &lt; 10 detik untuk ${isoLong(t)} belum ada di laporan.</p></section>`;
+  if(!ents.some(e=>e.waktu.n?.[t]||e.waktu.w?.[t]))return `<section class="cd"><h2>Reservasi & Wait &lt; 10 Detik</h2><p class="rg-warn">Data reservasi dan wait &lt; 10 detik untuk ${isoLong(t)} belum ada di laporan.</p></section>`;
   const pc=v=>v==null?'–':(v*100).toLocaleString('id-ID',{minimumFractionDigits:1,maximumFractionDigits:1})+'%';
   const wp=e=>{const w=e.waktu.w?.[t];return w&&w[0]?w[1]/w[0]:null;};
   const urut=REG.map(e=>({e,p:wp(e)})).filter(r=>r.p!=null).sort((a,b)=>b.p-a.p);
   const rk=new Map(urut.map((r,i)=>[r.e,i+1]));
-  const row=e=>{const n=e.waktu.n?.[t],v=e.waktu.d?.[t],p=e.waktu.p?.[t],w=e.waktu.w?.[t];
-    return `<tr class="${e===FOKUS?'on':''}"><td class="rg-sticky2" style="left:0"><b>${clean(nama(e))}</b><small>${clean(e===NAS?'bankwide':e.nama)}</small></td><td>${n?num(n[2]):'–'}</td><td class="${kelas(MET[0],v?.[2])}">${clock(v?.[2])}</td><td class="${kelas(MET[0],p?.[0])}">${clock(p?.[0])}</td><td class="${kelas(MET[0],p?.[1])}">${clock(p?.[1])}</td><td class="${kelas(MET[0],p?.[2])}"><b>${clock(p?.[2])}</b></td><td>${w?num(w[1]):'–'}</td><td><b>${pc(wp(e))}</b>${rk.has(e)?`<small>#${rk.get(e)}</small>`:''}</td></tr>`;};
+  const row=e=>{const n=e.waktu.n?.[t],w=e.waktu.w?.[t];
+    return `<tr class="${e===FOKUS?'on':''}"><td class="rg-sticky2" style="left:0"><b>${clean(nama(e))}</b><small>${clean(e===NAS?'bankwide':e.nama)}</small></td><td>${n?num(n[2]):'–'}</td><td>${w?num(w[1]):'–'}</td><td><b>${pc(wp(e))}</b>${rk.has(e)?`<small>#${rk.get(e)}</small>`:''}</td></tr>`;};
   // cabang Region II dengan persentase wait < 10 detik tertinggi (data cabang di data.js)
   const j=st.d,cab=D.B.map((b,i)=>({b,w:D.QW?.[i]?.[j]})).filter(r=>r.w&&r.w[1]>0).map(r=>({...r,p:r.w[1]/r.w[0]})).sort((a,b)=>b.p-a.p||b.w[1]-a.w[1]);
   const top=cab.slice(0,10).map((r,k)=>`<tr><td class="mu">${k+1}</td><td style="text-align:left"><button type="button" class="wt-lnk" data-ak-code="${clean(r.b[0])}"><b>${clean(r.b[1])}</b><small>${clean(r.b[2])}</small></button></td><td>${num(r.w[0])}</td><td>${num(r.w[1])}</td><td><b>${pc(r.p)}</b></td></tr>`).join('');
-  return `<section class="cd"><h2>Reservasi, P100 & Wait &lt; 10 Detik · ${isoLong(t)}</h2>
-    <p class="rg-sub">Reservasi = jumlah reservasi unik nasabah; P95 dan P100 dalam mm:ss; Wait &lt; 10 detik = reservasi dengan waktu tunggu di bawah 10 detik (sheet Wait &lt;10 Detik). # = peringkat persentase tertinggi.</p>
-    <div class="tw rg-tw"><table class="rg-tbl rx-ant"><tr><th class="rg-sticky2" style="left:0">Region</th><th>Reservasi</th><th>P95 All</th><th>P100 Teller</th><th>P100 CS</th><th>P100 All</th><th>&lt; 10 dtk</th><th>%</th></tr>${ents.map(row).join('')}</table></div>
+  return `<section class="cd"><h2>Reservasi & Wait &lt; 10 Detik · ${isoLong(t)}</h2>
+    <p class="rg-sub">Reservasi = jumlah reservasi unik nasabah; Wait &lt; 10 detik = reservasi dengan waktu tunggu di bawah 10 detik (sheet Wait &lt;10 Detik). # = peringkat persentase tertinggi.</p>
+    <div class="tw rg-tw"><table class="rg-tbl rx-ant"><tr><th class="rg-sticky2" style="left:0">Region</th><th>Reservasi</th><th>&lt; 10 dtk</th><th>%</th></tr>${ents.map(row).join('')}</table></div>
     ${top?`<h2 style="margin-top:16px">Cabang Region ${clean(FOKUS.no)} · Wait &lt; 10 Detik Tertinggi</h2><div class="tw"><table class="rx-ant"><tr><th>#</th><th style="text-align:left">Cabang</th><th>Reservasi</th><th>&lt; 10 dtk</th><th>%</th></tr>${top}</table></div><p class="rg-note">${cab.length} cabang Region ${clean(FOKUS.no)} memiliki reservasi wait &lt; 10 detik. Daftar lengkap per area ada di tab Area · Dashboard Waktu Tunggu. Ketuk nama cabang untuk membuka detailnya.</p>`:''}</section>`;
 }
 

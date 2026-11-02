@@ -10,7 +10,7 @@ const COL=['var(--c1)','var(--c2)','var(--c3)'];
 const NAME=['Teller','Customer Service','Semua TRX'];
 const TABS=[['gab','Gabungan'],[0,'Teller'],[1,'CS'],[2,'Semua TRX']];
 const clk=s=>s==null?'–':f(s);
-const kls=s=>mp(s)[1];                                  // ok | mid | warn | bad | n
+const kls=(s,iso)=>mp(s,qP95(iso))[1];                  // ok | mid | warn | bad | n (P95: batas 20 menit)
 const norm=s=>String(s||'').toLowerCase().replace(/^area\s+/,'').replace(/[^a-z0-9]/g,'');
 const long=iso=>dlong(iso);
 
@@ -25,7 +25,7 @@ const series=k=>D.Q[st.b].map(x=>x?.[k]??null);
 function tipHtml(i){
   const iso=D.dates[i],q=D.Q[st.b][i];
   if(!q||q.every(v=>v==null))return `<b>${long(iso)}</b><span class="wt-dl mu">Tidak ada data</span>`;
-  const it=k=>`<span><i style="background:${COL[k]}"></i>${k===1?'CS':NAME[k]}<b class="${kls(q[k])}">${clk(q[k])}</b></span>`;
+  const it=k=>`<span><i style="background:${COL[k]}"></i>${k===1?'CS':NAME[k]}<b class="${kls(q[k],iso)}">${clk(q[k])}</b></span>`;
   const ar=areaSeries(),av=ar?ar[i]:null;
   return `<b>${long(iso)}</b><div class="wt-tip-g">${[0,1,2].map(it).join('')}${av!=null?`<span><u class="dash"></u>All Trx Area<b>${clk(av)}</b></span>`:''}</div>`;
 }

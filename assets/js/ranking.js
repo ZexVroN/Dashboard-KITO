@@ -49,7 +49,7 @@ const wArea=a=>W?.areas.find(x=>norm(x.name)===norm(a));
 const wVal=(ent,key,per)=>{if(!ent)return null;const arr=per==='mtd'?ent.m:ent.d[iso()];return arr?arr[WIDX[key]]:null;};
 
 /* ----- kelas warna ----- */
-const kWaktu=v=>mp(v)[1];                                            // ok/mid/warn/bad (bawaan script.js)
+const kWaktu=(v,per)=>mp(v,per!=='mtd'&&qP95(iso()))[1];            // ok/mid/warn/bad (bawaan script.js); DtD P95 batas 20 menit
 const kNbds=v=>v==null?'n':v>=TGT?'ok':v>=.9?'mid':v>=.8?'warn':'bad';
 const kRel=(v,ref)=>v==null||ref==null?'n':v>=ref?'ok':'bad';
 
@@ -61,8 +61,8 @@ const waktu=(key,n,s)=>({key:'w-'+key,g:'Waktu Antrian',n,s,tinggi:false,jenis:'
   cab:(i,per)=>{if(per==='mtd'){const r=kelK.get(String(D.B[i][0]));return r?.mtd?.[key]??null;}return D.Q[i]?.[st.d]?.[{teller:0,cs:1,all:2}[key]]??null;},
   area:(a,per)=>wVal(wArea(a),key,per),
   reg:per=>wVal(W?.region,key,per),
-  kelas:v=>kWaktu(v),fmt:clock,
-  sumber:per=>per==='mtd'?'P90 MTD Oktober 2026':'P90 DtD'});
+  kelas:v=>kWaktu(v,ui.per),fmt:clock,
+  sumber:per=>per==='mtd'?'P90 MTD Oktober 2026':`${qP95(iso())?'P95':'P90'} DtD`});
 MET.push(waktu('teller','Teller','Teller'),waktu('cs','Customer Service','CS'),waktu('all','Semua Transaksi','All Trx'));
 MET.push({key:'o2o',g:'O2O & Digital',n:'Overall O2O',s:'O2O',tinggi:true,jenis:'pct',per:['tgl'],
   cab:i=>o2oP(mSum([i])),area:a=>o2oP(mSum(cabOfArea(a))),reg:()=>o2oP(mSum(D.B.map((b,i)=>i))),

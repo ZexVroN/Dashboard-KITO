@@ -16,9 +16,9 @@
   if (isTWA) { try { sessionStorage.setItem('kitoTWA', '1'); } catch (e) {} }
   const standalone = isTWA || window.matchMedia('(display-mode: standalone)').matches || window.matchMedia('(display-mode: fullscreen)').matches || navigator.standalone === true;
   const didukung = 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
-  // perangkat/browser tanpa Web Push (mis. APK lama berbasis WebView): ikon 🔔 tidak ditampilkan.
-  // Kecuali Safari iOS: push tersedia setelah dashboard ditambahkan ke Layar Utama, jadi panduannya tetap ditampilkan.
-  if (!didukung && !(isIOS && !standalone)) return;
+  // perangkat/browser tanpa Web Push (APK lama berbasis WebView, browser lama, Safari iOS di luar Layar Utama):
+  // ikon 🔔 tidak ditampilkan sama sekali
+  if (!didukung) return;
   const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const keyBytes = (b64) => { const r = atob(b64.replace(/-/g, '+').replace(/_/g, '/')); return Uint8Array.from(r, (c) => c.charCodeAt(0)); };
   const api = async (method, path, body) => {
@@ -91,12 +91,9 @@
   }
 
   function gambar() {
-    const izin = didukung ? Notification.permission : 'unsupported';
+    const izin = Notification.permission;
     let h = '';
-    if (isIOS && !standalone) {
-      h = `<p class="knp-lead">Di iPhone/iPad, notifikasi hanya bisa diterima dari <b>aplikasi KITO di Layar Utama</b> (iOS 16.4 ke atas).</p>
-        <ol class="knp-steps"><li>Buka dashboard ini di <b>Safari</b>.</li><li>Ketuk tombol <b>Bagikan</b> <span aria-hidden="true">⬆︎</span>.</li><li>Pilih <b>Tambah ke Layar Utama</b>, lalu <b>Tambah</b>.</li><li>Buka <b>KITO</b> dari Layar Utama, lalu ketuk 🔔 lagi.</li></ol>`;
-    } else if (izin === 'denied') {
+    if (izin === 'denied') {
       h = `<p class="knp-lead">Notifikasi <b>diblokir</b> untuk situs ini.</p><p class="knp-note">Buka pengaturan situs di browser (ikon gembok di samping alamat${isIOS ? ', atau Pengaturan › Notifikasi › KITO di iPhone' : ''}), izinkan Notifikasi, lalu muat ulang halaman.</p>`;
     } else {
       const aktif = !!sub && server.terdaftar;

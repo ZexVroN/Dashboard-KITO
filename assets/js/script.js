@@ -31,17 +31,22 @@ const dlong = (s) =>
     year: "numeric",
   });
 
-// kategori waktu antrian -> [teks, kelas warna]
-const mp = (s) =>
-  s == null
+// tanggal yang waktu antriannya P95 (sejak 27 Okt); sebelumnya P90
+const qP95 = (iso) => (D.queueMetricByDate?.[iso] || (iso >= "2026-10-27" ? "P95" : "P90")) === "P95";
+
+// kategori waktu antrian -> [teks, kelas warna]; batas atas P90 15 menit, P95 20 menit (P100 tetap 15)
+const mp = (s, p95 = false) => {
+  const atas = p95 ? 20 : 15;
+  return s == null
     ? ["–", "n"]
     : s < 300
       ? ["Under 5 Menit", "ok"]
       : s < 600
         ? ["5 - 10 Menit", "mid"]
-        : s < 900
-          ? ["10 - 15 Menit", "warn"]
-          : ["Over 15 Menit", "bad"];
+        : s < atas * 60
+          ? [`10 - ${atas} Menit`, "warn"]
+          : [`Over ${atas} Menit`, "bad"];
+};
 
 // kategori utilisasi -> [teks, kelas warna]
 const club = (p) =>
@@ -113,7 +118,7 @@ function qcard(name, k) {
       .filter((x) => x != null),
     mtd = v.length ? v.reduce((a, b) => a + b) / v.length : null;
   const dd = cur != null && prev != null ? Math.round(cur - prev) : null,
-    [m, c] = mp(cur);
+    [m, c] = mp(cur, qP95(D.dates[st.d]));
   const dh =
     dd == null
       ? ""
@@ -409,7 +414,7 @@ function kartuRanking() {
   if (!METRIK[rk.m]) rk.m = 2;
   const M = METRIK[rk.m],
     fmt = (v) => fmtRanking(M, v),
-    kelas = M.kelas || ((v) => (M.tinggi ? club(v) : mp(v))[1]);
+    kelas = M.kelas || ((v) => (M.tinggi ? club(v) : mp(v, qP95(D.dates[st.d])))[1]);
   const rows = barisRanking();
   const n = Math.min(10, Math.floor(rows.length / 2));
   const terbaik = rows.slice(0, n),
@@ -487,7 +492,7 @@ function kartuDetailAntrian() {
         `<tr data-d="${i}" class="${i === st.d ? "on" : ""}"><td>${dlong(d)}</td>${[0, 1, 2]
           .map((k) => {
             const v = s[i]?.[k];
-            return `<td class="${mp(v)[1]}"><b>${f(v)}</b></td>`;
+            return `<td class="${mp(v, qP95(d))[1]}"><b>${f(v)}</b></td>`;
           })
           .join("")}</tr>`,
     )

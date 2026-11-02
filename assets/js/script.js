@@ -321,9 +321,35 @@ function kartuCabang() {
   return `<div class="cd hero"><h3>${esc(b[1])}</h3><div class="row sub"><span>${esc(b[2])}</span>${b[3] ? chip("Kelas " + b[3], "n") : ""}</div>${pic}</div>`;
 }
 
-// Tiga kotak: Teller, CS, Semua TRX pada tanggal terpilih
+/* --- pilihan periode DtD / MTD per kartu (Waktu Antrian, Utilisasi NBDS) --- */
+const perKartu = { q: "dtd", nb: "dtd" };
+const BULAN_DATA = new Date(D.dates[D.dates.length - 1] + "T00:00").toLocaleDateString("id-ID", { month: "long", year: "numeric" });
+// tombol DtD | MTD; tanpaDtd = data harian tidak tersedia (tombol DtD nonaktif)
+const segPer = (k, tanpaDtd) =>
+  `<div class="seg seg-per" role="group" aria-label="Periode">${[
+    ["dtd", "DtD"],
+    ["mtd", "MTD"],
+  ]
+    .map(([v, t]) => {
+      const mati = v === "dtd" && tanpaDtd;
+      return `<button type="button" data-per="${k}" data-pv="${v}" class="${perKartu[k] === v ? "on" : ""}"${mati ? ' disabled title="Data DtD per cabang belum tersedia"' : ""}>${t}</button>`;
+    })
+    .join("")}</div>`;
+
+// waktu antrian MTD (P90) per cabang dari area-kelompok-data.js
+const kelCabang = () => (window.KITO_AREA_KELOMPOK || []).find((r) => String(r.kode) === String(D.B[st.b][0]));
+function qcardMtd(name, k) {
+  const v = kelCabang()?.mtd?.[["teller", "cs", "all"][k]] ?? null,
+    [m, c] = mp(v),
+    dtd = D.Q[st.b][st.d]?.[k];
+  return `<div class="q"><div class="t">${name}</div><div class="v">${f(v)}</div>${chip(m, c)}<div class="s">P90 MTD<br><b>${BULAN_DATA}</b></div><div class="d"></div><div class="m">DtD ${dl(D.dates[st.d])} ${f(dtd)}</div></div>`;
+}
+
+// Tiga kotak: Teller, CS, Semua TRX pada tanggal terpilih (DtD) atau MTD
 function kartuAntrian() {
-  return `<div class="cd"><h2>Waktu Antrian · ${dlong(D.dates[st.d])}</h2><div class="g3">${qcard("TELLER", 0)}${qcard("CS", 1)}${qcard("SEMUA TRX", 2)}</div>${wait10()}</div>`;
+  if (perKartu.q === "mtd")
+    return `<div class="cd"><h2>Waktu Antrian · MTD ${BULAN_DATA} · P90</h2>${segPer("q")}<div class="g3">${qcardMtd("TELLER", 0)}${qcardMtd("CS", 1)}${qcardMtd("SEMUA TRX", 2)}</div></div>`;
+  return `<div class="cd"><h2>Waktu Antrian · ${dlong(D.dates[st.d])}</h2>${segPer("q")}<div class="g3">${qcard("TELLER", 0)}${qcard("CS", 1)}${qcard("SEMUA TRX", 2)}</div>${wait10()}</div>`;
 }
 
 // sejak 27 Okt: reservasi dengan waktu tunggu < 10 detik (sheet "Wait <10 Detik"), peringkat di Region II
@@ -364,7 +390,7 @@ function kartuO2O() {
   const [o2o, nb] = m,
     tot = o2o + nb,
     abv = tot && o2o / tot > D.bw;
-  return `<div class="cd"><h2>Overall O2O · ${dlong(D.mdate)}</h2><div class="row">${donut(o2o, nb)}<div style="flex:1;min-width:150px">
+  return `<div class="cd"><h2>Overall O2O · MTD s.d. ${dlong(D.mdate)}</h2><div class="row">${donut(o2o, nb)}<div style="flex:1;min-width:150px">
      <div class="kv"><span>Livin O2O</span><b>${o2o}</b></div><div class="kv"><span>NBDS</span><b>${nb}</b></div><div class="kv"><span>Total</span><b>${tot}</b></div></div></div>
      <div class="note">Avg Bankwide ${P(D.bw)} · ${tot ? (abv ? '<b class="ok">⬆ Above Avg</b>' : '<b class="bad">⬇ Below Avg</b>') : ""}</div></div>`;
 }
@@ -390,7 +416,7 @@ function kartuShifting() {
   const leg = bagian
     .map(([n, v, c]) => `<div class="sh-it"><i class="${c}"></i><span>${n}</span><b>${v}</b><small>${pct(v)} dari total</small></div>`)
     .join("");
-  return `<div class="cd"><h2>Shifting Digital · ${dlong(D.mdate)}</h2>
+  return `<div class="cd"><h2>Shifting Digital · MTD s.d. ${dlong(D.mdate)}</h2>
     <div class="sh-atas"><div class="sh-n">${sh ? P(dig / sh) : "–"}</div>
       <div class="sh-t">${sh ? `<b>${dig}</b> dari <b>${sh}</b> transaksi lewat O2O dan CSM` : "Belum ada data transaksi"}</div></div>
     ${sh ? `<div class="sh-bar">${bar}</div><div class="sh-grid">${leg}</div>` : ""}
@@ -398,12 +424,25 @@ function kartuShifting() {
   </div>`;
 }
 
-// Utilisasi NBDS: tiga baris dengan bar
+// Utilisasi NBDS: tiga baris dengan bar. DtD = tanggal terpilih, MTD = akumulasi bulan berjalan (area-nbds-data.js)
 function kartuUtilisasi() {
-  const m = D.M[st.b];
-  if (!m) return "";
-  const [, , , , fpn, fpo, fnn, fno, nfn, nfo] = m;
-  return `<div class="cd"><h2>Utilisasi NBDS</h2>${util("Teller Perorangan", fpn, fpo)}${util("Teller Badan", fnn, fno)}${util("Customer Service", nfn, nfo)}</div>`;
+  const N = window.KITO_AREA_NBDS,
+    c = N?.cabang?.find((x) => String(x.kode) === String(D.B[st.b][0]));
+  const mtd = perKartu.nb === "mtd";
+  let pasang, judul;
+  if (c) {
+    const j = N.dates.indexOf(D.dates[st.d]);
+    pasang = (k) => (mtd ? c.m[k] : j < 0 ? null : c.d[k]?.[j]) || [null, null];
+    judul = mtd ? `MTD s.d. ${dlong(N.tanggal)}` : dlong(D.dates[st.d]);
+  } else {
+    // cadangan: D.M[4..9] = DtD tanggal laporan
+    const m = D.M[st.b];
+    if (!m) return "";
+    pasang = (k) => ({ fp: [m[4], m[5]], fnp: [m[6], m[7]], nf: [m[8], m[9]] })[k];
+    judul = dlong(D.mdate);
+  }
+  const ada = ["fp", "fnp", "nf"].some((k) => pasang(k)[0] != null);
+  return `<div class="cd"><h2>Utilisasi NBDS · ${judul}</h2>${segPer("nb", !c)}${util("Teller Perorangan", ...pasang("fp"))}${util("Teller Badan", ...pasang("fnp"))}${util("Customer Service", ...pasang("nf"))}${ada ? "" : '<div class="note">Data utilisasi untuk tanggal ini belum ada di laporan.</div>'}</div>`;
 }
 
 
@@ -483,20 +522,68 @@ function kartuOldBds() {
 
 // Tabel waktu antrian per tanggal (ketuk baris untuk ganti tanggal)
 function kartuDetailAntrian() {
-  const s = D.Q[st.b];
-  return `<div class="cd"><h2>Detail Waktu Antrian</h2><div class="tw"><table><tr><th>Tanggal</th><th>Teller</th><th>CS</th><th>Semua</th></tr>${D.dates
+  const s = D.Q[st.b],
+    N = window.KITO_AREA_NBDS,
+    c = N?.cabang?.find((x) => String(x.kode) === String(D.B[st.b][0])),
+    kel = kelCabang(),
+    KN = ["fp", "fnp", "nf"];
+  const sel = (v, p95) => `<td class="${mp(v, p95)[1]}"><b>${f(v)}</b></td>`;
+  const nb = (pair) => {
+    const u = pair ? pc(pair[0], pair[1]) : null;
+    return `<td class="${club(u)[1]}"><b>${P(u)}</b></td>`;
+  };
+  const mtd = `<tr><td><b>MTD ${BULAN_DATA}</b></td>${["teller", "cs", "all"].map((k) => sel(kel?.mtd?.[k] ?? null, false)).join("")}${KN.map((k) => nb(c?.m?.[k])).join("")}</tr>`;
+  const harian = D.dates
     .map((d, i) => [d, i])
     .reverse()
-    .map(
-      ([d, i]) =>
-        `<tr data-d="${i}" class="${i === st.d ? "on" : ""}"><td>${dlong(d)}</td>${[0, 1, 2]
-          .map((k) => {
-            const v = s[i]?.[k];
-            return `<td class="${mp(v, qP95(d))[1]}"><b>${f(v)}</b></td>`;
-          })
-          .join("")}</tr>`,
-    )
-    .join("")}</table></div><div class="note">Ketuk baris untuk ganti tanggal.</div></div>`;
+    .map(([d, i]) => {
+      const j = N ? N.dates.indexOf(d) : -1;
+      return `<tr data-d="${i}" class="${i === st.d ? "on" : ""}"><td>${dlong(d)}</td>${[0, 1, 2].map((k) => sel(s[i]?.[k], qP95(d))).join("")}${KN.map((k) => nb(j < 0 ? null : c?.d?.[k]?.[j])).join("")}</tr>`;
+    })
+    .join("");
+  return `<div class="cd"><h2>Detail Waktu Antrian & Utilisasi NBDS per Tanggal</h2><div class="tw"><table><tr><th>Tanggal</th><th>Teller</th><th>CS</th><th>Semua</th><th>NBDS T. Prg</th><th>NBDS T. Bdn</th><th>NBDS CS</th></tr>${mtd}${harian}</table></div><div class="note">Waktu antrian mm:ss (P95 sejak 27 Okt, sebelumnya dan MTD P90) · Utilisasi NBDS = New BDS ÷ (New BDS + Old BDS), target ≥ 98% · T. Prg = Teller Perorangan, T. Bdn = Teller Badan. Ketuk baris untuk ganti tanggal.</div></div>`;
+}
+
+// Detail O2O: cabang dibanding area, Region II, dan Bankwide (laporan Ganti Kartu, kumulatif MTD)
+function kartuDetailO2O() {
+  const m = D.M[st.b];
+  if (!m) return "";
+  // jumlah [O2O, NBDS O2O, CSM, OBDS, NBDS shifting] untuk sekumpulan cabang
+  const jumlah = (idx) =>
+    idx.reduce((a, i) => {
+      const x = D.M[i];
+      if (!x) return a;
+      return [a[0] + (x[0] || 0), a[1] + (x[1] || 0), a[2] + (x[2] || 0), a[3] + (x[3] || 0), a[4] + (x[10] ?? x[1] ?? 0)];
+    }, [0, 0, 0, 0, 0]);
+  const semua = D.B.map((b, i) => i),
+    area = D.B[st.b][2],
+    diArea = semua.filter((i) => D.B[i][2] === area);
+  const o2oP = (i) => {
+    const x = D.M[i];
+    return x && x[0] + x[1] > 0 ? x[0] / (x[0] + x[1]) : null;
+  };
+  // peringkat O2O % (tertinggi = 1) di antara sekumpulan cabang
+  const peringkat = (idx) => {
+    const v = o2oP(st.b),
+      ada = idx.map(o2oP).filter((x) => x != null);
+    return v == null ? null : [1 + ada.filter((x) => x > v).length, ada.length];
+  };
+  const bw = (window.KITO_AREA_O2O || {}).bankwide?.s?.overall;
+  const kls = (p) => (p == null ? "n" : p >= D.bw ? "ok" : "bad");
+  const baris = (nama, j, rk, on) => {
+    const tot = j[0] + j[1],
+      p = tot ? j[0] / tot : null,
+      shTot = j[0] + j[2] + j[3] + j[4],
+      sh = j[2] == null || !shTot ? null : (j[0] + j[2]) / shTot;
+    return `<tr class="${on ? "on" : ""}"><td><b>${esc(nama)}</b>${rk ? `<small>#${rk[0]} dari ${rk[1]} cabang</small>` : ""}</td><td>${j[0].toLocaleString("id-ID")}</td><td>${j[1].toLocaleString("id-ID")}</td><td>${tot.toLocaleString("id-ID")}</td><td class="${kls(p)}"><b>${P(p)}</b></td><td>${P(sh)}</td></tr>`;
+  };
+  const rows = [
+    baris("Cabang ini", jumlah([st.b]), null, true),
+    baris(`Area ${area}`, jumlah(diArea), peringkat(diArea)),
+    baris("Region II", jumlah(semua), peringkat(semua)),
+    bw ? baris("Bankwide", [bw[0], bw[1], null, null, null], null) : "",
+  ].join("");
+  return `<div class="cd"><h2>Detail O2O · MTD s.d. ${dlong(D.mdate)}</h2><div class="tw"><table><tr><th>Cakupan</th><th>Livin O2O</th><th>NBDS</th><th>Total</th><th>O2O %</th><th>Shifting</th></tr>${rows}</table></div><div class="note">O2O % = Livin O2O ÷ (Livin O2O + NBDS); hijau = di atas rata-rata Bankwide ${P(D.bw)}. Shifting = (O2O + CSM) ÷ (O2O + NBDS + CSM + OBDS). # = peringkat O2O % cabang ini (tertinggi = 1).</div></div>`;
 }
 
 // Halaman Region dan Area: tampilan "sedang dalam pengembangan"
@@ -518,6 +605,7 @@ const URUTAN = [
   kartuUtilisasi,
   kartuOldBds,
   kartuDetailAntrian,
+  kartuDetailO2O,
 ];
 
 // Tab yang sedang dibuka: "region", "area", atau "cabang"
@@ -566,6 +654,16 @@ $("#app").addEventListener("click", (e) => {
     st.d = +tr.dataset.d;
     fill();
     render();
+    return;
+  }
+
+  // tombol periode DtD / MTD di kartu
+  const pv = e.target.closest("[data-pv]");
+  if (pv) {
+    if (!pv.disabled) {
+      perKartu[pv.dataset.per] = pv.dataset.pv;
+      render();
+    }
     return;
   }
 

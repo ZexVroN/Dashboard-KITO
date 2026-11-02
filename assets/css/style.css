@@ -316,6 +316,8 @@ main .cd:nth-child(n + 6) { animation-delay: 0.12s; }
   cursor: pointer;
 }
 .seg button.on { background: var(--nv); border-color: var(--nv); color: #fff; }
+.seg button:disabled { opacity: .45; cursor: not-allowed; }
+.seg-per { margin-top: -2px; }
 /* ranking cabang: tombol metrik per grup, dengan judul kecil di depan */
 .rk-seg { align-items: center; margin-bottom: 8px; }
 .rk-g { flex: 0 0 100%; font-size: 10.5px; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; color: var(--mu); }

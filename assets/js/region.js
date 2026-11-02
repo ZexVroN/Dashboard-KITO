@@ -148,11 +148,23 @@ function versus(){
 function pilihMetrik(){
   return GRUP.map(g=>`<div class="seg rg-seg"><span class="rg-g">${g.ik} ${clean(g.n)}</span>${MET.filter(m=>m.g===g.key).map(m=>`<button type="button" data-rx-m="${m.key}" class="${m.key===ui.m?'on':''}">${clean(m.n)}</button>`).join('')}</div>`).join('');
 }
-// kotak ringkasan ke-3 mengikuti pembanding terpilih (bawaan: Nasional), lengkap dengan selisih Region II
-function kotakCmp(m,per,rows,me,cmp){
-  const v=m.val(cmp,per),r=rows.find(x=>x.e===cmp),s=selisih(m,me?.v,v);
+// kotak ringkasan dengan selisih Region II terhadap nilainya
+function kotakVs(m,me,judul,v,ket,kls){
+  const s=selisih(m,me?.v,v);
   const sel=s?`<em class="${s.sama?'mu':s.baik?'ok':'bad'}">Reg. ${clean(FOKUS.no)} ${s.sama?'≈ setara':(s.baik?'▲ ':'▼ ')+s.kata}</em>`:'';
-  return `<div class="rx-sum-cmp"><small>${cmp===NAS?'Nasional':'Pembanding'}</small><b class="${kelas(m,v)}">${m.fmt(v)}</b><span>${cmp===NAS?'bankwide':`${clean(nama(cmp))} · ${r?`peringkat #${r.rk}`:'tidak ada data'}`}</span>${sel}</div>`;
+  return `<div class="${kls}"><small>${judul}</small><b class="${kelas(m,v)}">${m.fmt(v)}</b><span>${ket}</span>${sel}</div>`;
+}
+// kotak ke-3: pembanding terpilih (bawaan Nasional)
+function kotakCmp(m,per,rows,me,cmp){
+  if(cmp===NAS)return kotakVs(m,me,'Nasional',m.val(NAS,per),'bankwide','rx-sum-cmp');
+  const r=rows.find(x=>x.e===cmp);
+  return kotakVs(m,me,'Pembanding',m.val(cmp,per),`${clean(nama(cmp))} · ${r?`peringkat #${r.rk}`:'tidak ada data'}`,'rx-sum-cmp');
+}
+// kotak pertama: region terbaik
+function kotakTerbaik(m,rows,me){
+  const best=rows[0];
+  if(best.e===FOKUS)return `<div><small>Terbaik</small><b class="${kelas(m,best.v)}">${m.fmt(best.v)}</b><span>${clean(nama(best.e))} · ${clean(best.e.nama)}</span><em class="ok">🥇 Region ${clean(FOKUS.no)} terbaik</em></div>`;
+  return kotakVs(m,me,'Terbaik',best.v,`${clean(nama(best.e))} · ${clean(best.e.nama)}`,'');
 }
 function daftar(){
   const m=metOf(ui.m),per=perOf(m,ui.per),rows=peringkat(m,ui.per),cmp=cmpEnt(),ref=m.val(NAS,per);
@@ -165,7 +177,7 @@ function daftar(){
   const x=v=>Math.max(0,Math.min(100,(v-min)/(max-min)*100));
   const list=rows.map(r=>{const k=kelas(m,r.v),me=r.e===FOKUS,c=r.e===cmp;return `<button type="button" class="rg-row rx-row ${me?'me':''} ${c?'cmp':''}" data-rx-pilih="${clean(r.e.id)}" aria-label="Bandingkan dengan ${clean(namaPanjang(r.e))}"><span class="rg-no ${r.rk<=3?'top':''}">${r.rk<=3?['🥇','🥈','🥉'][r.rk-1]:r.rk}</span><span class="rg-mid"><span class="rg-nm">${clean(nama(r.e))}<small>${clean(r.e.nama)}${me?' · fokus':c?' · pembanding':''}</small></span><span class="rg-bar"><i class="${me?k:'rx-grey'}" style="width:${x(r.v)}%"></i>${ref!=null?`<u style="left:${x(ref)}%"></u>`:''}${m.jenis==='nbds'?`<u class="tgt" style="left:${x(TGT)}%"></u>`:''}</span></span><span class="rg-val ${me?k:''}">${m.fmt(r.v)}</span></button>`;}).join('');
   const me=rows.find(r=>r.e===FOKUS),best=rows[0],worst=rows[rows.length-1];
-  const ringkas=`<div class="rg-sum"><div><small>Terbaik</small><b>${m.fmt(best.v)}</b><span>${clean(nama(best.e))} · ${clean(best.e.nama)}</span></div><div class="rx-sum-me"><small>Region ${clean(FOKUS.no)}</small><b class="${kelas(m,me?.v)}">${me?m.fmt(me.v):'–'}</b><span>${me?`peringkat #${me.rk} dari ${rows.length}`:'tidak ada data'}</span></div>${kotakCmp(m,per,rows,me,cmp)}</div>`;
+  const ringkas=`<div class="rg-sum">${kotakTerbaik(m,rows,me)}<div class="rx-sum-me"><small>Region ${clean(FOKUS.no)}</small><b class="${kelas(m,me?.v)}">${me?m.fmt(me.v):'–'}</b><span>${me?`peringkat #${me.rk} dari ${rows.length}`:'tidak ada data'}</span></div>${kotakCmp(m,per,rows,me,cmp)}</div>`;
   const lg=`<div class="wt-legend"><span><i class="rx-dot-me"></i>Region ${clean(FOKUS.no)}</span><span><i class="rx-dot-cmp"></i>Pembanding</span><span><u class="rg"></u>Nasional ${m.fmt(ref)}</span>${m.jenis==='nbds'?`<span><u class="t5"></u>Target ${pctT(TGT)}</span>`:''}</div>`;
   return `<section class="cd" id="rx-daftar"><h2>Perbandingan Region · ${clean(m.n)} · ${perLabel(m,ui.per)}<button type="button" class="unduh" data-rx-csv="1">⬇ CSV</button></h2>${pilihMetrik()}${ringkas}<div>${list}</div>${lg}<p class="rg-note">${m.jenis==='waktu'?'Semakin kecil semakin baik.':'Semakin besar semakin baik.'} Nilai sama = peringkat sama. Ketuk region untuk menjadikannya pembanding.</p></section>`;
 }

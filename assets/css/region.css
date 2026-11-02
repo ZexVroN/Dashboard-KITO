@@ -64,7 +64,7 @@ body.mode-region .fl { grid-template-columns: 1fr; }
 .rx-row .rg-bar u.tgt { background: var(--bd); }
 .rx-sum-me { border-color: var(--c1) !important; box-shadow: inset 0 0 0 1px var(--c1); }
 .rx-sum-cmp { border-color: var(--c2) !important; box-shadow: inset 0 0 0 1px var(--c2); }
-.rx-sum-cmp em { display: block; margin-top: 3px; font-size: 10.5px; font-style: normal; font-weight: 700; line-height: 1.3; }
+.rg-sum em { display: block; margin-top: 3px; font-size: 10.5px; font-style: normal; font-weight: 700; line-height: 1.3; }
 .rx-dot-me, .rx-dot-cmp { display: inline-block; width: 10px; height: 10px; border-radius: 50%; }
 .rx-dot-me { background: var(--c1); }
 .rx-dot-cmp { background: var(--c2); }

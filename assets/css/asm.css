@@ -1,0 +1,11 @@
+/* Nama ASM di kartu judul halaman Area (asm.js) */
+.asm-box{display:inline-flex;align-items:center;gap:10px;margin:8px 0 6px;padding:7px 14px 7px 9px;border:1px solid var(--ln);border-radius:999px;background:var(--bg)}
+.asm-ik{display:flex;align-items:center;justify-content:center;width:30px;height:30px;border-radius:50%;background:var(--nv);font-size:14px;flex:none}
+.asm-box small,.asm-list>small{display:block;font-size:10.5px;font-weight:600;color:var(--mu);letter-spacing:.2px}
+.asm-box b{display:block;font-size:14px;font-weight:800;color:var(--tx)}
+.asm-list{margin:8px 0 6px}
+.asm-list>div{display:flex;flex-wrap:wrap;gap:6px;margin-top:5px}
+.asm-list span{display:inline-flex;flex-direction:column;padding:5px 10px;border:1px solid var(--ln);border-radius:10px;background:var(--bg);font-size:12.5px;font-weight:700;color:var(--tx)}
+.asm-list em{font-style:normal;font-size:10px;font-weight:600;color:var(--mu)}
+.hero .asm-box{background:rgba(255,255,255,.12);border-color:rgba(255,255,255,.2)}
+.hero .asm-box b{color:#fff}.hero .asm-box small{color:rgba(255,255,255,.72)}

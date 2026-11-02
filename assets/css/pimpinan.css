@@ -1,0 +1,8 @@
+/* Nama Branch Manager & BOM/BOS di kartu cabang (pimpinan.js) */
+.hero .pm-row{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:12px}
+.hero .pm{padding:8px 11px;border-radius:12px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.16);min-width:0}
+.hero .pm small{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:10.5px;font-weight:600;letter-spacing:.2px;color:rgba(255,255,255,.72)}
+.hero .pm b{display:block;margin-top:2px;font-size:14px;font-weight:700;color:#fff;overflow-wrap:anywhere}
+.hero .pm b.pm-kosong{font-weight:500;font-style:italic;color:rgba(255,255,255,.6)}
+@media(max-width:360px){.hero .pm-row{grid-template-columns:1fr}}
+@media print{.hero .pm{background:none;border-color:#ccd}}

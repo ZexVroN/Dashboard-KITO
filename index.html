@@ -181,6 +181,14 @@
     <script src="assets/js/kpi.js?v=13"></script>
     <link rel="stylesheet" href="assets/css/kpi-login.css?v=6" />
     <script src="assets/js/kpi-login.js?v=7"></script>
+    <link rel="stylesheet" href="assets/css/pimpinan.css?v=2" />
+    <script src="assets/js/pimpinan-data.js?v=20261102"></script>
+    <script src="assets/js/pimpinan.js?v=3"></script>
+    <link rel="stylesheet" href="assets/css/asm.css?v=1" />
+    <script src="assets/js/asm-data.js?v=20261102"></script>
+    <script src="assets/js/asm.js?v=1"></script>
+    <link rel="stylesheet" href="assets/css/penguatan.css?v=4" />
+    <script src="assets/js/penguatan.js?v=6"></script>
     <script src="assets/js/animasi.js?v=5"></script>
 
 <style>
@@ -214,7 +222,7 @@ body.dark .kito-pctl-close,[data-theme="dark"] .kito-pctl-close{color:#fff}
       box=document.createElement('div');box.id='kito-pctl-top';box.className='kito-pctl-top';box.setAttribute('role','status');
       box.innerHTML='<div class="kito-pctl-copy"><strong></strong><small></small></div><button type="button" class="kito-pctl-close" aria-label="Tutup informasi persentil waktu antrian" title="Tutup">&times;</button>';
       box.querySelector('button').addEventListener('click',()=>{closed=true;box.remove()});
-      app.prepend(box);busy=false;
+      const pgn=app.querySelector('#pgn-notif');if(pgn)pgn.after(box);else app.prepend(box);busy=false;
     }
     const title=p95?`Waktu Antrian · P95 (${tg(date)})`:`Waktu Antrian · P90 (hingga ${tg(p90Tgl[p90Tgl.length-1]||date)})`;
     const desc=`Data ${p95Tgl.map(t=>new Date(t+'T00:00').getDate()).join(', ')} Okt menggunakan P95; riwayat sampai ${tg(p90Tgl[p90Tgl.length-1]||date)} dan MTD historis menggunakan P90. Kedua persentil tidak dibandingkan langsung.`;

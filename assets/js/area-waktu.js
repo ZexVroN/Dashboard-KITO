@@ -10,7 +10,6 @@ const ALL='Semua Area Region II';
 const IDX={teller:2,cs:5,all:6};
 const P100_MULAI='2026-10-27';                    // mulai tanggal ini: Antrian & P100 menggantikan Single/Multipel                         // indeks nilai P90 pada data
 const SVC=[['all','All Trx'],['teller','Teller'],['cs','Customer Service']];
-const CAT=[['Under 5 Menit','ok'],['5 - 10 Menit','md'],['10 - 15 Menit','wr'],['Over 15 Menit','bd']];
 const ui={svc:'all',per:'dtd',catPer:'dtd',kelSvc:'all',trend:'gab',tip:null};
 const kel=window.KITO_AREA_KELOMPOK||[];          // P90 per cabang (DtD 21 Okt & MTD)
 const KEL_ISO=src.tanggal;
@@ -18,10 +17,13 @@ const KEL_ISO=src.tanggal;
 const clean=x=>String(x??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const norm=s=>String(s||'').toLowerCase().replace(/^area\s+/,'').replace(/[^a-z0-9]/g,'');
 const clock=s=>{if(s==null)return '–';const t=Math.round(Math.abs(s)),h=Math.floor(t/3600),m=Math.floor(t/60)%60,d=t%60,p=x=>String(x).padStart(2,'0');return (s<0?'-':'')+(h?h+':'+p(m):p(m))+':'+p(d);};
-const cls=s=>s==null?'n':s<300?'ok':s<600?'md':s<900?'wr':'bd';   // kelas warna kategori (untuk bar)
+// kategori: P90 batas atas 15 menit; data P95 (sejak 27 Okt) batas atas 20 menit
+const isP95=iso=>(src.metricByDate?.[iso]||(iso>=P100_MULAI?'P95':'P90'))==='P95';
+const atas=p95=>p95?1200:900;
+const cls=(s,p95)=>s==null?'n':s<300?'ok':s<600?'md':s<atas(p95)?'wr':'bd';   // kelas warna kategori (untuk bar)
 const K={ok:'ok',md:'mid',wr:'warn',bd:'bad',n:'n'};              // padanan kelas teks/chip bawaan aplikasi
-const tk=s=>K[cls(s)];
-const catText=s=>s==null?'–':s<300?'Under 5 Menit':s<600?'5 - 10 Menit':s<900?'10 - 15 Menit':'Over 15 Menit';
+const tk=(s,p95)=>K[cls(s,p95)];
+const catText=(s,p95)=>s==null?'–':s<300?'Under 5 Menit':s<600?'5 - 10 Menit':s<atas(p95)?`10 - ${p95?20:15} Menit`:`Over ${p95?20:15} Menit`;
 const region=src.region,areas=src.areas;
 const isoLong=iso=>new Date(iso+'T00:00').toLocaleDateString('id-ID',{day:'numeric',month:'long',year:'numeric'});
 const isoShort=iso=>iso.slice(8,10)+'/'+iso.slice(5,7);
@@ -55,7 +57,7 @@ function tile(name,per,e,isRegion,svc){
   const arr=per==='mtd'?e.m:e.d[dtdIso()];
   const refArr=per==='mtd'?region.m:region.d[dtdIso()];
   if(!arr)return `<div class="wt-tile"><b class="wt-nm">${name}</b><div class="wt-v n">–</div><span class="chip n">Tidak ada data</span></div>`;
-  const i=IDX[svc],v=arr[i];
+  const i=IDX[svc],v=arr[i],p95=per==='dtd'&&baru();
   // format sama dengan kotak kanal di tab Cabang: sejak 27 Okt Reservasi + P100, sebelumnya Single / Multipel
   const x=per==='dtd'&&baru()?(xOf(e)||{}):null;
   const sub=x?`Reservasi<br><b>${nfmt(x.n?.[XI[svc]])}</b>`
@@ -63,7 +65,7 @@ function tile(name,per,e,isRegion,svc){
     :`Single <b>${clock(arr[i-2])}</b><br>Multipel <b>${clock(arr[i-1])}</b>`;
   const ft=delta(v,refArr?refArr[i]:null,isRegion);
   // struktur seragam: nama · nilai · kategori · info · footer pembanding (footer selalu di dasar kotak)
-  return `<div class="wt-tile"><b class="wt-nm">${name}</b><div class="wt-v ${tk(v)}">${clock(v)}</div><span class="chip ${tk(v)}">${catText(v)}</span><div class="wt-info"><small>${sub}</small></div>${ft?`<div class="wt-foot">${ft}</div>`:''}</div>`;
+  return `<div class="wt-tile"><b class="wt-nm">${name}</b><div class="wt-v ${tk(v,p95)}">${clock(v)}</div><span class="chip ${tk(v,p95)}">${catText(v,p95)}</span><div class="wt-info"><small>${sub}</small></div>${ft?`<div class="wt-foot">${ft}</div>`:''}</div>`;
 }
 
 // sejak 27 Okt kartu MTD diganti kartu P100 (waktu tunggu terlama) tanggal terpilih, seperti tab Cabang
@@ -80,7 +82,16 @@ function periodCard(per,e,isRegion){
   if(per==='mtd'&&baru())return p100Card(e,isRegion);
   const title=per==='dtd'?`DtD ${pctl()} · ${isoLong(dtdIso())}`:'MTD · Oktober 2026';
   const has=per==='mtd'||e.d[dtdIso()];
-  return `<section class="cd wt-period"><h2>${title}</h2>${has?'':`<p class="wt-warn">Data area untuk tanggal ini belum ada di laporan. Pilih tanggal lain di filter atas (tersedia: ${src.dates.map(isoShort).join(', ')}).</p>`}<div class="wt-tiles">${tile('Teller',per,e,isRegion,'teller')}${tile('CS',per,e,isRegion,'cs')}${tile('All Trx',per,e,isRegion,'all')}</div>${isRegion?'':'<p class="wt-note">▲ lebih cepat · ▼ lebih lambat dibanding Region II (semakin kecil semakin baik).</p>'}</section>`;
+  return `<section class="cd wt-period"><h2>${title}</h2>${has?'':`<p class="wt-warn">Data area untuk tanggal ini belum ada di laporan. Pilih tanggal lain di filter atas (tersedia: ${src.dates.map(isoShort).join(', ')}).</p>`}<div class="wt-tiles">${tile('Teller',per,e,isRegion,'teller')}${tile('CS',per,e,isRegion,'cs')}${tile('All Trx',per,e,isRegion,'all')}</div>${isRegion?'':'<p class="wt-note">▲ lebih cepat · ▼ lebih lambat dibanding Region II (semakin kecil semakin baik).</p>'}${per==='dtd'&&baru()?over20(e):''}</section>`;
+}
+
+// keterangan di bawah kanal DtD P95: area yang waktu tunggunya over 20 menit pada tanggal terpilih
+function over20(e){
+  const iso=dtdIso();
+  const rows=areas.map(a=>({a,k:['teller','cs','all'].filter(svc=>(a.d[iso]?.[IDX[svc]]??0)>=1200)})).filter(r=>r.k.length);
+  if(!rows.length)return '';
+  const item=r=>`<button type="button" class="wt-lnk" data-wt-area="${clean(r.a.name)}"><b>${clean(r.a.name)}</b></button> (${r.k.map(svc=>`${svc==='cs'?'CS':TNAME[svc]} <b>${clock(r.a.d[iso][IDX[svc]])}</b>`).join(', ')})`;
+  return `<p class="wt-warn wt-o20">⚠ ${rows.length} area dengan P95 over 20 menit pada ${isoLong(iso)}: ${rows.map(item).join('; ')}.</p>`;
 }
 
 function hero(e,isRegion){
@@ -88,18 +99,18 @@ function hero(e,isRegion){
 }
 
 function ranking(e,isRegion){
-  const svc=ui.svc;if(ui.per==='p100'&&!baru())ui.per='dtd';const per=ui.per;
+  const svc=ui.svc;if(ui.per==='p100'&&!baru())ui.per='dtd';const per=ui.per,p95=per==='dtd'&&baru(),ta=p95?20:15;
   const rows=areas.map(a=>({a,v:valOf(a,per,svc)})).filter(r=>r.v!=null).sort((x,y)=>x.v-y.v);
   const reg=valOf(region,per,svc);
   const max=Math.max(600,...rows.map(r=>r.v),reg||0)*1.08;
   const seg=(attr,list,cur)=>`<div class="seg">${list.map(([k,t])=>`<button type="button" data-wt-${attr}="${k}" class="${k===cur?'on':''}">${t}</button>`).join('')}</div>`;
   const list=rows.map((r,i)=>{
     const me=!isRegion&&e&&r.a.name===e.name;
-    return `<button type="button" class="wt-row ${me?'me':''}" data-wt-area="${clean(r.a.name)}" aria-label="Buka ${clean(r.a.name)}"><span class="wt-no">${i+1}</span><span class="wt-mid"><span class="wt-nm">${clean(r.a.name)}</span><span class="wt-bar"><i class="${cls(r.v)}" style="width:${r.v/max*100}%"></i><u class="t5" style="left:${300/max*100}%"></u>${reg!=null?`<u class="rg" style="left:${reg/max*100}%"></u>`:''}</span></span><span class="wt-val ${tk(r.v)}">${clock(r.v)}</span></button>`;
+    return `<button type="button" class="wt-row ${me?'me':''}" data-wt-area="${clean(r.a.name)}" aria-label="Buka ${clean(r.a.name)}"><span class="wt-no">${i+1}</span><span class="wt-mid"><span class="wt-nm">${clean(r.a.name)}</span><span class="wt-bar"><i class="${cls(r.v,p95)}" style="width:${r.v/max*100}%"></i><u class="t5" style="left:${300/max*100}%"></u>${reg!=null?`<u class="rg" style="left:${reg/max*100}%"></u>`:''}</span></span><span class="wt-val ${tk(r.v,p95)}">${clock(r.v)}</span></button>`;
   }).join('');
   const svcName=SVC.find(x=>x[0]===svc)[1];
   const perName=per==='dtd'?`DtD ${pctl()} ${isoShort(dtdIso())}`:per==='p100'?`P100 ${isoShort(dtdIso())}`:'MTD Oktober';
-  return `<section class="cd"><h2>Ranking Area · ${svcName} · ${perName}</h2>${seg('per',baru()?[['dtd','DtD P95'],['p100','P100'],['mtd','MTD P90']]:[['dtd','DtD'],['mtd','MTD']],per)}${seg('svc',SVC,svc)}${rows.length?`<div>${list}</div>`:'<p class="wt-warn">Belum ada data untuk periode ini.</p>'}<div class="wt-legend"><span><i class="ok"></i>&lt; 5 mnt</span><span><i class="md"></i>5–10</span><span><i class="wr"></i>10–15</span><span><i class="bd"></i>&gt; 15</span><span><u class="t5"></u>Batas 5 menit</span><span><u class="rg"></u>Region II ${clock(reg)}</span></div><p class="wt-note">Urut dari tercepat. Ketuk area untuk membuka dashboard-nya.</p></section>`;
+  return `<section class="cd"><h2>Ranking Area · ${svcName} · ${perName}</h2>${seg('per',baru()?[['dtd','DtD P95'],['p100','P100'],['mtd','MTD P90']]:[['dtd','DtD'],['mtd','MTD']],per)}${seg('svc',SVC,svc)}${rows.length?`<div>${list}</div>`:'<p class="wt-warn">Belum ada data untuk periode ini.</p>'}<div class="wt-legend"><span><i class="ok"></i>&lt; 5 mnt</span><span><i class="md"></i>5–10</span><span><i class="wr"></i>10–${ta}</span><span><i class="bd"></i>&gt; ${ta}</span><span><u class="t5"></u>Batas 5 menit</span><span><u class="rg"></u>Region II ${clock(reg)}</span></div><p class="wt-note">Urut dari tercepat. Ketuk area untuk membuka dashboard-nya.</p></section>`;
 }
 
 const TCOL={teller:'var(--c1)',cs:'var(--c2)',all:'var(--c3)'};
@@ -110,7 +121,7 @@ const TMODE=[['gab','Gabungan'],['teller','Teller'],['cs','CS'],['all','All Trx'
 function tipHtml(e,i){
   const iso=src.dates[i],arr=e.d[iso];
   if(!arr)return `<b>${isoLong(iso)}</b><span class="wt-dl mu">Tidak ada data</span>`;
-  const item=k=>`<span><i style="background:${TCOL[k]}"></i>${k==='cs'?'CS':TNAME[k]}<b class="${tk(arr[IDX[k]])}">${clock(arr[IDX[k]])}</b></span>`;
+  const item=k=>`<span><i style="background:${TCOL[k]}"></i>${k==='cs'?'CS':TNAME[k]}<b class="${tk(arr[IDX[k]],isP95(iso))}">${clock(arr[IDX[k]])}</b></span>`;
   const rg=e!==region&&region.d[iso]?`<span><u class="dash"></u>All Region II<b>${clock(region.d[iso][6])}</b></span>`:'';
   return `<b>${isoLong(iso)}</b><div class="wt-tip-g">${['teller','cs','all'].map(item).join('')}${rg}</div>`;
 }
@@ -166,8 +177,9 @@ function trend(e){
   return `<section class="cd"><h2>Tren Harian P90 · ${clean(dispName(e))}</h2>${tabs}${svg}${tip}<div class="wt-legend">${lg}</div><p class="wt-note">${note}</p></section>`;
 }
 
-const bk=n=>n==null?-1:n<300?0:n<600?1:n<900?2:3;
-const KB=[['Under 5 Menit','green','ok'],['5–10 Menit','yellow','md'],['10–15 Menit','orange','wr'],['Over 15 Menit','red','bd']];
+const bk=(n,p95)=>n==null?-1:n<300?0:n<600?1:n<atas(p95)?2:3;
+const kelP95=per=>per==='dtd'&&isP95(KEL_ISO);       // DtD kelompok = tanggal laporan terbaru
+const kb=p95=>[['Under 5 Menit','green','ok'],['5–10 Menit','yellow','md'],[`10–${p95?20:15} Menit`,'orange','wr'],[`Over ${p95?20:15} Menit`,'red','bd']];
 const kelRows=isRegion=>kel.filter(r=>isRegion||norm(r.area)===norm(st.a));
 const perName=per=>per==='dtd'?`DtD · ${isoLong(KEL_ISO)}`:'MTD · Oktober 2026';
 function perSeg(cur){
@@ -175,28 +187,28 @@ function perSeg(cur){
 }
 
 function kategori(e,isRegion){
-  const rows=kelRows(isRegion),per=ui.catPer;
+  const rows=kelRows(isRegion),per=ui.catPer,p95=kelP95(per),KB=kb(p95);
   const blok=[['Teller','teller'],['Customer Service','cs'],['All Trx','all']].map(([n,svc])=>{
     const c=[0,0,0,0];let nd=0;
-    rows.forEach(r=>{const i=bk(r[per][svc]);if(i<0)nd++;else c[i]++;});
+    rows.forEach(r=>{const i=bk(r[per][svc],p95);if(i<0)nd++;else c[i]++;});
     const tot=c.reduce((a,b)=>a+b,0)+nd||1;
     const seg=c.map((v,i)=>v?`<i class="${KB[i][2]}" style="flex:${v}">${v}</i>`:'').join('')+(nd?`<i class="nd" style="flex:${nd}">${nd}</i>`:'');
     const lg=c.map((v,i)=>`<span><i class="${KB[i][2]}"></i>${KB[i][0]} <b>${v}</b></span>`).join('')+(nd?`<span><i class="nd"></i>Tanpa data <b>${nd}</b></span>`:'');
     return `<div class="wt-cat"><div class="wt-cat-h"><b>${n}</b><span>${tot} cabang</span></div><div class="wt-stack">${seg}</div><div class="wt-cat-lg">${lg}</div></div>`;
   }).join('');
-  return `<section class="cd"><h2>Jumlah Cabang per Kategori</h2>${perSeg(per)}<p class="wt-sub">${perName(per)} · P90 per cabang di ${isRegion?'Region II':'area ini'}.${per==='dtd'?' DtD memakai tanggal laporan terbaru.':''}</p>${blok}</section>`;
+  return `<section class="cd"><h2>Jumlah Cabang per Kategori</h2>${perSeg(per)}<p class="wt-sub">${perName(per)} · ${p95?'P95':'P90'} per cabang di ${isRegion?'Region II':'area ini'}.${per==='dtd'?' DtD memakai tanggal laporan terbaru.':''}</p>${blok}</section>`;
 }
 
 function kelompok(e,isRegion){
-  const rows=kelRows(isRegion),per=ui.catPer,svc=ui.kelSvc;
+  const rows=kelRows(isRegion),per=ui.catPer,svc=ui.kelSvc,p95=kelP95(per),KB=kb(p95);
   const g=[[],[],[],[]],miss=[];
-  rows.forEach(r=>{const n=r[per][svc],i=bk(n);(i<0?miss:g[i]).push({...r,n});});
+  rows.forEach(r=>{const n=r[per][svc],i=bk(n,p95);(i<0?miss:g[i]).push({...r,n});});
   g.forEach(x=>x.sort((a,b)=>b.n-a.n));
   const svcTabs=`<div class="seg" role="group" aria-label="Jenis layanan">${SVC.map(([k,t])=>`<button type="button" data-wt-ksvc="${k}" class="${k===svc?'on':''}">${t}</button>`).join('')}</div>`;
   const summary=`<div class="ak-summary">${KB.map((b,i)=>`<div class="ak-count ${b[1]}"><b>${g[i].length}</b><span>${b[0]}</span></div>`).join('')}</div>`;
   const grid=`<div class="ak-grid">${KB.map((b,i)=>`<section class="ak-group ${b[1]}"><h3><span class="ak-dot"></span>${b[0]}<small>${g[i].length} cabang</small></h3><div class="ak-items">${g[i].length?g[i].map(r=>`<button type="button" class="ak-branch" data-ak-code="${clean(r.kode)}"><span><b>${clean(r.nama)}</b><small>${clean(r.kode)}${isRegion?' · '+clean(r.area):''}</small></span><strong>${clock(r.n)}</strong></button>`).join(''):'<p class="ak-empty">Tidak ada cabang dalam kelompok ini.</p>'}</div></section>`).join('')}</div>`;
   const foot=miss.length?`<p class="ak-foot">${miss.length} cabang tidak memiliki nilai ${per.toUpperCase()} untuk jenis layanan ini, sehingga tidak dimasukkan ke kelompok.</p>`:'';
-  return `<section class="cd"><h2>Kelompok Waktu Tunggu Cabang</h2>${perSeg(per)}${svcTabs}<p class="wt-sub">${perName(per)} · ${rows.length} cabang · P90 ${SVC.find(x=>x[0]===svc)[1]}. Ketuk nama cabang untuk membuka detailnya.</p>${summary}${grid}${foot}</section>`;
+  return `<section class="cd"><h2>Kelompok Waktu Tunggu Cabang</h2>${perSeg(per)}${svcTabs}<p class="wt-sub">${perName(per)} · ${rows.length} cabang · ${p95?'P95':'P90'} ${SVC.find(x=>x[0]===svc)[1]}. Ketuk nama cabang untuk membuka detailnya.</p>${summary}${grid}${foot}</section>`;
 }
 
 /* ----- cabang dengan reservasi wait < 10 detik (sheet "Wait <10 Detik") ----- */
@@ -218,8 +230,8 @@ function wait10(e,isRegion){
 }
 
 function tabel(e){
-  const rowHtml=(label,arr,ref,on)=>`<tr class="${on?'on':''}"><td>${label}</td>${[2,5,6].map(i=>`<td class="${tk(arr?arr[i]:null)}"><b>${clock(arr?arr[i]:null)}</b></td>`).join('')}<td class="mu">${e===region?'–':clock(ref?ref[6]:null)}</td></tr>`;
-  const body=[rowHtml('<b>MTD Oktober</b>',e.m,region.m,false)].concat(src.dates.slice().reverse().map(d=>rowHtml(isoLong(d),e.d[d],region.d[d],d===dtdIso()))).join('');
+  const rowHtml=(label,arr,ref,on,p95)=>`<tr class="${on?'on':''}"><td>${label}</td>${[2,5,6].map(i=>`<td class="${tk(arr?arr[i]:null,p95)}"><b>${clock(arr?arr[i]:null)}</b></td>`).join('')}<td class="mu">${e===region?'–':clock(ref?ref[6]:null)}</td></tr>`;
+  const body=[rowHtml('<b>MTD Oktober</b>',e.m,region.m,false)].concat(src.dates.slice().reverse().map(d=>rowHtml(isoLong(d),e.d[d],region.d[d],d===dtdIso(),isP95(d)))).join('');
   return `<section class="cd"><h2>Detail P90 per Tanggal</h2><div class="tw"><table><tr><th>Tanggal</th><th>Teller</th><th>CS</th><th>All Trx</th><th>All Reg. II</th></tr>${body}</table></div><p class="wt-note">Format mm:ss. Teller/CS = P90 overall; All Trx = P90 gabungan. Sumber: ${clean(src.sumber)}.</p></section>`;
 }
 

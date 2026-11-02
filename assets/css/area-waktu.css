@@ -101,4 +101,6 @@ i.ok{background:var(--ok)}i.md{background:var(--md)}i.wr{background:var(--wr)}i.
 .wt-lnk{all:unset;cursor:pointer;display:block}
 .wt-lnk small{display:block;font-size:10.5px;color:var(--mu)}
 .wt-lnk:hover b{text-decoration:underline}
+.wt-o20{color:var(--bd)}
+.wt-o20 .wt-lnk{display:inline}
 @media (max-width:480px){.wt-w10{grid-template-columns:repeat(2,1fr)}}

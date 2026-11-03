@@ -3,8 +3,8 @@
 
 /* ----- kartu notifikasi di halaman Cabang ----- */
 .pgn-notif{position:relative;display:flex;align-items:center;gap:12px;margin:0 0 12px;padding:12px 44px 12px 12px;border-radius:16px;
-  background:linear-gradient(135deg,#0f2a5c 0%,#163d82 100%);color:#fff;cursor:pointer;touch-action:pan-y;user-select:none;-webkit-user-select:none;
-  box-shadow:0 6px 18px rgba(15,42,92,.22);overflow:hidden;will-change:transform}
+  background:linear-gradient(135deg,#dc2626 0%,#991b1b 100%);color:#fff;cursor:pointer;touch-action:pan-y;user-select:none;-webkit-user-select:none;
+  box-shadow:0 6px 18px rgba(153,27,27,.3);overflow:hidden;will-change:transform}
 .pgn-notif::after{content:"";position:absolute;inset:0 auto 0 0;width:4px;background:var(--pgn-gold)}
 .pgn-notif:focus-visible{outline:3px solid var(--pgn-gold);outline-offset:2px}
 .pgn-n-ik{flex:none;display:flex;align-items:center;justify-content:center;width:44px;height:44px;border-radius:50%;border:2px solid var(--pgn-gold);color:var(--pgn-gold)}

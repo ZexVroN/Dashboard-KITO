@@ -54,6 +54,9 @@
   let terakhir = { tab: tampil, b: st.b, a: st.a, d: st.d };
   let paksa = null; // jenis transisi yang diminta oleh klik tertentu
   let siap = false; // false selama render awal saat halaman dimuat
+  // setelah pindah halaman, gulir otomatis ke atas + konten yang berganti tinggi bisa memicu
+  // "gulir turun" sesaat sehingga nav sempat turun; selama jeda ini nav dikunci tetap terlihat
+  let kunciNavSampai = 0;
 
   const sebelumnya = render;
   render = function () {
@@ -73,7 +76,10 @@
     terakhir = baru;
 
     if (jenis && siap && !reduce.matches) mulai(jenis);
-    if (jenis === 'maju' || jenis === 'mundur' || jenis === 'ganti') nav.classList.remove('nav-sembunyi');
+    if (jenis === 'maju' || jenis === 'mundur' || jenis === 'ganti') {
+      nav.classList.remove('nav-sembunyi');
+      kunciNavSampai = performance.now() + 1200;
+    }
   };
 
   // ganti tampilan di tab Area (Waktu Tunggu / Infografis O2O) tidak mengubah st, jadi ditandai lewat klik
@@ -98,6 +104,11 @@
           const n = window.scrollY,
             dy = n - y,
             dasar = window.innerHeight + n >= document.documentElement.scrollHeight - 8;
+          if (performance.now() < kunciNavSampai) {
+            y = n; // ikuti posisi agar setelah jeda tidak terbaca sebagai lompatan
+            menunggu = false;
+            return;
+          }
           if (n < 80 || dasar || dy < -6) nav.classList.remove('nav-sembunyi');
           else if (dy > 8) nav.classList.add('nav-sembunyi');
           if (Math.abs(dy) > 6) y = n;

@@ -1,14 +1,12 @@
 /* Notifikasi "Highlight Issue" di halaman Cabang.
    - Kartu notifikasi di paling atas halaman Cabang: ketuk = buka detail, geser kiri/kanan atau tombol × = tutup.
-   - Notifikasi yang ditutup tidak tampil lagi hari itu (muncul kembali besok, atau bila isi POIN diganti VERSI).
+   - Notifikasi yang ditutup hanya hilang sampai halaman di-refresh / dibuka lagi (wajib dilihat setiap kunjungan).
    - Detail: panel layar penuh berisi judul besar (ikon perisai) dan 7 kartu poin.
    Isi poin diedit langsung di array POIN di bawah. Add-on non-destruktif: menyisipkan kartu ke URUTAN. */
 (()=>{'use strict';
 if(typeof URUTAN==='undefined'||typeof render!=='function')return;
 const app=document.getElementById('app');if(!app)return;
 
-const VERSI='2026-11-03-kontrol';                 // ganti bila isi poin diperbarui -> notifikasi tampil lagi untuk semua
-const KUNCI='kito-penguatan-tutup';
 
 /* ----- isi: teks **tebal** ditandai dengan dua bintang ----- */
 const JUDUL={
@@ -62,10 +60,10 @@ const IKON={
 };
 const tebal=t=>esc(t).replace(/\*\*(.+?)\*\*/g,'<b>$1</b>');
 
-/* ----- status tutup (per hari) ----- */
-const hariIni=()=>new Date().toISOString().slice(0,10);
-const ditutup=()=>{try{return localStorage.getItem(KUNCI)===VERSI+'|'+hariIni();}catch(e){return false;}};
-const tutupHariIni=()=>{try{localStorage.setItem(KUNCI,VERSI+'|'+hariIni());}catch(e){}};
+/* ----- status tutup: hanya di memori, jadi tampil lagi setiap refresh ----- */
+let sudahDitutup=false;
+const ditutup=()=>sudahDitutup;
+const tutupHariIni=()=>{sudahDitutup=true;};
 
 /* ===== kartu notifikasi di halaman Cabang ===== */
 function kartuPenguatan(){
@@ -132,8 +130,8 @@ function tutupDetail(){
 }
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&panel)tutupDetail();});
 
-/* ===== tutup notifikasi (geser info P95 / tombol × Highlight Issue) ===== */
-const GESER='#kito-pctl-top';
+/* ===== tutup notifikasi (geser / tombol ×) — Highlight Issue & info P95 (#kito-pctl-top) ===== */
+const GESER='#pgn-notif,#kito-pctl-top';
 function buangNotif(el,arah){
   if(!el||el.dataset.dibuang)return;
   el.dataset.dibuang='1';                         // klik yang menyusul gerakan geser diabaikan

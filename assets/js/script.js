@@ -431,9 +431,12 @@ function kartuUtilisasi() {
   const mtd = perKartu.nb === "mtd";
   let pasang, judul;
   if (c) {
-    const j = N.dates.indexOf(D.dates[st.d]);
+    let j = N.dates.indexOf(D.dates[st.d]);
+    // laporan NBDS bisa terbit lebih lambat dari antrian/O2O: tanggal terpilih yang lebih baru memakai data NBDS terakhir
+    const terakhir = j < 0 && D.dates[st.d] > N.tanggal;
+    if (terakhir) j = N.dates.indexOf(N.tanggal);
     pasang = (k) => (mtd ? c.m[k] : j < 0 ? null : c.d[k]?.[j]) || [null, null];
-    judul = mtd ? `MTD s.d. ${dlong(N.tanggal)}` : dlong(D.dates[st.d]);
+    judul = mtd ? `MTD s.d. ${dlong(N.tanggal)}` : terakhir ? `${dlong(N.tanggal)} (data terakhir)` : dlong(D.dates[st.d]);
   } else {
     // cadangan: D.M[4..9] = DtD tanggal laporan
     const m = D.M[st.b];

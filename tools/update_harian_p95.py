@@ -5,6 +5,9 @@ Pemakaian (dari folder Dashboard-KITO):
         --o2o <Dashboard_Monitoring_Ganti_Kartu_DD_Okt_26.xlsx> \
         --nbds <Monitoring_Utilisasi_NBDS_sd_DD_Oktober_2026.xlsx>
 
+Bila laporan NBDS belum terbit, --nbds boleh dikosongkan: Utilisasi NBDS (data.js M[4..9], D.O, area-nbds-data.js,
+dan NBDS di region-data.js) tetap memakai data terakhir; yang diperbarui hanya waktu antri dan O2O.
+
 Beda dengan update_semua.py: file antrian ini tidak punya sheet "Calc" (riwayat P90 banyak tanggal),
 melainkan sheet Bankwide / Region / Area / Cabang berisi P95 untuk SATU tanggal (isi sheet RAW).
 Jadi tanggal itu DITAMBAHKAN ke riwayat yang sudah ada; riwayat P90 dan MTD tidak disentuh.
@@ -263,17 +266,21 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--antrian", required=True)
     ap.add_argument("--o2o", required=True)
-    ap.add_argument("--nbds", required=True)
+    ap.add_argument("--nbds", help="kosongkan bila laporan NBDS belum ada (NBDS tetap memakai data terakhir)")
     ap.add_argument("--lewati-nbds-area", action="store_true", help="jangan jalankan convert_nbds_bankwide.py")
     a = ap.parse_args()
 
     # NBDS (area-nbds-data.js, D.M[4..9], D.O) memakai skrip yang sudah ada; harus lebih dulu karena menulis data.js
-    if not a.lewati_nbds_area:
+    if a.nbds and not a.lewati_nbds_area:
         subprocess.run([sys.executable, os.path.join("tools", "convert_nbds_bankwide.py"), a.nbds], check=True)
 
     tgl, cab, area_q, reg_q = baca_antrian(a.antrian)
     O = baca_o2o(a.o2o)
-    nbds_reg, tgl_nbds, bulan, bulan_lalu = baca_nbds_region(a.nbds)
+    if a.nbds:
+        nbds_reg, tgl_nbds, bulan, bulan_lalu = baca_nbds_region(a.nbds)
+    else:
+        nbds_reg, tgl_nbds, bulan, bulan_lalu = {}, None, None, None
+        print("NBDS dilewati: Utilisasi NBDS tetap memakai data terakhir.")
 
     # ===== data.js =====
     D, nl_d = baca_js(JS + "data.js", "const D = ")
@@ -366,13 +373,16 @@ def main():
         if key in O["reg_ch"]:
             e["ch"] = O["reg_ch"][key]
     R["tglWaktu"] = sorted(set(R["tglWaktu"]) | {tgl})
-    R["tglNbds"], R["bulan"], R["bulanLalu"] = tgl_nbds, bulan, bulan_lalu
+    if tgl_nbds:
+        R["tglNbds"], R["bulan"], R["bulanLalu"] = tgl_nbds, bulan, bulan_lalu
+    tgl_nbds = R["tglNbds"]
     R["tglO2O"] = O["tgl"]
     R["tanggal"] = max(tgl, tgl_nbds[-1])
     R.setdefault("queueMetricByDate", {})[tgl] = "P95"
     R["sumber"] = {
         "waktu": f"{nama_file(a.antrian)} · DtD {tgl} P95 seluruh 12 Region; MTD dan riwayat sampai 26 Okt P90",
-        "nbds": f"{nama_file(a.nbds)} · sheet Region · DtD dan MTD s.d. {tgl_nbds[-1]} · 12 Region + Bankwide",
+        "nbds": (f"{nama_file(a.nbds)} · sheet Region · DtD dan MTD s.d. {tgl_nbds[-1]} · 12 Region + Bankwide"
+                 if a.nbds else (R.get("sumber") or {}).get("nbds", "")),
         "o2o": nama_file(a.o2o),
     }
     tulis_js(JS + "region-data.js", "window.KITO_REGION=", R, nl_r)

@@ -10,7 +10,7 @@ kp_page_start('KITO Push · Setup');
 if (kp_config() && empty($_GET['selesai'])) {
     echo '<div class="cd"><h2>Sudah disetel</h2><p class="ok">✔ Backend notifikasi sudah aktif.</p>
       <p><a class="btn" href="index.php/admin">Buka halaman admin</a> <a class="btn sec" href="status.php">Cek status</a></p>
-      <p class="mu">Lupa token admin? Buka <code>data/config.php</code> lewat File Manager hosting, lihat nilai <code>admin_token</code>.<br>
+      <p class="mu">Lupa token admin? Buka <code>data/config.php</code> lewat File Manager hosting, lihat nilai <code>admin_token</code>, atau <a href="reset-token.php">reset token</a>.<br>
       Jangan hapus <code>config.php</code> setelah ada pelanggan: kunci baru membuat semua langganan lama tidak berlaku.</p></div>';
     kp_page_end(); exit;
 }

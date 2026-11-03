@@ -1,3 +1,4 @@
 config.php
 push.sqlite*
 *.tmp
+RESET-TOKEN

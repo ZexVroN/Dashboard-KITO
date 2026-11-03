@@ -3,9 +3,9 @@
 
 /* ----- kartu notifikasi di halaman Cabang ----- */
 .pgn-notif{position:relative;display:flex;align-items:center;gap:12px;margin:0 0 12px;padding:36px 44px 12px 14px;border:2px solid #ffd166;border-radius:16px;
-  background:linear-gradient(135deg,#1e4fa3 0%,#0f2a5c 100%);color:#fff;cursor:pointer;touch-action:pan-y;user-select:none;-webkit-user-select:none;
-  box-shadow:0 6px 20px rgba(15,42,92,.35);overflow:hidden;will-change:transform;animation:pgn-alert-glow 1.4s ease-in-out infinite}
-@keyframes pgn-alert-glow{0%,100%{box-shadow:0 6px 20px rgba(30,79,163,.35),0 0 0 0 rgba(59,130,246,.6)}50%{box-shadow:0 6px 24px rgba(30,79,163,.6),0 0 0 6px rgba(59,130,246,0)}}
+  background:linear-gradient(135deg,#dc2626 0%,#991b1b 100%);color:#fff;cursor:pointer;touch-action:pan-y;user-select:none;-webkit-user-select:none;
+  box-shadow:0 6px 20px rgba(153,27,27,.35);overflow:hidden;will-change:transform;animation:pgn-alert-glow 1.4s ease-in-out infinite}
+@keyframes pgn-alert-glow{0%,100%{box-shadow:0 6px 20px rgba(153,27,27,.35),0 0 0 0 rgba(220,38,38,.6)}50%{box-shadow:0 6px 24px rgba(153,27,27,.6),0 0 0 6px rgba(220,38,38,0)}}
 .pgn-notif::after{content:"";position:absolute;inset:0 auto 0 0;width:4px;background:var(--pgn-gold)}
 .pgn-notif:focus-visible{outline:3px solid var(--pgn-gold);outline-offset:2px}
 .pgn-n-ik{flex:none;display:flex;align-items:center;justify-content:center;width:44px;height:44px;border-radius:50%;border:2px solid var(--pgn-gold);color:var(--pgn-gold)}

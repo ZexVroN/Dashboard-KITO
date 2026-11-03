@@ -41,7 +41,7 @@ Selesai. Halaman admin ada di `https://domain-anda/push/admin` (atau `…/push/i
   - target topik, semua perangkat, atau per platform;
   - kirim sekarang atau **jadwalkan**, plus statistik dan riwayat.
 - **Otomatis dari skrip update harian**: `KITO_PUSH_URL=https://domain-anda/push` dan `KITO_PUSH_TOKEN=<token admin>` lalu jalankan `tools/update_harian_p95.py`.
-- API sama persis dengan versi Node (`push-server/`), jadi dashboard dan skrip tidak perlu diubah.
+- API dipakai bersama oleh dashboard dan skrip update harian.
 
 ## Keamanan
 
@@ -49,7 +49,6 @@ Selesai. Halaman admin ada di `https://domain-anda/push/admin` (atau `…/push/i
 - Hanya endpoint push service resmi yang diterima; token admin dibandingkan aman; percobaan salah dan permintaan publik dibatasi.
 - Langganan yang kedaluwarsa (404/410) atau gagal 5 kali dihapus otomatis.
 - **Lupa token?** Buka `data/config.php` lewat File Manager, lihat `admin_token`.
-- **Reset token admin** (kunci VAPID & langganan tetap): buat berkas kosong `data/RESET-TOKEN` lewat File Manager, buka `reset-token.php`, klik **Buat token baru**. Berkas pemicu terhapus otomatis.
 - **Jangan hapus** `data/config.php` setelah ada pelanggan: kunci baru membuat semua langganan lama tidak berlaku. Cadangkan folder `data/`.
 
 ## Bila ada masalah

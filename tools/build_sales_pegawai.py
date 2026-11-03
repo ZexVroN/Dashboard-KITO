@@ -14,6 +14,13 @@ Yang disimpan per pegawai (Gap, %, dan Status dihitung ulang di browser dengan a
      [akuisisi eksten per tanggal], target eksten, bal eksten, target bal eksten,
      [akuisisi inten per tanggal],  target inten,  bal inten,  target bal inten]
 NIP disamarkan (******1234), sama seperti User ID pada data Old BDS.
+
+Riwayat tanggal: laporan baru sering hanya memuat tanggal update terakhir. Nilai tanggal sebelumnya diambil dari
+data yang sudah ada (assets/js/sales-pegawai-data.js), dicocokkan per pegawai (kode cabang + nama), lalu
+ditampilkan N tanggal terakhir (bawaan 3). Target, balance, dan target balance selalu dari laporan terbaru.
+
+    python tools/build_sales_pegawai.py <xlsx> [--tampil 3] [--ganti-label 2026-10-28=2026-10-30]
+    --ganti-label  memperbaiki label tanggal di riwayat (mis. kolom berjudul "28 Okt" yang ternyata data 30 Okt)
 """
 
 import json
@@ -22,8 +29,18 @@ import sys
 
 import openpyxl
 
-SRC = sys.argv[1] if len(sys.argv) > 1 else sys.exit("Pemakaian: python tools/build_sales_pegawai.py <xlsx>")
-OUT = sys.argv[2] if len(sys.argv) > 2 else "assets/js/sales-pegawai-data.js"
+import argparse
+import os
+
+ap = argparse.ArgumentParser()
+ap.add_argument("xlsx")
+ap.add_argument("--out", default="assets/js/sales-pegawai-data.js")
+ap.add_argument("--riwayat", help="data lama untuk tanggal sebelumnya (bawaan: file --out yang sudah ada)")
+ap.add_argument("--tampil", type=int, default=3, help="jumlah tanggal update yang ditampilkan (bawaan 3)")
+ap.add_argument("--ganti-label", action="append", default=[], metavar="LAMA=BARU",
+                help="ganti label tanggal di riwayat, mis. 2026-10-28=2026-10-30")
+A = ap.parse_args()
+SRC, OUT = A.xlsx, A.out
 BULAN = {"jan": 1, "feb": 2, "mar": 3, "apr": 4, "mei": 5, "jun": 6, "jul": 7, "agu": 8, "agt": 8,
          "sep": 9, "okt": 10, "nov": 11, "des": 12}
 
@@ -68,7 +85,6 @@ for key, nama in (("e", "EKSTENSIFIKASI"), ("i", "INTENSIFIKASI")):
         "bal": kol(nama, r"^bal( inten)?$"),
         "tbal": kol(nama, r"^target bal"),
     }
-assert BL["e"]["tgl"] == BL["i"]["tgl"], "tanggal update Ekstensifikasi dan Intensifikasi berbeda"
 
 def num(v):
     if not isinstance(v, (int, float)) or isinstance(v, bool):
@@ -85,19 +101,52 @@ def kode(v):
         v = int(v)
     return str(v).strip() if v is not None else ""
 
-data = []
+# ---------- riwayat (data lama) ----------
+ganti = dict(x.split("=", 1) for x in A.ganti_label)
+riwayat = {}                      # (kode, nama) -> {"e": {tgl: nilai}, "i": {tgl: nilai}}
+path_riwayat = A.riwayat or (OUT if os.path.exists(OUT) else None)
+if path_riwayat:
+    teks = open(path_riwayat, encoding="utf-8").read()
+    lama = json.loads(teks[teks.index("{"):teks.rindex("}") + 1])
+    tgl_lama = [ganti.get(t, t) for t in lama["update"]]
+    for r in lama["rows"]:
+        riwayat[(r[4], r[0].upper())] = {"e": dict(zip(tgl_lama, r[5])), "i": dict(zip(tgl_lama, r[9]))}
+    print(f"Riwayat: {path_riwayat} · tanggal {tgl_lama}" + (f" (label diganti {ganti})" if ganti else ""))
+
+# ---------- laporan baru ----------
+pegawai = []
 for r in rows[5:]:
     if not r[c_nama]:
         continue
-    row = [str(r[c_nama]).strip(), samar(r[c_nip]), str(r[c_jab] or "").strip(), kode(r[c_area]), kode(r[c_kode])]
+    p = {"id": [str(r[c_nama]).strip(), samar(r[c_nip]), str(r[c_jab] or "").strip(), kode(r[c_area]), kode(r[c_kode])]}
     for key in ("e", "i"):
         b = BL[key]
-        row += [[num(r[i]) for i in b["akuisisi"]], num(r[b["target"]]), num(r[b["bal"]]), num(r[b["tbal"]])]
+        p[key] = {"seri": dict(zip(b["tgl"], (num(r[i]) for i in b["akuisisi"]))),
+                  "sisa": [num(r[b["target"]]), num(r[b["bal"]]), num(r[b["tbal"]])]}
+    pegawai.append(p)
+
+# tanggal yang ditampilkan: gabungan laporan baru + riwayat, ambil N terakhir
+semua = set(BL["e"]["tgl"]) | set(BL["i"]["tgl"])
+for v in riwayat.values():
+    semua |= set(v["e"]) | set(v["i"])
+update = sorted(semua)[-A.tampil:]
+tanpa_riwayat = 0
+data = []
+for p in pegawai:
+    h = riwayat.get((p["id"][4], p["id"][0].upper()))
+    if h is None:
+        tanpa_riwayat += 1
+    row = list(p["id"])
+    for key in ("e", "i"):
+        seri = [p[key]["seri"].get(t, (h or {}).get(key, {}).get(t)) for t in update]
+        row += [seri] + p[key]["sisa"]
     data.append(row)
+print(f"Ekstensifikasi di laporan: {BL['e']['tgl']} · Intensifikasi: {BL['i']['tgl']}")
+print(f"Ditampilkan: {update} · pegawai tanpa riwayat (titik lama kosong): {tanpa_riwayat}")
 
 out = {
-    "tanggal": BL["e"]["tgl"][-1],
-    "update": BL["e"]["tgl"],
+    "tanggal": update[-1],
+    "update": update,
     "sumber": SRC.replace("\\", "/").split("/")[-1] + " · sheet Monitoring Ind Pegawai",
     "kolom": ["nama", "nip", "jabatan", "area", "kode",
               "eAkuisisi", "eTarget", "eBal", "eTargetBal", "iAkuisisi", "iTarget", "iBal", "iTargetBal"],

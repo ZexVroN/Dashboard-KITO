@@ -1,22 +1,18 @@
-/* Notifikasi Highlight Issue & detail kontrol operasional (penguatan.js) */
+/* Notifikasi & detail "7 Poin Penguatan Operasional" (penguatan.js) */
 :root{--pgn-navy:#0f2a5c;--pgn-gold:#f5b81b;--pgn-krem:#fff6dc;--pgn-krem-bd:#f3d98a}
 
 /* ----- kartu notifikasi di halaman Cabang ----- */
-.pgn-notif{position:relative;display:flex;align-items:center;gap:12px;margin:0 0 12px;padding:36px 44px 12px 14px;border:2px solid #ffd166;border-radius:16px;
-  background:linear-gradient(135deg,#dc2626 0%,#991b1b 100%);color:#fff;cursor:pointer;touch-action:pan-y;user-select:none;-webkit-user-select:none;
-  box-shadow:0 6px 20px rgba(153,27,27,.35);overflow:hidden;will-change:transform;animation:pgn-alert-glow 1.4s ease-in-out infinite}
-@keyframes pgn-alert-glow{0%,100%{box-shadow:0 6px 20px rgba(153,27,27,.35),0 0 0 0 rgba(220,38,38,.6)}50%{box-shadow:0 6px 24px rgba(153,27,27,.6),0 0 0 6px rgba(220,38,38,0)}}
+.pgn-notif{position:relative;display:flex;align-items:center;gap:12px;margin:0 0 12px;padding:12px 44px 12px 12px;border-radius:16px;
+  background:linear-gradient(135deg,#0f2a5c 0%,#163d82 100%);color:#fff;cursor:pointer;touch-action:pan-y;user-select:none;-webkit-user-select:none;
+  box-shadow:0 6px 18px rgba(15,42,92,.22);overflow:hidden;will-change:transform}
 .pgn-notif::after{content:"";position:absolute;inset:0 auto 0 0;width:4px;background:var(--pgn-gold)}
 .pgn-notif:focus-visible{outline:3px solid var(--pgn-gold);outline-offset:2px}
 .pgn-n-ik{flex:none;display:flex;align-items:center;justify-content:center;width:44px;height:44px;border-radius:50%;border:2px solid var(--pgn-gold);color:var(--pgn-gold)}
 .pgn-n-ik svg{width:24px;height:24px}
 .pgn-n-tx{flex:1;min-width:0;display:flex;flex-direction:column;gap:1px}
-.pgn-n-tx small{position:absolute;top:9px;left:16px;z-index:1;display:inline-flex;align-items:center;gap:5px;margin:0;padding:3px 10px 3px 8px;border-radius:6px;background:#ffd166;box-shadow:0 1px 3px rgba(0,0,0,.2);
-  font-size:10.5px;font-weight:900;line-height:1.2;letter-spacing:1.2px;text-transform:uppercase;white-space:nowrap;color:#c8102e;animation:pgn-alert-blink 1.6s ease-in-out infinite}
-.pgn-n-tx small::before{content:"!";display:flex;align-items:center;justify-content:center;width:14px;height:14px;border-radius:50%;background:#b42318;color:#fff;font-size:10px;letter-spacing:0}
-.pgn-n-tx b{font-size:16px;font-weight:900;line-height:1.25}
-.pgn-n-tx em{font-style:normal;font-size:11px;font-weight:700;color:#ffe3a3}
-@keyframes pgn-alert-blink{0%,100%{opacity:1}50%{opacity:.35}}
+.pgn-n-tx small{font-size:10px;font-weight:800;letter-spacing:1.4px;text-transform:uppercase;color:var(--pgn-gold)}
+.pgn-n-tx b{font-size:15px;font-weight:800;line-height:1.25}
+.pgn-n-tx em{font-style:normal;font-size:11px;color:rgba(255,255,255,.7)}
 .pgn-n-go{flex:none;width:20px;height:20px;color:rgba(255,255,255,.8)}
 .pgn-n-go svg{width:20px;height:20px}
 .pgn-n-x{position:absolute;top:8px;right:8px;width:28px;height:28px;display:flex;align-items:center;justify-content:center;border:0;border-radius:50%;background:rgba(255,255,255,.12);color:#fff;cursor:pointer;padding:0}
@@ -80,7 +76,7 @@ html.pgn-kunci,html.pgn-kunci body{overflow:hidden}
 [data-theme="dark"] .pgn-k-tanda{background:#3a3018;border-color:#6b5520;color:#ffe9b0}
 [data-theme="dark"] .pgn-k-ik{background:#0a1d44}
 
-@media (prefers-reduced-motion:reduce){.pgn-latar,.pgn-panel,.pgn-notif{transition:none!important}.pgn-notif,.pgn-n-tx small{animation:none}}
+@media (prefers-reduced-motion:reduce){.pgn-latar,.pgn-panel,.pgn-notif{transition:none!important}}
 @media print{.pgn-notif{display:none}}
 /* info "Waktu Antrian · P95" juga bisa digeser untuk ditutup */
 #kito-pctl-top{touch-action:pan-y;user-select:none;-webkit-user-select:none;will-change:transform}

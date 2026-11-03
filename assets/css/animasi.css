@@ -83,7 +83,9 @@
   @keyframes kito-lembut     { from { opacity: 0.45; } to { opacity: 1; } }
 
   /* mencegah bilah gulir horizontal muncul sekejap saat kartu digeser */
-  html.an-jalan { overflow-x: hidden; }
+  /* overflow dipasang di #app (clip), BUKAN di <html>: mengubah overflow root di Chrome Android
+     membuat nav bawah (position:fixed) sesaat turun ke balik bilah navigasi HP saat tab diklik */
+  html.an-jalan #app { overflow-x: clip; }
 
   /* batang kemajuan tumbuh dari kiri saat halaman baru muncul */
   #app.an-maju .bar b,    #app.an-mundur .bar b,    #app.an-ganti .bar b,

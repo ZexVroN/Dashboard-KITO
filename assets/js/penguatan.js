@@ -1,4 +1,4 @@
-/* Notifikasi "7 Poin Penguatan Operasional" di halaman Cabang.
+/* Notifikasi "Highlight Issue" di halaman Cabang.
    - Kartu notifikasi di paling atas halaman Cabang: ketuk = buka detail, geser kiri/kanan atau tombol × = tutup.
    - Notifikasi yang ditutup tidak tampil lagi hari itu (muncul kembali besok, atau bila isi POIN diganti VERSI).
    - Detail: panel layar penuh berisi judul besar (ikon perisai) dan 7 kartu poin.
@@ -7,18 +7,18 @@
 if(typeof URUTAN==='undefined'||typeof render!=='function')return;
 const app=document.getElementById('app');if(!app)return;
 
-const VERSI='2026-11-02';                 // ganti bila isi poin diperbarui -> notifikasi tampil lagi untuk semua
+const VERSI='2026-11-03-kontrol';                 // ganti bila isi poin diperbarui -> notifikasi tampil lagi untuk semua
 const KUNCI='kito-penguatan-tutup';
 
 /* ----- isi: teks **tebal** ditandai dengan dua bintang ----- */
 const JUDUL={
-  label:'Penguatan Operasional',
+  label:'Kontrol Operasional',
   intro:'Sebagai upaya untuk peningkatan kewaspadaan atas **risiko operasional dan layanan cabang**, berikut adalah poin – poin yang perlu dilakukan.',
   ringkas:'poin peningkatan kewaspadaan risiko operasional & layanan cabang',
 };
 /* jenis: 'inisiatif' = Inisiatif Penjagaan (kartu biru muda); selain itu Arahan Operasional (kartu putih) */
 const KETERANGAN=[
-  {jenis:'inisiatif', judul:'Inisiatif Penjagaan', isi:'Penguatan kontrol dan sistem yang dijalankan'},
+  {jenis:'inisiatif', judul:'Inisiatif Penjagaan', isi:'Kontrol dan sistem yang dijalankan'},
   {jenis:'arahan',    judul:'Arahan Operasional',  isi:'Ketentuan yang wajib dipatuhi seluruh pegawai cabang'},
 ];
 const POIN=[
@@ -29,7 +29,7 @@ const POIN=[
    isi:'Pegawai cabang **tidak diperkenankan saling meminjamkan tablet** dalam kondisi tablet login.',
    tanda:'Berlaku saat tablet login'},
   {ik:'gembok', jenis:'inisiatif', kat:'Akses & Perangkat', judul:'Pembatasan Transaksi Pegawai',
-   isi:'Penguatan pengamanan sistem dengan **menutup akses reservasi dan transaksi pegawai di cabang sendiri**.',
+   isi:'Kontrol keamanan sistem dengan **menutup akses reservasi dan transaksi pegawai di cabang sendiri**.',
    tanda:'Penutupan akses reservasi & transaksi pegawai'},
   {ik:'timbangan', kat:'Pengendalian Kas', judul:'Kesesuaian Fisik Kas & Sistem',
    isi:'Teller wajib memastikan **fisik uang tunai sesuai dengan sistem** saat meninggalkan counter Teller dan pada akhir hari, sesuai dokumen Aktivitas Operasional Cabang.',
@@ -70,9 +70,9 @@ const tutupHariIni=()=>{try{localStorage.setItem(KUNCI,VERSI+'|'+hariIni());}cat
 /* ===== kartu notifikasi di halaman Cabang ===== */
 function kartuPenguatan(){
   if(ditutup())return '';
-  return `<div class="pgn-notif" id="pgn-notif" role="button" tabindex="0" aria-label="Buka 7 Poin Penguatan Operasional">
+  return `<div class="pgn-notif" id="pgn-notif" role="button" tabindex="0" aria-label="Buka Highlight Issue: 7 Poin Kontrol Operasional">
     <span class="pgn-n-ik">${IKON.perisai}</span>
-    <span class="pgn-n-tx"><small>${esc(JUDUL.label)}</small><b>${POIN.length} Poin Penguatan Operasional</b><em>Ketuk untuk lihat detail · geser untuk tutup</em></span>
+    <span class="pgn-n-tx"><small>HIGHLIGHT ISSUE !!!</small><b>${POIN.length} Poin Kontrol Operasional</b><em>WAJIB DIBACA · Ketuk untuk lihat detail</em></span>
     <span class="pgn-n-go">${IKON.panah}</span>
     <button type="button" class="pgn-n-x" data-pgn-tutup aria-label="Tutup notifikasi">${IKON.tutup}</button>
   </div>`;
@@ -132,9 +132,8 @@ function tutupDetail(){
 }
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&panel)tutupDetail();});
 
-/* ===== tutup notifikasi (geser / tombol ×) =====
-   Berlaku untuk notifikasi Penguatan Operasional dan info "Waktu Antrian · P95" (#kito-pctl-top dari index.html). */
-const GESER='#pgn-notif,#kito-pctl-top';
+/* ===== tutup notifikasi (geser info P95 / tombol × Highlight Issue) ===== */
+const GESER='#kito-pctl-top';
 function buangNotif(el,arah){
   if(!el||el.dataset.dibuang)return;
   el.dataset.dibuang='1';                         // klik yang menyusul gerakan geser diabaikan

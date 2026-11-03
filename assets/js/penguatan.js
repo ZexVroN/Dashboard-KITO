@@ -70,9 +70,9 @@ const tutupHariIni=()=>{try{localStorage.setItem(KUNCI,VERSI+'|'+hariIni());}cat
 /* ===== kartu notifikasi di halaman Cabang ===== */
 function kartuPenguatan(){
   if(ditutup())return '';
-  return `<div class="pgn-notif" id="pgn-notif" role="button" tabindex="0" aria-label="Buka 7 Poin Penguatan Operasional">
+  return `<div class="pgn-notif" id="pgn-notif" role="button" tabindex="0" aria-label="Buka Highlight Issue: 7 Poin Kontrol Operasional">
     <span class="pgn-n-ik">${IKON.perisai}</span>
-    <span class="pgn-n-tx"><small>${esc(JUDUL.label)}</small><b>${POIN.length} Poin Penguatan Operasional</b><em>Ketuk untuk lihat detail · geser untuk tutup</em></span>
+    <span class="pgn-n-tx"><small>HIGHLIGHT ISSUE !!!</small><b>${POIN.length} Poin Kontrol Operasional</b><em>WAJIB DIBACA · Ketuk untuk lihat detail</em></span>
     <span class="pgn-n-go">${IKON.panah}</span>
     <button type="button" class="pgn-n-x" data-pgn-tutup aria-label="Tutup notifikasi">${IKON.tutup}</button>
   </div>`;

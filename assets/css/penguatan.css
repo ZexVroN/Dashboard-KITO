@@ -12,11 +12,11 @@
 .pgn-n-ik svg{width:24px;height:24px}
 .pgn-n-tx{flex:1;min-width:0;display:flex;flex-direction:column;gap:1px}
 .pgn-n-tx small{position:absolute;top:9px;left:16px;z-index:1;display:inline-flex;align-items:center;gap:5px;margin:0;padding:3px 10px 3px 8px;border-radius:6px;background:#ffd166;box-shadow:0 1px 3px rgba(0,0,0,.2);
-  font-size:10.5px;font-weight:900;line-height:1.2;letter-spacing:1.2px;text-transform:uppercase;white-space:nowrap;color:#c8102e;animation:pgn-alert-blink 1s steps(2,start) infinite}
+  font-size:10.5px;font-weight:900;line-height:1.2;letter-spacing:1.2px;text-transform:uppercase;white-space:nowrap;color:#c8102e;animation:pgn-alert-blink 1.6s ease-in-out infinite}
 .pgn-n-tx small::before{content:"!";display:flex;align-items:center;justify-content:center;width:14px;height:14px;border-radius:50%;background:#b42318;color:#fff;font-size:10px;letter-spacing:0}
 .pgn-n-tx b{font-size:16px;font-weight:900;line-height:1.25}
 .pgn-n-tx em{font-style:normal;font-size:11px;font-weight:700;color:#ffe3a3}
-@keyframes pgn-alert-blink{50%{opacity:.2}}
+@keyframes pgn-alert-blink{0%,100%{opacity:1}50%{opacity:.35}}
 .pgn-n-go{flex:none;width:20px;height:20px;color:rgba(255,255,255,.8)}
 .pgn-n-go svg{width:20px;height:20px}
 .pgn-n-x{position:absolute;top:8px;right:8px;width:28px;height:28px;display:flex;align-items:center;justify-content:center;border:0;border-radius:50%;background:rgba(255,255,255,.12);color:#fff;cursor:pointer;padding:0}

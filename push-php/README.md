@@ -41,7 +41,7 @@ Selesai. Halaman admin ada di `https://domain-anda/push/admin` (atau `…/push/i
   - target topik, semua perangkat, atau per platform;
   - kirim sekarang atau **jadwalkan**, plus statistik dan riwayat.
 - **Otomatis dari skrip update harian**: `KITO_PUSH_URL=https://domain-anda/push` dan `KITO_PUSH_TOKEN=<token admin>` lalu jalankan `tools/update_harian_p95.py`.
-- API dipakai bersama oleh dashboard dan skrip update harian.
+- API sama persis dengan versi Node (`push-server/`), jadi dashboard dan skrip tidak perlu diubah.
 
 ## Keamanan
 

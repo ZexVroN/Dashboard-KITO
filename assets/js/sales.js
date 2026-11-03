@@ -12,7 +12,7 @@ const kartu=()=>window.KITO_SALES_CARDS||[];   // diisi infografis.js & pegawai.
 
 // Satu label periode seragam untuk kedua kartu (menggantikan tanggal berbeda di tiap judul kartu).
 function periode(){
-  const iso=window.KITO_SALES_PEGAWAI?.tanggal||window.KITO_INFO_DATA?.tanggal;
+  const iso=window.KITO_SALES_PEGAWAI?.tanggal;
   if(!iso)return 'Periode MTD Oktober 2026';
   const d=new Date(iso+'T00:00');
   const bln=d.toLocaleDateString('id-ID',{month:'long',year:'numeric'});

@@ -1,12 +1,7 @@
-/* inbranch sales cabang: tambahan indikator target/gap/achievement tanpa mengubah modul lain. */
+/* Kartu "Informasi Sales Akuisisi Cabang" (halaman Informasi Sales): profil pegawai inbranch + ringkasan sales.
+   Sumber: KITO_SALES_PEGAWAI (sales-pegawai-data.js) dan KITO_SP_RINGKAS (pegawai.js). */
 (()=>{'use strict';
- const source=window.KITO_INFO_DATA;
- if(!source||typeof URUTAN==='undefined'||typeof D==='undefined')return;
- const byCode=new Map(source.rows.map(r=>[String(r.kode).replace(/\D/g,''),r]));
- const byName=new Map(source.rows.map(r=>[String(r.cabang).trim().toLowerCase(),r]));
- const pegawai=window.KITO_PEGAWAI_DATA?.rows||[];
- const byPegawai=new Map();
- for(const r of pegawai){const k=String(r.kode).replace(/\D/g,'');if(!byPegawai.has(k))byPegawai.set(k,[]);byPegawai.get(k).push(r)}
+ if(typeof URUTAN==='undefined'||typeof D==='undefined')return;
  // Profil Pegawai Inbranch (dipindahkan dari kartu Pegawai): dari KITO_SALES_PEGAWAI agar jumlahnya sama.
  // Dibaca lazy karena sales-pegawai-data.js dimuat SETELAH script ini (urutan di index.html).
  let spByKode=null;
@@ -33,19 +28,9 @@
    return `<div class="sp-profil pp"><div class="pp-head"><span class="pp-tt"><b>Profil Pegawai Inbranch</b><small>${per.size} jabatan · ${kel.length} kelompok</small></span><strong>${tot}<small>pegawai</small></strong></div>
      <div class="pp-bar">${bar}</div><div class="pp-leg">${leg}</div><div class="pp-tiles">${tiles}</div></div>`;
  }
- const fmt=v=>v==null||!Number.isFinite(Number(v))?'–':Math.ceil(Number(v)).toLocaleString('id-ID',{maximumFractionDigits:0});
- const fields=[['cakra','Input CAKRA'],['cif','Akuisisi New CIF'],['pebisnis','Akuisisi Rek Pebisnis'],['payroll','New CIF Payroll']];
  function kartuInfografisCabang(){
    const b=D.B[st.b];if(!b)return '';
    const kode=String(b[0]??'').replace(/\D/g,'');
-   const r=byCode.get(kode)||byName.get(String(b[1]).trim().toLowerCase());
-   const list=byPegawai.get(kode)||[];
-   const target=(key)=>{
-     if(key==='cakra')return null;
-     if(list.length){const nums=list.map(x=>x.metrics?.[key]?.[1]).filter(x=>x!=null&&Number.isFinite(Number(x)));if(nums.length)return nums.reduce((a,b)=>a+Number(b),0)}
-     if(key==='cif'&&r?.target_cif!=null)return Number(r.target_cif);
-     return null;
-   };
    return `<div class="cd info-cabang"><h2>Informasi Sales Akuisisi Cabang</h2>
      <p class="info-caption">Data MTD cabang: <b>${esc(b[1])}</b> · ${esc(b[2])}</p>
      ${profilPegawai(kode)}

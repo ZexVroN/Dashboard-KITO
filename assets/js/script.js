@@ -152,105 +152,6 @@ function lebarGrafik() {
   return Math.max(260, Math.round(Math.min(vw, 720) - sisi - 2));
 }
 
-// memilih tanggal mana yang diberi label agar tidak saling menumpuk:
-// label dipasang tiap beberapa titik sesuai ruang yang tersedia, dihitung dari tanggal terakhir;
-// tanggal terpilih selalu diberi label
-function idxLabel(n, spasi, minGap, pilih) {
-  const langkah = Math.max(1, Math.ceil(minGap / Math.max(spasi, 1)));
-  const tampil = new Set();
-  for (let i = n - 1; i >= 0; i -= langkah) tampil.add(i);
-  [...tampil].forEach((i) => {
-    if (i !== pilih && Math.abs(i - pilih) * spasi < minGap) tampil.delete(i);
-  });
-  tampil.add(pilih);
-  return tampil;
-}
-
-// grafik gabungan: tiga garis dalam satu grafik
-function chart() {
-  const s = D.Q[st.b],
-    W = lebarGrafik(),
-    H = 190,
-    L = 34,
-    R = 14,
-    T = 12,
-    Bt = 26,
-    col = ["var(--c1)", "var(--c2)", "var(--c3)"],
-    nm = ["Teller", "CS", "Semua TRX"];
-  const n = D.dates.length,
-    spasi = n < 2 ? W : (W - L - R) / (n - 1),
-    tglTampil = idxLabel(n, spasi, 30, st.d);
-  const all = s.flat().filter((x) => x != null),
-    mx = Math.max(60, ...all),
-    top = Math.ceil(mx / 120) * 120 || 120;
-  const X = (i) => L + (D.dates.length < 2 ? 0 : (i * (W - L - R)) / (D.dates.length - 1)),
-    Y = (v) => T + (H - T - Bt) * (1 - v / top);
-  let g = "";
-  for (let i = 0; i <= 3; i++) {
-    const v = (top * i) / 3;
-    g += `<line x1="${L}" x2="${W - R}" y1="${Y(v)}" y2="${Y(v)}" stroke="var(--ln)"/><text x="${L - 4}" y="${Y(v) + 3}" font-size="9" text-anchor="end" fill="var(--mu)">${f(v)}</text>`;
-  }
-  D.dates.forEach((d, i) => {
-    if (!tglTampil.has(i)) return;
-    g += `<text x="${X(i)}" y="${H - 8}" font-size="9" text-anchor="middle" fill="${i === st.d ? "var(--tx)" : "var(--mu)"}" font-weight="${i === st.d ? 700 : 400}">${dl(d)}</text>`;
-  });
-  [0, 1, 2].forEach((k) => {
-    const pts = s.map((x, i) => (x?.[k] == null ? null : [X(i), Y(x[k])])).filter(Boolean);
-    if (pts.length)
-      g +=
-        `<polyline fill="none" stroke="${col[k]}" stroke-width="2.4" stroke-linejoin="round" points="${pts.map((p) => p.join(",")).join(" ")}"/>` +
-        pts.map((p) => `<circle cx="${p[0]}" cy="${p[1]}" r="3" fill="${col[k]}"/>`).join("");
-  });
-  g += `<line x1="${X(st.d)}" x2="${X(st.d)}" y1="${T}" y2="${H - Bt}" stroke="var(--mu)" stroke-dasharray="3 3"/>`;
-  return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Tren waktu antrian">${g}</svg><div class="lg">${nm.map((n, k) => `<span><i style="background:${col[k]}"></i>${n}</span>`).join("")}</div>`;
-}
-
-// grafik satu kategori, dengan nilai di titik-titik yang cukup lega
-function chart1(k, nama, warna) {
-  const s = D.Q[st.b],
-    W = lebarGrafik(),
-    H = 160,
-    L = 34,
-    R = 18,
-    T = 22,
-    Bt = 30;
-  const PX = 14; // jarak titik pertama/terakhir dari tepi grafik
-  const n = D.dates.length,
-    spasi = n < 2 ? W : (W - L - R - 2 * PX) / (n - 1),
-    tglTampil = idxLabel(n, spasi, 30, st.d),
-    nilaiTampil = idxLabel(n, spasi, 30, st.d);
-  const vals = s.map((x) => x?.[k]).filter((x) => x != null);
-  const top = Math.ceil(Math.max(60, ...vals) / 60) * 60;
-  const X = (i) =>
-      L + PX + (D.dates.length < 2 ? 0 : (i * (W - L - R - 2 * PX)) / (D.dates.length - 1)),
-    Y = (v) => T + (H - T - Bt) * (1 - v / top);
-  let g = "";
-  for (let i = 0; i <= 2; i++) {
-    const v = (top * i) / 2;
-    g += `<line x1="${L}" x2="${W - R}" y1="${Y(v)}" y2="${Y(v)}" stroke="var(--ln)"/><text x="${L - 4}" y="${Y(v) + 3}" font-size="9" text-anchor="end" fill="var(--mu)">${f(v)}</text>`;
-  }
-  D.dates.forEach((d, i) => {
-    if (!tglTampil.has(i)) return;
-    g += `<text x="${X(i)}" y="${H - 8}" font-size="9" text-anchor="middle" fill="${i === st.d ? "var(--tx)" : "var(--mu)"}" font-weight="${i === st.d ? 700 : 400}">${dl(d)}</text>`;
-  });
-  const pts = s
-    .map((x, i) => (x?.[k] == null ? null : [X(i), Y(x[k]), x[k], i]))
-    .filter(Boolean);
-  if (pts.length) {
-    g += `<polyline fill="none" stroke="${warna}" stroke-width="2.2" stroke-linejoin="round" points="${pts.map((p) => p[0] + "," + p[1]).join(" ")}"/>`;
-    pts.forEach((p, j) => {
-      // angka ditaruh di atas titik kalau tetangganya lebih rendah di layar, selain itu di bawah
-      const nb = [pts[j - 1], pts[j + 1]].filter(Boolean).map((q) => q[1]);
-      const atas = nb.length ? nb.reduce((a, b) => a + b) / nb.length >= p[1] : true;
-      const ly = atas ? p[1] - 7 : p[1] + 13;
-      g += `<circle cx="${p[0]}" cy="${p[1]}" r="${p[3] === st.d ? 4 : 2.8}" fill="${warna}"/>`;
-      if (nilaiTampil.has(p[3]))
-        g += `<text x="${p[0]}" y="${ly}" font-size="8" font-weight="${p[3] === st.d ? 700 : 600}" text-anchor="middle" fill="var(--tx)" stroke="var(--cd)" stroke-width="3" stroke-linejoin="round" paint-order="stroke">${f(p[2])}</text>`;
-    });
-  }
-  return `<div class="u"><b>${nama}</b><svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Tren ${nama}">${g}</svg></div>`;
-}
-
 // baris utilisasi dengan bar warna
 function util(label, n, o) {
   const p = pc(n, o),
@@ -364,9 +265,9 @@ function wait10() {
   return `<div class="w10"><span>Wait &lt; 10 detik</span><b>${w[1].toLocaleString("id-ID")} <small>dari ${w[0].toLocaleString("id-ID")} reservasi</small></b><b class="w10-p">${p == null ? "–" : pc(p)}</b>${rk ? `<small>Peringkat ${rk} dari ${semua.length} cabang Region II (persentase tertinggi = 1)</small>` : ""}</div>`;
 }
 
-// Grafik tren yang bisa digeser: Gabungan, Teller, CS, Semua TRX
+// Posisi kartu Tren Waktu Antrian; isinya digambar cabang-tren.js (mengganti fungsi ini di URUTAN)
 function kartuTren() {
-  return `<div class="cd"><h2>Tren Waktu Antrian</h2><div class="seg" id="dots"><button type="button" class="on">Gabungan</button><button type="button">Teller</button><button type="button">CS</button><button type="button">Semua TRX</button></div><div class="slider" id="sl"><div class="sl"><div class="u"><b>Teller · CS · Semua TRX</b>${chart()}</div></div><div class="sl">${chart1(0, "Teller", "var(--c1)")}</div><div class="sl">${chart1(1, "Customer Service", "var(--c2)")}</div><div class="sl">${chart1(2, "Semua TRX", "var(--c3)")}</div></div></div>`;
+  return "";
 }
 
 // Data Kelompok: kotak Teller dan CS, masing-masing dua periode
@@ -621,7 +522,6 @@ function render() {
     tampil === "cabang"
       ? URUTAN.map((kartu) => kartu()).join("")
       : kartuMaintenance(tampil === "region" ? "Region" : "Area");
-  pasangSlider();
   pasangUnduh();
   try {
     localStorage.setItem("dbm", JSON.stringify({ b: st.b }));
@@ -885,27 +785,6 @@ window.addEventListener("afterprint", () => {
 const cetak = $("#cetak");
 if (cetak) cetak.addEventListener("click", () => window.print());
 
-/* --- Slider grafik tren --- */
-let slIdx = 0;
-function pasangSlider() {
-  const sl = $("#sl");
-  if (!sl) return;
-  const dots = document.querySelectorAll("#dots button");
-  const tandai = (i) => dots.forEach((d, j) => d.classList.toggle("on", j === i));
-  sl.scrollLeft = slIdx * sl.clientWidth;
-  tandai(slIdx);
-  sl.addEventListener(
-    "scroll",
-    () => {
-      slIdx = Math.round(sl.scrollLeft / sl.clientWidth);
-      tandai(slIdx);
-    },
-    { passive: true },
-  );
-  dots.forEach((d, j) =>
-    d.addEventListener("click", () => sl.scrollTo({ left: j * sl.clientWidth, behavior: "smooth" })),
-  );
-}
 
 
 /* --- Navigasi: Region, Area, Cabang --- */

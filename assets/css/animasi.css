@@ -82,8 +82,11 @@
   @keyframes kito-ganti      { from { opacity: 0; transform: translateY(14px) scale(0.985); } to { opacity: 1; transform: none; } }
   @keyframes kito-lembut     { from { opacity: 0.45; } to { opacity: 1; } }
 
-  /* mencegah bilah gulir horizontal muncul sekejap saat kartu digeser */
-  html.an-jalan { overflow-x: hidden; }
+  /* mencegah bilah gulir horizontal muncul sekejap saat kartu digeser.
+     Dipotong di #app, bukan <html>: di HP, overflow pada <html> tidak selalu dihormati,
+     sehingga kartu yang menjorok 28px memperlebar viewport dan nav bawah (fixed) sempat turun.
+     "clip" tidak membuat area gulir baru; "hidden" cadangan untuk browser lama. */
+  html.an-jalan #app { overflow-x: hidden; overflow-x: clip; }
 
   /* batang kemajuan tumbuh dari kiri saat halaman baru muncul */
   #app.an-maju .bar b,    #app.an-mundur .bar b,    #app.an-ganti .bar b,

@@ -9,17 +9,12 @@
 <link rel="icon" type="image/png" sizes="32x32" href="../assets/images/ios/favicon-32.png" />
 <script src="../assets/js/apk-config.js"></script>
 <script>
-  /* Hanya HP/tablet Android yang dilayani halaman ini; perangkat lain (iPhone, iPad, laptop/PC) diarahkan ke website.
-     Di dalam aplikasi KITO (WebView) file tidak bisa diunduh: halaman menampilkan tombol "Salin link" untuk dibuka di Chrome. */
+  /* Halaman unduh APK hanya untuk Google Chrome di HP/tablet Android.
+     Selain itu (iPhone, iPad, laptop/PC, browser Android lain, dan aplikasi KITO sendiri) langsung ke dashboard. */
   (function () {
-    var ua = navigator.userAgent || '';
-    var android = /Android/i.test(ua);
-    var diDalamAplikasi = /; wv\)|KITO-Android/i.test(ua);
     if (/^zexvron\.github\.io$/i.test(location.hostname)) { location.replace('https://inbranch.region2.co.id/download/'); return; }
-    if (!android) location.replace('../');
-    window.KITO_DI_APLIKASI = diDalamAplikasi;
-    // versi aplikasi yang terpasang (APK 1.0 belum menambahkan penanda "KITO-Android/<versionCode>" -> dianggap 1)
-    window.KITO_KODE_TERPASANG = diDalamAplikasi ? Number((ua.match(/KITO-Android\/(\d+)/) || [])[1] || 1) : null;
+    var p = window.KITO_PERANGKAT ? window.KITO_PERANGKAT() : { chromeAndroid: false };
+    if (!p.chromeAndroid) location.replace('../');
   })();
 </script>
 <link rel="stylesheet" href="../assets/css/halaman-update.css?v=6" />
@@ -39,15 +34,16 @@
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11"/><path d="M7 10l5 5 5-5"/><path d="M5 20h14"/></svg>
       Unduh APK
     </a>
-    <p class="info-app" id="info-app" hidden>Anda membuka halaman ini dari aplikasi KITO. Unduhan hanya bisa dilakukan dari browser:
-      salin link, lalu tempel di <b>Chrome</b>.</p>
+    <a class="tombol kedua" id="dashboard" href="../">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>
+      Buka Dashboard
+    </a>
     <ol>
       <li>Ketuk <b>Unduh APK</b>, tunggu sampai selesai.</li>
       <li>Buka file <b>Dashboard-Kito.apk</b> dari notifikasi atau folder Download.</li>
       <li>Bila diminta, izinkan <b>Instal aplikasi tidak dikenal</b> untuk browser ini.</li>
       <li>Ketuk <b>Instal</b>. Untuk pembaruan, cukup pasang APK versi baru di atas versi lama.</li>
     </ol>
-    <a class="web" href="../">Buka versi website →</a>
   </main>
   <footer class="kredit"><span>Property of Operation Region II Sumatera</span><span>© Credits by <a href="https://assyahid.github.io/" target="_blank" rel="noopener noreferrer">Assyahid Hasan Albana</a> | Desigen By Deni</span></footer>
 <script>
@@ -56,28 +52,6 @@
     var a = document.getElementById('unduh');
     a.href = '../' + A.file;
     a.setAttribute('download', A.file.split('/').pop());
-    if (window.KITO_DI_APLIKASI && window.KITO_KODE_TERPASANG >= Number(A.kode)) {
-      // aplikasi sudah versi terbaru
-      a.removeAttribute('download');
-      a.href = '../';
-      a.lastChild.textContent = ' Kembali ke dashboard';
-      document.querySelector('h1').textContent = 'Aplikasi KITO sudah versi terbaru';
-      document.querySelector('.sub').textContent = 'Versi ' + (A.versi || '') + ' sudah terpasang di HP ini. Tidak perlu mengunduh ulang.';
-      document.querySelector('ol').hidden = true;
-    } else if (window.KITO_DI_APLIKASI) {
-      var link = location.href.split('#')[0];
-      a.removeAttribute('download');
-      a.lastChild.textContent = ' Salin link unduhan';
-      document.getElementById('info-app').hidden = false;
-      a.addEventListener('click', function (e) {
-        e.preventDefault();
-        var selesai = function (ok) { a.lastChild.textContent = ok ? ' Link disalin ✓ Tempel di Chrome' : ' Buka Chrome: ' + link; };
-        var cadangan = function () { var t = document.createElement('textarea'); t.value = link; document.body.appendChild(t); t.select();
-          var ok = false; try { ok = document.execCommand('copy'); } catch (er) {} t.remove(); selesai(ok); };
-        if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(link).then(function () { selesai(true); }, cadangan);
-        else cadangan();
-      });
-    }
     var tgl = A.tanggal ? new Date(A.tanggal + 'T00:00').toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }) : '';
     document.getElementById('meta').innerHTML = [A.versi ? 'Versi ' + A.versi : '', A.ukuran || '', tgl ? 'Rilis ' + tgl : '']
       .filter(Boolean).map(function (t) { return '<span>' + t + '</span>'; }).join('');

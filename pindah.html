@@ -8,7 +8,7 @@
 <title>Dashboard KITO pindah alamat</title>
 <link rel="icon" type="image/png" sizes="32x32" href="assets/images/ios/favicon-32.png" />
 <!-- Ditampilkan bila dashboard dibuka dari alamat lama (zexvron.github.io/Dashboard-KITO), lihat skrip di awal index.html. -->
-<link rel="stylesheet" href="assets/css/halaman-update.css?v=5" />
+<link rel="stylesheet" href="assets/css/halaman-update.css?v=6" />
 </head>
 <body>
   <picture class="latar" aria-hidden="true">
@@ -17,12 +17,20 @@
     <img src="assets/images/splash-landscape.png" alt="" decoding="async" />
   </picture>
   <main class="kartu" role="alert">
-    <span class="lencana">UPDATE</span>
+    <img class="ikon" src="assets/images/ios/icon-192.png" alt="" width="96" height="96" />
     <h1>Dashboard KITO telah pindah alamat</h1>
     <p class="sub">Mulai sekarang dashboard diakses melalui alamat baru. Alamat ini tidak diperbarui lagi.</p>
-    <span class="alamat">inbranch.region2.co.id</span>
-    <a class="tombol tombol-pendek" id="buka" href="https://inbranch.region2.co.id/">Buka Dashboard Baru →</a>
-    <p class="catatan" id="hitung">Dialihkan otomatis dalam <b>10</b> detik</p>
+    <div class="meta"><span>UPDATE</span><span>inbranch.region2.co.id</span></div>
+    <a class="tombol" id="buka" href="https://inbranch.region2.co.id/">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 4h6v6"/><path d="M20 4l-9 9"/><path d="M18 14v5a1 1 0 01-1 1H5a1 1 0 01-1-1V7a1 1 0 011-1h5"/></svg>
+      Buka Dashboard Baru
+    </a>
+    <ol>
+      <li>Ketuk <b>Buka Dashboard Baru</b>, atau tunggu dialihkan otomatis.</li>
+      <li>Simpan <b>inbranch.region2.co.id</b> sebagai bookmark di browser.</li>
+      <li>Bila KITO ada di <b>layar utama</b> dari alamat lama, hapus ikon lama lalu tambahkan lagi dari alamat baru.</li>
+    </ol>
+    <p class="web" id="hitung">Dialihkan otomatis dalam <b>10</b> detik</p>
   </main>
   <footer class="kredit"><span>Property of Operation Region II Sumatera</span><span>© Credits by <a href="https://assyahid.github.io/" target="_blank" rel="noopener noreferrer">Assyahid Hasan Albana</a> | Desigen By Deni</span></footer>
 <script>

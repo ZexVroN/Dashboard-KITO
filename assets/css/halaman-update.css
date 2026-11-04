@@ -1,0 +1,39 @@
+/* Halaman pemberitahuan (pindah.html, download/): latar gambar splash KITO + kartu kaca transparan */
+*{box-sizing:border-box}
+html{background:#0b2a6b}
+html,body{margin:0;min-height:100%}
+body{background:transparent}
+body{min-height:100vh;min-height:100dvh;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;
+  padding:calc(24px + env(safe-area-inset-top,0px)) 16px calc(12px + env(safe-area-inset-bottom,0px));
+  font-family:Inter,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;color:#fff}
+.latar{position:fixed;inset:0;z-index:0}
+.kartu,.kredit{position:relative;z-index:1}
+.latar img{width:100%;height:100%;object-fit:cover;display:block}
+.latar::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,24,72,.10) 0%,rgba(0,24,72,.18) 60%,rgba(0,24,72,.35) 100%)}
+.kartu{margin:auto 0;width:100%;max-width:420px;padding:26px 22px 22px;text-align:center;border-radius:22px;
+  background:rgba(14,36,92,.62);border:1px solid rgba(255,255,255,.22);box-shadow:0 18px 40px rgba(0,16,56,.35);
+  -webkit-backdrop-filter:blur(14px) saturate(1.2);backdrop-filter:blur(14px) saturate(1.2)}
+.lencana{display:inline-block;padding:5px 16px;border-radius:999px;background:#f5b81b;color:#14213d;font-size:13px;font-weight:800;letter-spacing:2px}
+.ikon{width:84px;height:84px;border-radius:22px;object-fit:cover;background:#fff;box-shadow:0 4px 14px rgba(0,0,0,.25)}
+h1{margin:14px 0 8px;font-size:24px;line-height:1.25;font-weight:800}
+.sub{margin:0 0 14px;font-size:15px;line-height:1.55;color:rgba(255,255,255,.88)}
+.alamat{display:block;margin:0 0 20px;font-size:18px;font-weight:800;color:#7cc4ff;letter-spacing:.2px}
+.alamat s{display:block;font-size:12.5px;font-weight:600;color:rgba(255,255,255,.55);margin-bottom:2px}
+.meta{display:flex;justify-content:center;gap:8px;flex-wrap:wrap;margin:0 0 18px}
+.meta span{font-size:12px;font-weight:700;padding:5px 10px;border-radius:999px;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.22)}
+.tombol{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;padding:14px 18px;border-radius:14px;border:0;
+  background:#fff;color:#0b3fa8;font:800 16px Inter,system-ui,sans-serif;text-decoration:none;cursor:pointer;box-shadow:0 6px 18px rgba(0,0,0,.18)}
+.tombol svg{width:21px;height:21px}
+.tombol:active{transform:scale(.98)}
+.tombol-pendek{width:auto;display:inline-flex;min-width:220px;padding:14px 38px;font-size:17px}
+.tombol.kedua{margin-top:10px;background:transparent;color:#fff;border:1.5px solid rgba(255,255,255,.65);box-shadow:none;font-size:14.5px;padding:12px 18px}
+.catatan{margin:12px 0 0;font-size:13px;color:rgba(255,255,255,.82)}
+.info-app{margin:14px 0 0;padding:10px 12px;border-radius:12px;background:rgba(245,184,27,.16);border:1px solid rgba(245,184,27,.5);font-size:12.5px;line-height:1.5;text-align:left}
+ol{text-align:left;margin:18px 0 0;padding:12px 14px 12px 32px;border-radius:14px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.14);font-size:13px;line-height:1.6;color:rgba(255,255,255,.92)}
+ol b{color:#fff}
+.kredit{margin-top:24px;padding:0 12px;text-align:center;
+  font-size:11.5px;line-height:1.5;color:rgba(255,255,255,.92);text-shadow:0 1px 3px rgba(0,20,70,.7)}
+.kredit span{display:block}
+.kredit a{color:#fff}
+@media (min-height:760px){h1{font-size:26px}}
+.web{display:inline-block;margin-top:16px;font-size:13.5px;font-weight:700;color:#fff;text-decoration:none;border-bottom:1px solid rgba(255,255,255,.5)}

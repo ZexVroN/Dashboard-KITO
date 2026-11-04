@@ -8,51 +8,33 @@
 <title>Dashboard KITO pindah alamat</title>
 <link rel="icon" type="image/png" sizes="32x32" href="assets/images/ios/favicon-32.png" />
 <!-- Ditampilkan bila dashboard dibuka dari alamat lama (zexvron.github.io/Dashboard-KITO), lihat skrip di awal index.html. -->
-<style>
-  :root{--nv:#002060;--bl:#0057ae;--tx:#14213d;--mu:#5b6b8c;--bg:#f3f6fb;--cd:#fff;--ln:#dfe5ef}
-  @media (prefers-color-scheme: dark){:root{--tx:#e8eefc;--mu:#9fb0d0;--bg:#0b1630;--cd:#13234a;--ln:#24365f}}
-  *{box-sizing:border-box}
-  body{margin:0;min-height:100vh;min-height:100dvh;display:flex;align-items:center;justify-content:center;padding:24px 16px;
-       background:var(--bg);color:var(--tx);font-family:Inter,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
-  .kartu{width:100%;max-width:380px;background:var(--cd);border:1px solid var(--ln);border-radius:22px;padding:26px 22px;text-align:center;box-shadow:0 10px 30px rgba(0,32,96,.12)}
-  .ikon{width:96px;height:96px;border-radius:24px;object-fit:cover;box-shadow:0 4px 14px rgba(0,32,96,.18);background:#fff}
-  h1{font-size:20px;margin:16px 0 4px}
-  .sub{margin:0 0 16px;color:var(--mu);font-size:13.5px;line-height:1.5}
-  .meta{display:flex;justify-content:center;gap:8px;flex-wrap:wrap;margin-bottom:20px}
-  .meta span{font-size:12px;font-weight:700;padding:5px 10px;border-radius:999px;background:var(--bg);border:1px solid var(--ln)}
-  .meta .lama{text-decoration:line-through;color:var(--mu);font-weight:600}
-  .tombol{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;padding:14px 18px;border-radius:14px;border:0;
-          background:linear-gradient(135deg,var(--nv),var(--bl));color:#fff;font:800 16px inherit;text-decoration:none}
-  .tombol svg{width:22px;height:22px}
-  .tombol.kedua{margin-top:10px;background:var(--cd);color:var(--nv);border:1.5px solid var(--nv);font-size:14.5px;padding:12px 18px}
-  @media (prefers-color-scheme: dark){.tombol.kedua{color:#c9dbff;border-color:#4a6fb5}}
-  ol{text-align:left;margin:20px 0 0;padding:14px 16px 14px 34px;border-radius:14px;background:var(--bg);font-size:13px;line-height:1.6}
-</style>
+<link rel="stylesheet" href="assets/css/halaman-update.css?v=4" />
 </head>
 <body>
-  <main class="kartu">
-    <img class="ikon" src="assets/images/ios/icon-192.png" alt="" width="96" height="96" />
-    <h1>Dashboard KITO pindah alamat</h1>
-    <p class="sub">Alamat ini tidak diperbarui lagi. Data terbaru Dashboard Monitoring Inbranch Region II ada di alamat baru.</p>
-    <div class="meta"><span class="lama">zexvron.github.io</span><span>→ inbranch.region2.co.id</span></div>
-    <a class="tombol" id="buka" href="https://inbranch.region2.co.id/">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 4h6v6"/><path d="M20 4l-9 9"/><path d="M18 14v5a1 1 0 01-1 1H5a1 1 0 01-1-1V7a1 1 0 011-1h5"/></svg>
-      Buka alamat baru
-    </a>
-    <a class="tombol kedua" id="apk" href="https://inbranch.region2.co.id/download/" hidden>
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11"/><path d="M7 10l5 5 5-5"/><path d="M5 20h14"/></svg>
-      Unduh Aplikasi Android
-    </a>
-    <ol>
-      <li>Ketuk <b>Buka alamat baru</b>.</li>
-      <li>Simpan <b>inbranch.region2.co.id</b> sebagai bookmark (penanda) di browser.</li>
-      <li>Bila dulu menambahkan KITO ke <b>layar utama</b> dari alamat lama, hapus ikon lama lalu tambahkan lagi dari alamat baru.</li>
-    </ol>
+  <picture class="latar" aria-hidden="true">
+    <source media="(orientation: portrait)" srcset="assets/images/splash-portrait.png" />
+    <source media="(min-width: 1600px)" srcset="assets/images/splash-widescreen.png" />
+    <img src="assets/images/splash-landscape.png" alt="" decoding="async" />
+  </picture>
+  <main class="kartu" role="alert">
+    <span class="lencana">UPDATE</span>
+    <h1>Dashboard KITO telah pindah alamat</h1>
+    <p class="sub">Mulai sekarang dashboard diakses melalui alamat baru. Alamat ini tidak diperbarui lagi.</p>
+    <span class="alamat">inbranch.region2.co.id</span>
+    <a class="tombol tombol-pendek" id="buka" href="https://inbranch.region2.co.id/">Buka Dashboard Baru →</a>
+    <p class="catatan" id="hitung">Dialihkan otomatis dalam <b>10</b> detik</p>
   </main>
+  <footer class="kredit"><span>Property of Operation Region II Sumatera</span><span>© Credits by <a href="https://assyahid.github.io/" target="_blank" rel="noopener noreferrer">Assyahid Hasan Albana</a> | Desigen By Deni</span></footer>
 <script>
+  /* Hitung mundur 10 detik lalu pindah otomatis ke alamat baru (tombol bisa diketuk lebih cepat). */
   (function () {
-    var ua = navigator.userAgent || '';
-    if (/Android/i.test(ua) && !/; wv\)|KITO-Android/i.test(ua)) document.getElementById('apk').hidden = false;
+    var tujuan = 'https://inbranch.region2.co.id/';
+    var sisa = 10, el = document.getElementById('hitung');
+    var t = setInterval(function () {
+      sisa -= 1;
+      if (sisa <= 0) { clearInterval(t); el.textContent = 'Membuka alamat baru…'; location.replace(tujuan); return; }
+      el.innerHTML = 'Dialihkan otomatis dalam <b>' + sisa + '</b> detik';
+    }, 1000);
   })();
 </script>
 </body>

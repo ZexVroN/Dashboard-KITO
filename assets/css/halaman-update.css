@@ -11,29 +11,29 @@ body{min-height:100vh;min-height:100dvh;display:flex;flex-direction:column;align
 .latar img{width:100%;height:100%;object-fit:cover;display:block}
 .latar::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,24,72,.10) 0%,rgba(0,24,72,.18) 60%,rgba(0,24,72,.35) 100%)}
 .kartu{margin:auto 0;width:100%;max-width:420px;padding:26px 22px 22px;text-align:center;border-radius:22px;
-  background:rgba(14,36,92,.62);border:1px solid rgba(255,255,255,.22);box-shadow:0 18px 40px rgba(0,16,56,.35);
-  -webkit-backdrop-filter:blur(14px) saturate(1.2);backdrop-filter:blur(14px) saturate(1.2)}
+  background:#fff;color:#14213d;border:1px solid #dfe5ef;box-shadow:0 18px 44px rgba(0,16,56,.35)}
 .lencana{display:inline-block;padding:5px 16px;border-radius:999px;background:#f5b81b;color:#14213d;font-size:13px;font-weight:800;letter-spacing:2px}
-.ikon{width:84px;height:84px;border-radius:22px;object-fit:cover;background:#fff;box-shadow:0 4px 14px rgba(0,0,0,.25)}
-h1{margin:14px 0 8px;font-size:24px;line-height:1.25;font-weight:800}
-.sub{margin:0 0 14px;font-size:15px;line-height:1.55;color:rgba(255,255,255,.88)}
-.alamat{display:block;margin:0 0 20px;font-size:18px;font-weight:800;color:#7cc4ff;letter-spacing:.2px}
-.alamat s{display:block;font-size:12.5px;font-weight:600;color:rgba(255,255,255,.55);margin-bottom:2px}
+.ikon{width:96px;height:96px;border-radius:24px;object-fit:cover;background:#fff;box-shadow:0 4px 14px rgba(0,32,96,.18)}
+h1{margin:14px 0 6px;font-size:22px;line-height:1.25;font-weight:800;color:#14213d}
+.sub{margin:0 0 14px;font-size:14.5px;line-height:1.55;color:#5b6b8c}
+.alamat{display:block;margin:0 0 20px;font-size:18px;font-weight:800;color:#0057ae;letter-spacing:.2px}
+.alamat s{display:block;font-size:12.5px;font-weight:600;color:#8a97b3;margin-bottom:2px}
 .meta{display:flex;justify-content:center;gap:8px;flex-wrap:wrap;margin:0 0 18px}
-.meta span{font-size:12px;font-weight:700;padding:5px 10px;border-radius:999px;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.22)}
+.meta span{font-size:12px;font-weight:700;padding:5px 10px;border-radius:999px;background:#f3f6fb;border:1px solid #dfe5ef;color:#14213d}
 .tombol{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;padding:14px 18px;border-radius:14px;border:0;
-  background:#fff;color:#0b3fa8;font:800 16px Inter,system-ui,sans-serif;text-decoration:none;cursor:pointer;box-shadow:0 6px 18px rgba(0,0,0,.18)}
+  background:linear-gradient(135deg,#002060,#0057ae);color:#fff;font:800 16px Inter,system-ui,sans-serif;text-decoration:none;cursor:pointer;box-shadow:0 6px 18px rgba(0,32,96,.22)}
 .tombol svg{width:21px;height:21px}
 .tombol:active{transform:scale(.98)}
 .tombol-pendek{width:auto;display:inline-flex;min-width:220px;padding:14px 38px;font-size:17px}
-.tombol.kedua{margin-top:10px;background:transparent;color:#fff;border:1.5px solid rgba(255,255,255,.65);box-shadow:none;font-size:14.5px;padding:12px 18px}
-.catatan{margin:12px 0 0;font-size:13px;color:rgba(255,255,255,.82)}
-.info-app{margin:14px 0 0;padding:10px 12px;border-radius:12px;background:rgba(245,184,27,.16);border:1px solid rgba(245,184,27,.5);font-size:12.5px;line-height:1.5;text-align:left}
-ol{text-align:left;margin:18px 0 0;padding:12px 14px 12px 32px;border-radius:14px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.14);font-size:13px;line-height:1.6;color:rgba(255,255,255,.92)}
-ol b{color:#fff}
+.tombol.kedua{margin-top:10px;background:#fff;color:#002060;border:1.5px solid #002060;box-shadow:none;font-size:14.5px;padding:12px 18px}
+.catatan{margin:12px 0 0;font-size:13px;color:#5b6b8c}
+.catatan b{color:#14213d}
+.info-app{margin:14px 0 0;padding:10px 12px;border-radius:12px;background:#fff6dc;border:1px solid #f3d98a;color:#5a4300;font-size:12.5px;line-height:1.5;text-align:left}
+ol{text-align:left;margin:18px 0 0;padding:14px 16px 14px 34px;border-radius:14px;background:#f3f6fb;font-size:13px;line-height:1.6;color:#14213d}
+ol b{color:#14213d}
 .kredit{margin-top:24px;padding:0 12px;text-align:center;
   font-size:11.5px;line-height:1.5;color:rgba(255,255,255,.92);text-shadow:0 1px 3px rgba(0,20,70,.7)}
 .kredit span{display:block}
 .kredit a{color:#fff}
 @media (min-height:760px){h1{font-size:26px}}
-.web{display:inline-block;margin-top:16px;font-size:13.5px;font-weight:700;color:#fff;text-decoration:none;border-bottom:1px solid rgba(255,255,255,.5)}
+.web{display:inline-block;margin-top:16px;font-size:13.5px;font-weight:700;color:#0057ae;text-decoration:none}

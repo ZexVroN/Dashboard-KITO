@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#002060" />
 <meta name="robots" content="noindex" />
 <title>Dashboard KITO pindah alamat</title>
-<script src="assets/js/apk-config.js"></script>
+<script src="assets/js/apk-config.js?v=3"></script>
 <link rel="icon" type="image/png" sizes="32x32" href="assets/images/ios/favicon-32.png" />
 <!-- Ditampilkan bila dashboard dibuka dari alamat lama (zexvron.github.io/Dashboard-KITO), lihat skrip di awal index.html. -->
 <link rel="stylesheet" href="assets/css/halaman-update.css?v=6" />
@@ -49,8 +49,14 @@
       apk.hidden = false;
       apk.href = tujuan + (A.file || 'download/Dashboard-Kito.apk');
       if (A.versi) apk.lastElementChild.textContent = 'Unduh APK Terbaru (v' + A.versi + ')';
-      apk.addEventListener('click', function () {
+      apk.addEventListener('click', function (e) {
         clearInterval(t);
+        if (!P.bisaUnduh && window.KITO_APK_LEWAT_CHROME) {
+          // aplikasi KITO 1.0 tidak bisa mengunduh file: salin alamat & tampilkan panduan lewat Chrome
+          e.preventDefault(); window.KITO_APK_LEWAT_CHROME();
+          el.innerHTML = 'Pengalihan otomatis dihentikan. Unduh APK lewat <b>Chrome</b>.';
+          return;
+        }
         el.innerHTML = 'Unduhan dimulai. Setelah selesai, buka file <b>' + (A.file || '').split('/').pop() + '</b> untuk memasang.';
       });
     }

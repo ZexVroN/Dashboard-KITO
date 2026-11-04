@@ -12,7 +12,7 @@
 'use strict';
 const API = new URL(self.location).searchParams.get('api') || '';
 const ICON = 'assets/images/ios/icon-192.png';
-const VERSI = 'kito-v5';
+const VERSI = 'kito-v6';
 const SHELL = `${VERSI}-shell`, RUNTIME = `${VERSI}-runtime`, DATA = `${VERSI}-data`;
 const MAKS_RUNTIME = 180;
 const scope = () => self.registration.scope;

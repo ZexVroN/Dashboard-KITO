@@ -3,8 +3,8 @@
    - Di dalam aplikasi KITO (WebView, penanda "; wv)" di user agent): notifikasi hanya tampil bila versi aplikasi
      yang terpasang lebih lama dari KITO_APK.kode, dengan tombol Unduh langsung ke file APK.
      Versi dibaca dari "KITO-Android/<versionCode>" di user agent; APK 1.0 belum menambahkan penanda itu (= 1).
-     APK 1.0 belum menangani unduhan file (tanpa DownloadListener): bila unduhan tidak berjalan, muncul petunjuk
-     untuk membuka halaman unduh di Chrome.
+     APK 1.0 sama sekali tidak bisa mengunduh file (WebViewClient polos, tanpa DownloadListener): tombol Unduh
+     menyalin alamat halaman unduh dan menampilkan panduan "Unduh APK lewat Chrome" (KITO_APK_LEWAT_CHROME).
    - Ketuk "Unduh" = unduh APK; geser kiri/kanan atau × = sembunyikan sampai ada versi APK baru (KITO_APK.kode).
    Info APK: assets/js/apk-config.js. Add-on non-destruktif: menyisipkan kartu ke URUTAN. */
 (()=>{'use strict';
@@ -59,7 +59,8 @@ function pesan(teks){
 app.addEventListener('click',e=>{
   const x=e.target.closest('[data-apk-tutup]');if(x){e.stopPropagation();buang(x.closest('#apk-notif'),1);return;}
   const u=e.target.closest('[data-apk-unduh]');
-  if(u&&diAplikasi)setTimeout(()=>pesan('Bila unduhan tidak berjalan, buka '+new URL('download/',document.baseURI).href.replace(/^https?:\/\//,'')+' di Chrome.'),600);
+  // APK 1.0 tidak bisa mengunduh file sama sekali: arahkan ke Chrome lewat panduan singkat
+  if(u&&!P.bisaUnduh&&window.KITO_APK_LEWAT_CHROME){e.preventDefault();window.KITO_APK_LEWAT_CHROME();}
 });
 if(typeof tampil!=='undefined'&&tampil==='cabang')render();
 })();

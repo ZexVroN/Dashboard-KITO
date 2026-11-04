@@ -1,6 +1,7 @@
 /* Notifikasi "Unduh Aplikasi KITO untuk Android" di atas halaman Cabang.
-   - Hanya untuk HP/tablet Android yang membuka website lewat browser (bukan dari dalam aplikasi KITO).
-     iPhone/iPad/PC tidak melihat apa pun dan tetap memakai website.
+   - Hanya untuk HP/tablet Android (browser maupun aplikasi KITO). iPhone/iPad/PC tidak melihat apa pun.
+   - Di dalam aplikasi KITO (WebView, penanda "; wv)" di user agent): aplikasi versi 1.0 belum bisa mengunduh file,
+     jadi tombolnya "Salin link" -> link halaman unduh disalin untuk dibuka di Chrome.
    - Ketuk "Unduh" = unduh APK; geser kiri/kanan atau × = sembunyikan sampai ada versi APK baru (KITO_APK.kode).
    Info APK: assets/js/apk-config.js. Add-on non-destruktif: menyisipkan kartu ke URUTAN. */
 (()=>{'use strict';
@@ -8,7 +9,7 @@ const A=window.KITO_APK;
 if(!A||typeof URUTAN==='undefined'||typeof render!=='function')return;
 const ua=navigator.userAgent||'';
 const android=/Android/i.test(ua), diAplikasi=/; wv\)|KITO-Android/i.test(ua);
-if(!android||diAplikasi)return;
+if(!android)return;
 const app=document.getElementById('app');if(!app)return;
 const KUNCI='kito-apk-tutup';
 const ditutup=()=>{try{return localStorage.getItem(KUNCI)===String(A.kode);}catch(e){return false;}};
@@ -19,8 +20,10 @@ function kartuApk(){
   if(ditutup())return '';
   return `<div class="apk-notif" id="apk-notif">
     <img src="assets/images/ios/icon-192.png" alt="" width="44" height="44" />
-    <span class="apk-tx"><small>Aplikasi Android</small><b>KITO versi ${esc(A.versi)} tersedia</b><em>${esc(A.ukuran||'')} · pasang langsung di HP Android</em></span>
-    <a class="apk-btn" href="${esc(A.file)}" download="${esc(nama)}" data-apk-unduh>Unduh</a>
+    <span class="apk-tx"><small>Aplikasi Android</small><b>KITO versi ${esc(A.versi)} tersedia</b><em>${diAplikasi?'Salin link, lalu buka di Chrome untuk mengunduh':esc(A.ukuran||'')+' · pasang langsung di HP Android'}</em></span>
+    ${diAplikasi
+      ?`<button type="button" class="apk-btn" data-apk-salin>Salin link</button>`
+      :`<a class="apk-btn" href="${esc(A.file)}" download="${esc(nama)}" data-apk-unduh>Unduh</a>`}
     <button type="button" class="apk-x" data-apk-tutup aria-label="Sembunyikan">×</button>
   </div>`;
 }
@@ -33,7 +36,7 @@ function buang(el,arah){
     el.style.height='0';el.style.margin='0';el.style.padding='0';el.style.borderWidth='0';setTimeout(()=>el.remove(),220);},220);
 }
 let g=null;
-app.addEventListener('pointerdown',e=>{const el=e.target.closest('#apk-notif');if(!el||e.target.closest('[data-apk-tutup],[data-apk-unduh]'))return;g={el,x0:e.clientX,y0:e.clientY,dx:0,k:null,id:e.pointerId};});
+app.addEventListener('pointerdown',e=>{const el=e.target.closest('#apk-notif');if(!el||e.target.closest('[data-apk-tutup],[data-apk-unduh],[data-apk-salin]'))return;g={el,x0:e.clientX,y0:e.clientY,dx:0,k:null,id:e.pointerId};});
 app.addEventListener('pointermove',e=>{
   if(!g||e.pointerId!==g.id)return;const dx=e.clientX-g.x0,dy=e.clientY-g.y0;
   if(g.k===null&&(Math.abs(dx)>8||Math.abs(dy)>8))g.k=Math.abs(dx)>Math.abs(dy)?'x':'y';
@@ -44,6 +47,23 @@ const lepas=e=>{if(!g||e.pointerId!==g.id)return;const {el,dx,k}=g;g=null;
   if(k==='x'&&Math.abs(dx)>90)return buang(el,Math.sign(dx));
   el.style.transition='transform .2s ease, opacity .2s ease';el.style.transform='';el.style.opacity='';};
 app.addEventListener('pointerup',lepas);app.addEventListener('pointercancel',lepas);
-app.addEventListener('click',e=>{const x=e.target.closest('[data-apk-tutup]');if(x){e.stopPropagation();buang(x.closest('#apk-notif'),1);}});
+/* salin link halaman unduh (dipakai di dalam aplikasi) */
+const linkUnduh=()=>new URL('download/',document.baseURI).href;
+function salin(teks){
+  const cadangan=()=>{const t=document.createElement('textarea');t.value=teks;t.setAttribute('readonly','');t.style.position='fixed';t.style.opacity='0';
+    document.body.appendChild(t);t.select();let ok=false;try{ok=document.execCommand('copy');}catch(e){}t.remove();return ok;};
+  if(navigator.clipboard&&navigator.clipboard.writeText)return navigator.clipboard.writeText(teks).then(()=>true,()=>cadangan());
+  return Promise.resolve(cadangan());
+}
+function pesan(teks){
+  let t=document.getElementById('apk-toast');
+  if(!t){t=document.createElement('div');t.id='apk-toast';t.className='apk-toast';t.setAttribute('role','status');document.body.appendChild(t);}
+  t.textContent=teks;t.classList.add('tampil');clearTimeout(t._j);t._j=setTimeout(()=>t.classList.remove('tampil'),4200);
+}
+app.addEventListener('click',e=>{
+  const x=e.target.closest('[data-apk-tutup]');if(x){e.stopPropagation();buang(x.closest('#apk-notif'),1);return;}
+  const c=e.target.closest('[data-apk-salin]');
+  if(c){const l=linkUnduh();salin(l).then(ok=>pesan(ok?'Link disalin. Buka Chrome, tempel di kolom alamat: '+l:'Buka Chrome lalu ketik: '+l));}
+});
 if(typeof tampil!=='undefined'&&tampil==='cabang')render();
 })();

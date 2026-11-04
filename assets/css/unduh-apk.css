@@ -12,4 +12,9 @@
 .apk-x{position:absolute;top:6px;right:6px;width:28px;height:28px;border:0;border-radius:50%;background:transparent;color:var(--mu,#5b6b8c);font-size:20px;line-height:1;cursor:pointer;padding:0}
 .apk-x:hover,.apk-x:focus-visible{background:rgba(0,32,96,.08);outline:none}
 [data-theme="dark"] .apk-notif{border-color:#2f4f8c;box-shadow:none}
-@media print{.apk-notif{display:none}}
+button.apk-btn{border:0;font-family:inherit;cursor:pointer}
+.apk-toast{position:fixed;left:50%;bottom:calc(96px + env(safe-area-inset-bottom,0px));z-index:1100;transform:translate(-50%,20px);opacity:0;pointer-events:none;
+  max-width:min(92vw,420px);padding:11px 16px;border-radius:12px;background:#14213d;color:#fff;font-size:13px;line-height:1.45;box-shadow:0 8px 24px rgba(0,0,0,.25);
+  transition:opacity .2s ease,transform .2s ease;overflow-wrap:anywhere}
+.apk-toast.tampil{opacity:1;transform:translate(-50%,0)}
+@media print{.apk-notif,.apk-toast{display:none}}

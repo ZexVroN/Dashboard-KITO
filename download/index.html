@@ -9,13 +9,14 @@
 <link rel="icon" type="image/png" sizes="32x32" href="../assets/images/ios/favicon-32.png" />
 <script src="../assets/js/apk-config.js"></script>
 <script>
-  /* Hanya HP/tablet Android (browser biasa) yang bisa mengunduh APK.
-     Perangkat lain (iPhone, iPad, laptop/PC) dan aplikasi KITO itu sendiri langsung diarahkan ke website. */
+  /* Hanya HP/tablet Android yang dilayani halaman ini; perangkat lain (iPhone, iPad, laptop/PC) diarahkan ke website.
+     Di dalam aplikasi KITO (WebView) file tidak bisa diunduh: halaman menampilkan tombol "Salin link" untuk dibuka di Chrome. */
   (function () {
     var ua = navigator.userAgent || '';
     var android = /Android/i.test(ua);
     var diDalamAplikasi = /; wv\)|KITO-Android/i.test(ua);
-    if (!android || diDalamAplikasi) location.replace('../');
+    if (!android) location.replace('../');
+    window.KITO_DI_APLIKASI = diDalamAplikasi;
   })();
 </script>
 <style>
@@ -35,6 +36,8 @@
   .unduh svg{width:22px;height:22px}
   ol{text-align:left;margin:20px 0 0;padding:14px 16px 14px 34px;border-radius:14px;background:var(--bg);font-size:13px;line-height:1.6;color:var(--tx)}
   ol b{color:var(--tx)}
+  .info-app{margin:14px 0 0;padding:10px 12px;border-radius:12px;background:#fff6dc;border:1px solid #f3d98a;color:#5a4300;font-size:12.5px;line-height:1.5;text-align:left}
+  @media (prefers-color-scheme: dark){.info-app{background:#3a3018;border-color:#6b5520;color:#ffe9b0}}
   .web{display:inline-block;margin-top:16px;font-size:13px;font-weight:700;color:var(--bl);text-decoration:none}
   @media (prefers-color-scheme: dark){.web{color:#8fb4ff}}
 </style>
@@ -49,6 +52,8 @@
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11"/><path d="M7 10l5 5 5-5"/><path d="M5 20h14"/></svg>
       Unduh APK
     </a>
+    <p class="info-app" id="info-app" hidden>Anda membuka halaman ini dari aplikasi KITO. Unduhan hanya bisa dilakukan dari browser:
+      salin link, lalu tempel di <b>Chrome</b>.</p>
     <ol>
       <li>Ketuk <b>Unduh APK</b>, tunggu sampai selesai.</li>
       <li>Buka file <b>Dashboard-Kito.apk</b> dari notifikasi atau folder Download.</li>
@@ -63,6 +68,20 @@
     var a = document.getElementById('unduh');
     a.href = '../' + A.file;
     a.setAttribute('download', A.file.split('/').pop());
+    if (window.KITO_DI_APLIKASI) {
+      var link = location.href.split('#')[0];
+      a.removeAttribute('download');
+      a.lastChild.textContent = ' Salin link unduhan';
+      document.getElementById('info-app').hidden = false;
+      a.addEventListener('click', function (e) {
+        e.preventDefault();
+        var selesai = function (ok) { a.lastChild.textContent = ok ? ' Link disalin ✓ Tempel di Chrome' : ' Buka Chrome: ' + link; };
+        var cadangan = function () { var t = document.createElement('textarea'); t.value = link; document.body.appendChild(t); t.select();
+          var ok = false; try { ok = document.execCommand('copy'); } catch (er) {} t.remove(); selesai(ok); };
+        if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(link).then(function () { selesai(true); }, cadangan);
+        else cadangan();
+      });
+    }
     var tgl = A.tanggal ? new Date(A.tanggal + 'T00:00').toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }) : '';
     document.getElementById('meta').innerHTML = [A.versi ? 'Versi ' + A.versi : '', A.ukuran || '', tgl ? 'Rilis ' + tgl : '']
       .filter(Boolean).map(function (t) { return '<span>' + t + '</span>'; }).join('');

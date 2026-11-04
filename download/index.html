@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+<meta name="theme-color" content="#002060" />
+<meta name="robots" content="noindex" />
+<title>Unduh Aplikasi KITO untuk Android</title>
+<link rel="icon" type="image/png" sizes="32x32" href="../assets/images/ios/favicon-32.png" />
+<script src="../assets/js/apk-config.js"></script>
+<script>
+  /* Hanya HP/tablet Android (browser biasa) yang bisa mengunduh APK.
+     Perangkat lain (iPhone, iPad, laptop/PC) dan aplikasi KITO itu sendiri langsung diarahkan ke website. */
+  (function () {
+    var ua = navigator.userAgent || '';
+    var android = /Android/i.test(ua);
+    var diDalamAplikasi = /; wv\)|KITO-Android/i.test(ua);
+    if (!android || diDalamAplikasi) location.replace('../');
+  })();
+</script>
+<style>
+  :root{--nv:#002060;--bl:#0057ae;--gold:#f5b81b;--tx:#14213d;--mu:#5b6b8c;--bg:#f3f6fb;--cd:#fff;--ln:#dfe5ef}
+  @media (prefers-color-scheme: dark){:root{--tx:#e8eefc;--mu:#9fb0d0;--bg:#0b1630;--cd:#13234a;--ln:#24365f}}
+  *{box-sizing:border-box}
+  body{margin:0;min-height:100vh;min-height:100dvh;display:flex;align-items:center;justify-content:center;padding:24px 16px;
+       background:var(--bg);color:var(--tx);font-family:Inter,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+  .kartu{width:100%;max-width:380px;background:var(--cd);border:1px solid var(--ln);border-radius:22px;padding:26px 22px;text-align:center;box-shadow:0 10px 30px rgba(0,32,96,.12)}
+  .ikon{width:96px;height:96px;border-radius:24px;object-fit:cover;box-shadow:0 4px 14px rgba(0,32,96,.18);background:#fff}
+  h1{font-size:20px;margin:16px 0 4px}
+  .sub{margin:0 0 18px;color:var(--mu);font-size:13.5px;line-height:1.5}
+  .meta{display:flex;justify-content:center;gap:8px;flex-wrap:wrap;margin-bottom:20px}
+  .meta span{font-size:12px;font-weight:700;padding:5px 10px;border-radius:999px;background:var(--bg);border:1px solid var(--ln)}
+  .unduh{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;padding:14px 18px;border-radius:14px;border:0;
+         background:linear-gradient(135deg,var(--nv),var(--bl));color:#fff;font:800 16px inherit;text-decoration:none}
+  .unduh svg{width:22px;height:22px}
+  ol{text-align:left;margin:20px 0 0;padding:14px 16px 14px 34px;border-radius:14px;background:var(--bg);font-size:13px;line-height:1.6;color:var(--tx)}
+  ol b{color:var(--tx)}
+  .web{display:inline-block;margin-top:16px;font-size:13px;font-weight:700;color:var(--bl);text-decoration:none}
+  @media (prefers-color-scheme: dark){.web{color:#8fb4ff}}
+</style>
+</head>
+<body>
+  <main class="kartu">
+    <img class="ikon" src="../assets/images/ios/icon-192.png" alt="" width="96" height="96" />
+    <h1>Aplikasi KITO untuk Android</h1>
+    <p class="sub">Dashboard Monitoring Inbranch Region II, langsung dari layar utama HP Anda.</p>
+    <div class="meta" id="meta"></div>
+    <a class="unduh" id="unduh" href="#" download>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11"/><path d="M7 10l5 5 5-5"/><path d="M5 20h14"/></svg>
+      Unduh APK
+    </a>
+    <ol>
+      <li>Ketuk <b>Unduh APK</b>, tunggu sampai selesai.</li>
+      <li>Buka file <b>Dashboard-Kito.apk</b> dari notifikasi atau folder Download.</li>
+      <li>Bila diminta, izinkan <b>Instal aplikasi tidak dikenal</b> untuk browser ini.</li>
+      <li>Ketuk <b>Instal</b>. Untuk pembaruan, cukup pasang APK versi baru di atas versi lama.</li>
+    </ol>
+    <a class="web" href="../">Buka versi website →</a>
+  </main>
+<script>
+  (function () {
+    var A = window.KITO_APK || { file: 'download/Dashboard-Kito.apk' };
+    var a = document.getElementById('unduh');
+    a.href = '../' + A.file;
+    a.setAttribute('download', A.file.split('/').pop());
+    var tgl = A.tanggal ? new Date(A.tanggal + 'T00:00').toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }) : '';
+    document.getElementById('meta').innerHTML = [A.versi ? 'Versi ' + A.versi : '', A.ukuran || '', tgl ? 'Rilis ' + tgl : '']
+      .filter(Boolean).map(function (t) { return '<span>' + t + '</span>'; }).join('');
+  })();
+</script>
+</body>
+</html>

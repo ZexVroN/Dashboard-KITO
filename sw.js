@@ -12,7 +12,7 @@
 'use strict';
 const API = new URL(self.location).searchParams.get('api') || '';
 const ICON = 'assets/images/ios/icon-192.png';
-const VERSI = 'kito-v4';
+const VERSI = 'kito-v5';
 const SHELL = `${VERSI}-shell`, RUNTIME = `${VERSI}-runtime`, DATA = `${VERSI}-data`;
 const MAKS_RUNTIME = 180;
 const scope = () => self.registration.scope;
@@ -90,7 +90,7 @@ self.addEventListener('fetch', (event) => {
   if (API && req.url.startsWith(API)) return; // API notifikasi: selalu langsung ke server
   if (req.mode === 'navigate' && lokal(u)) return event.respondWith(halaman(event));
   if (lokal(u)) {
-    if (u.pathname.endsWith('/sw.js') || u.pathname.includes('/push-php/') || u.pathname.includes('/.well-known/')) return;
+    if (u.pathname.endsWith('/sw.js') || u.pathname.includes('/push-php/') || u.pathname.includes('/.well-known/') || u.pathname.includes('/download/')) return; // APK & halaman unduh: langsung ke server, tidak di-cache
     if (isData(u)) return event.respondWith(networkFirst(req, DATA));
     return event.respondWith(staleWhileRevalidate(event, RUNTIME));
   }

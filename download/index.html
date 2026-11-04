@@ -15,8 +15,11 @@
     var ua = navigator.userAgent || '';
     var android = /Android/i.test(ua);
     var diDalamAplikasi = /; wv\)|KITO-Android/i.test(ua);
+    if (/^zexvron\.github\.io$/i.test(location.hostname)) { location.replace('https://inbranch.region2.co.id/download/'); return; }
     if (!android) location.replace('../');
     window.KITO_DI_APLIKASI = diDalamAplikasi;
+    // versi aplikasi yang terpasang (APK 1.0 belum menambahkan penanda "KITO-Android/<versionCode>" -> dianggap 1)
+    window.KITO_KODE_TERPASANG = diDalamAplikasi ? Number((ua.match(/KITO-Android\/(\d+)/) || [])[1] || 1) : null;
   })();
 </script>
 <style>
@@ -68,7 +71,15 @@
     var a = document.getElementById('unduh');
     a.href = '../' + A.file;
     a.setAttribute('download', A.file.split('/').pop());
-    if (window.KITO_DI_APLIKASI) {
+    if (window.KITO_DI_APLIKASI && window.KITO_KODE_TERPASANG >= Number(A.kode)) {
+      // aplikasi sudah versi terbaru
+      a.removeAttribute('download');
+      a.href = '../';
+      a.lastChild.textContent = ' Kembali ke dashboard';
+      document.querySelector('h1').textContent = 'Aplikasi KITO sudah versi terbaru';
+      document.querySelector('.sub').textContent = 'Versi ' + (A.versi || '') + ' sudah terpasang di HP ini. Tidak perlu mengunduh ulang.';
+      document.querySelector('ol').hidden = true;
+    } else if (window.KITO_DI_APLIKASI) {
       var link = location.href.split('#')[0];
       a.removeAttribute('download');
       a.lastChild.textContent = ' Salin link unduhan';

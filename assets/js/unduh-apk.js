@@ -1,7 +1,9 @@
 /* Notifikasi "Unduh Aplikasi KITO untuk Android" di atas halaman Cabang.
    - Hanya untuk HP/tablet Android (browser maupun aplikasi KITO). iPhone/iPad/PC tidak melihat apa pun.
-   - Di dalam aplikasi KITO (WebView, penanda "; wv)" di user agent): aplikasi versi 1.0 belum bisa mengunduh file,
-     jadi tombolnya "Salin link" -> link halaman unduh disalin untuk dibuka di Chrome.
+   - Di dalam aplikasi KITO (WebView, penanda "; wv)" di user agent): notifikasi hanya tampil bila versi aplikasi
+     yang terpasang lebih lama dari KITO_APK.kode. Versi dibaca dari "KITO-Android/<versionCode>" di user agent;
+     APK 1.0 belum menambahkan penanda itu, jadi dianggap versionCode 1. Aplikasi versi 1.0 belum bisa mengunduh
+     file, jadi tombolnya "Salin link" -> link halaman unduh disalin untuk dibuka di Chrome.
    - Ketuk "Unduh" = unduh APK; geser kiri/kanan atau × = sembunyikan sampai ada versi APK baru (KITO_APK.kode).
    Info APK: assets/js/apk-config.js. Add-on non-destruktif: menyisipkan kartu ke URUTAN. */
 (()=>{'use strict';
@@ -10,6 +12,8 @@ if(!A||typeof URUTAN==='undefined'||typeof render!=='function')return;
 const ua=navigator.userAgent||'';
 const android=/Android/i.test(ua), diAplikasi=/; wv\)|KITO-Android/i.test(ua);
 if(!android)return;
+const kodeTerpasang=diAplikasi?Number((ua.match(/KITO-Android\/(\d+)/)||[])[1]||1):null;   // APK 1.0 tanpa penanda = 1
+if(diAplikasi&&kodeTerpasang>=Number(A.kode))return;   // aplikasi sudah versi terbaru: tanpa notifikasi update
 const app=document.getElementById('app');if(!app)return;
 const KUNCI='kito-apk-tutup';
 const ditutup=()=>{try{return localStorage.getItem(KUNCI)===String(A.kode);}catch(e){return false;}};

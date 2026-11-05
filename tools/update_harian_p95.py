@@ -268,6 +268,13 @@ def main():
     ap.add_argument("--lewati-nbds-area", action="store_true", help="jangan jalankan convert_nbds_bankwide.py")
     a = ap.parse_args()
 
+    # Arsip posisi sebelum ditimpa (KITO_ARSIP_BULAN): arsip bulan X selalu = data terakhir bulan X,
+    # sehingga saat laporan bulan baru masuk, bulan sebelumnya tetap bisa ditampilkan (periode-bulan.js).
+    import arsip_bulan
+    arsip_bulan.arsip_o2o()
+    if a.nbds:
+        arsip_bulan.arsip_nbds()
+
     # NBDS (area-nbds-data.js, D.M[4..9], D.O) memakai skrip yang sudah ada; harus lebih dulu karena menulis data.js
     if a.nbds and not a.lewati_nbds_area:
         subprocess.run([sys.executable, os.path.join("tools", "convert_nbds_bankwide.py"), a.nbds], check=True)

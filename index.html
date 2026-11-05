@@ -226,7 +226,7 @@ body.dark .kito-pctl-close,[data-theme="dark"] .kito-pctl-close{color:#fff}
     const descWaktu=p90Tgl.length
       ?(p95Tgl.length?`Data waktu antrean tanggal ${p95Tgl.map(t=>new Date(t+'T00:00').getDate()).join(', ')} ${bln} menggunakan persentil P95. `:'')+`Data harian hingga ${tg(p90Tgl[p90Tgl.length-1])} dan data kumulatif bulanan (MTD) menggunakan persentil P90. Hasil pengukuran dengan persentil berbeda tidak dapat dibandingkan secara langsung.`
       :`Seluruh data waktu antrean ${window.KITO_BULAN?window.KITO_BULAN.nama:''} menggunakan persentil P95. Data kumulatif bulanan (MTD) waktu antrean belum tersedia dalam laporan harian.`;
-    const nbdsTanggal='2026-10-30'; // Tanggal pembaruan untuk informasi utilisasi NBDS.
+    const nbdsTanggal=(window.KITO_AREA_NBDS&&window.KITO_AREA_NBDS.tanggal)||''; // tanggal laporan NBDS terakhir (ikut periode bulan)
     const nbdsTerakhir=nbdsTanggal?new Date(nbdsTanggal+'T00:00').toLocaleDateString('id-ID',{day:'numeric',month:'long',year:'numeric'}):'';
     const desc=descWaktu;
     if(box){

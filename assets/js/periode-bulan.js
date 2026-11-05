@@ -9,7 +9,8 @@
    - kelompok area  : DtD = tanggal terakhir bulan terpilih (dari D.Q)
    - O2O & Shifting : bulan lama memakai arsip akhir bulan (kito.json [KITO_ARSIP_BULAN])
    - MTD waktu antri (P90) hanya ada untuk Oktober 2026; bulan lain tampil "–".
-   Utilisasi NBDS tidak dipotong: memakai laporan NBDS terakhir (DtD & MTD dengan tanggal/bulannya sendiri). */
+   - Utilisasi NBDS : bulan lama memakai arsip NBDS akhir bulan (KITO_ARSIP_BULAN[bulan].nbds); bila bulan terpilih
+     belum punya laporan NBDS, tampil laporan NBDS terakhir (DtD & MTD dengan tanggal/bulannya sendiri). */
 (function () {
   'use strict';
   if (typeof D === 'undefined' || !Array.isArray(D.dates) || !D.dates.length) return;
@@ -17,7 +18,7 @@
   var bulanList = SEMUA.map(function (d) { return d.slice(0, 7); }).filter(function (m, i, a) { return a.indexOf(m) === i; }).sort();
   var terbaru = bulanList[bulanList.length - 1];
   var MTD_P90 = '2026-10';                       // bulan yang punya MTD P90 waktu antri di laporan lama
-  var bagian = ['D', 'KITO_AREA_WAKTU', 'KITO_AREA_KELOMPOK', 'KITO_AREA_O2O', 'KITO_REGION'];
+  var bagian = ['D', 'KITO_AREA_WAKTU', 'KITO_AREA_KELOMPOK', 'KITO_AREA_O2O', 'KITO_AREA_NBDS', 'KITO_REGION'];
   var asli = {};
   bagian.forEach(function (k) { if (window[k]) asli[k] = window[k]; });
   asli = JSON.stringify(asli);
@@ -88,6 +89,18 @@
     if (arsip.areaO2O) data.KITO_AREA_O2O = arsip.areaO2O;
   }
 
+  /* ---------- Utilisasi NBDS: arsip akhir bulan bila bulan terpilih bukan bulan laporan NBDS terakhir ---------- */
+  var arsipNb = window.KITO_ARSIP_BULAN && window.KITO_ARSIP_BULAN[pilih] && window.KITO_ARSIP_BULAN[pilih].nbds;
+  if (arsipNb && !(data.KITO_AREA_NBDS && data.KITO_AREA_NBDS.bulan === pilih)) {
+    D.B.forEach(function (b, i) {
+      var m = arsipNb.M[String(b[0])], row = D.M[i];
+      if (!m || !row) return;
+      for (var k = 0; k < 6; k++) row[4 + k] = m[k];
+    });
+    D.O = arsipNb.O;
+    data.KITO_AREA_NBDS = arsipNb.area;
+  } else arsipNb = null;
+
   /* ---------- kito.json [KITO_AREA_WAKTU] ---------- */
   var KW = data.KITO_AREA_WAKTU;
   if (KW) {
@@ -134,6 +147,13 @@
         if (a) { e.o2o = a.o2o; e.ch = a.ch; }
       }
     });
+    if (arsipNb) {
+      var rn = arsipNb.region;
+      (R.regions || []).forEach(function (e) { if (rn.data[e.id] !== undefined) e.nbds = rn.data[e.id]; });
+      if (R.nasional && rn.data.NASIONAL !== undefined) R.nasional.nbds = rn.data.NASIONAL;
+      R.tglNbds = rn.tglNbds; R.bulan = rn.bulan; R.bulanLalu = rn.bulanLalu;
+      if (R.sumber) R.sumber.nbds = rn.sumberNbds;
+    }
     if (arsip && arsip.region) {
       R.tglO2O = arsip.region.tglO2O;
       if (R.sumber) R.sumber.o2o = arsip.region.sumberO2O;

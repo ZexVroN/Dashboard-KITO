@@ -133,12 +133,12 @@ function tutupDetail(){
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&panel)tutupDetail();});
 
 /* ===== tutup notifikasi (geser / tombol ×) =====
-   Berlaku untuk notifikasi Penguatan Operasional dan info "Waktu Antrian · P95" (#kito-pctl-top dari index.html). */
-const GESER='#pgn-notif,#kito-pctl-top';
+   Berlaku untuk notifikasi Penguatan Operasional, Waktu Antrian, dan Utilisasi NBDS. */
+const GESER='#pgn-notif,.kito-pctl-top';
 function buangNotif(el,arah){
   if(!el||el.dataset.dibuang)return;
   el.dataset.dibuang='1';                         // klik yang menyusul gerakan geser diabaikan
-  const pctl=el.id==='kito-pctl-top';
+  const pctl=el.matches('.kito-pctl-top');
   if(!pctl)tutupHariIni();
   el.style.transition='transform .22s ease, opacity .22s ease';
   el.style.transform=`translateX(${arah*110}%)`;el.style.opacity='0';
@@ -146,7 +146,7 @@ function buangNotif(el,arah){
     el.style.height=el.offsetHeight+'px';el.offsetHeight;   // lalu ciutkan tinggi agar konten di bawah naik halus
     el.style.transition='height .2s ease, margin .2s ease, padding .2s ease';
     el.style.height='0';el.style.margin='0';el.style.padding='0';el.style.borderWidth='0';
-    // info P95: pakai tombol × miliknya sendiri agar statusnya (tertutup) ikut tersimpan
+    // Pakai tombol × masing-masing informasi agar status tertutup ikut tersimpan.
     setTimeout(()=>{const x=pctl&&el.querySelector('.kito-pctl-close');if(x)x.click();else el.remove();},220);
   },220);
 }

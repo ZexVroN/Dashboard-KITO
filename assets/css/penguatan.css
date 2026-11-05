@@ -82,8 +82,8 @@ html.pgn-kunci,html.pgn-kunci body{overflow:hidden}
 
 @media (prefers-reduced-motion:reduce){.pgn-latar,.pgn-panel,.pgn-notif{transition:none!important}.pgn-notif,.pgn-n-tx small{animation:none}}
 @media print{.pgn-notif{display:none}}
-/* info "Waktu Antrian · P95" juga bisa digeser untuk ditutup */
-#kito-pctl-top{touch-action:pan-y;user-select:none;-webkit-user-select:none;will-change:transform}
+/* Info Waktu Antrian dan Utilisasi NBDS bisa digeser untuk ditutup. */
+.kito-pctl-top{touch-action:pan-y;user-select:none;-webkit-user-select:none;will-change:transform}
 /* kartu Keterangan (mengisi tempat kosong setelah poin 07) */
 .pgn-ket{padding:18px 16px;border-radius:16px;background:linear-gradient(180deg,#eef3fb 0%,#f6f8fc 100%);border:1px solid var(--ln,#dfe5ef)}
 .pgn-ket-h{display:flex;align-items:center;gap:10px;margin-bottom:16px}

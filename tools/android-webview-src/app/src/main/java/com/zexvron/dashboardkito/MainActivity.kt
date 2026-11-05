@@ -73,7 +73,7 @@ class MainActivity : AppCompatActivity() {
 
             // Tambahkan penanda khusus KITO-Android/<versionCode> agar website mengenali aplikasi
             val defaultUa = userAgentString
-            userAgentString = "$defaultUa KITO-Android/2"
+            userAgentString = "$defaultUa KITO-Android/1"
         }
 
         // Daftarkan jembatan JavaScript Interface

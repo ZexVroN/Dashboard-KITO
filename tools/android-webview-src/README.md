@@ -1,6 +1,6 @@
 # Source Code Android WebView KITO (Dengan Dukungan Push Notifikasi)
 
-Folder ini berisi kode sumber Android Studio untuk **Dashboard KITO versi 1.1 (versionCode 2)** dengan integrasi **Push Notifikasi Native Android WebView**.
+Folder ini berisi kode sumber Android Studio untuk **Dashboard KITO versi 1.0 (versionCode 1)** dengan integrasi **Push Notifikasi Native Android WebView**.
 
 ---
 
@@ -52,8 +52,8 @@ Aplikasi Android WebView biasa tidak mendukung Web Push standar (`PushManager`).
    - Perbarui versi di `assets/js/apk-config.js`:
      ```js
      window.KITO_APK = {
-       versi: '1.1',
-       kode: 2, // Naikkan ke 2 agar banner pembaruan APK muncul di dashboard
+       versi: '1.0',
+       kode: 1, // Versi saat ini; APK 1.0 tidak menampilkan banner pembaruan
        paket: 'com.zexvron.dashboardkito',
        file: 'download/Dashboard-Kito.apk',
        ukuran: '6,2 MB',

@@ -5,7 +5,7 @@
      Versi dibaca dari "KITO-Android/<versionCode>" di user agent; APK 1.0 belum menambahkan penanda itu (= 1).
      APK 1.0 sama sekali tidak bisa mengunduh file (WebViewClient polos, tanpa DownloadListener): tombol Unduh
      menyalin alamat halaman unduh dan menampilkan panduan "Unduh APK lewat Chrome" (KITO_APK_LEWAT_CHROME).
-   - Ketuk "Unduh" = unduh APK; geser kiri/kanan atau × = sembunyikan sampai ada versi APK baru (KITO_APK.kode).
+   - Ketuk "Unduh" = unduh APK; geser kiri/kanan atau × = sembunyikan hingga halaman dimuat ulang.
    Info APK: assets/js/apk-config.js. Add-on non-destruktif: menyisipkan kartu ke URUTAN. */
 (()=>{'use strict';
 const A=window.KITO_APK;
@@ -27,9 +27,9 @@ const perluUpdate=P.versiTerpasang
 // tampil hanya di Google Chrome Android, atau di aplikasi KITO yang versinya lebih lama dari APK terbaru
 if(!(diAplikasi?perluUpdate:P.chromeAndroid))return;
 const app=document.getElementById('app');if(!app)return;
-const KUNCI='kito-apk-tutup';
-const ditutup=()=>{try{return localStorage.getItem(KUNCI)===String(A.kode);}catch(e){return false;}};
-const tutup=()=>{try{localStorage.setItem(KUNCI,String(A.kode));}catch(e){}};
+let tertutup=false;
+const ditutup=()=>tertutup;
+const tutup=()=>{tertutup=true;};
 const nama=A.file.split('/').pop();
 
 function kartuApk(){

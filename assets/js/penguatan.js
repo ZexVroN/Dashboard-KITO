@@ -1,14 +1,12 @@
 /* Notifikasi "7 Poin Penguatan Operasional" di halaman Cabang.
    - Kartu notifikasi di paling atas halaman Cabang: ketuk = buka detail, geser kiri/kanan atau tombol × = tutup.
-   - Notifikasi yang ditutup tidak tampil lagi hari itu (muncul kembali besok, atau bila isi POIN diganti VERSI).
+   - Notifikasi yang ditutup muncul kembali setelah halaman dimuat ulang.
    - Detail: panel layar penuh berisi judul besar (ikon perisai) dan 7 kartu poin.
    Isi poin diedit langsung di array POIN di bawah. Add-on non-destruktif: menyisipkan kartu ke URUTAN. */
 (()=>{'use strict';
 if(typeof URUTAN==='undefined'||typeof render!=='function')return;
 const app=document.getElementById('app');if(!app)return;
 
-const VERSI='2026-11-02';                 // ganti bila isi poin diperbarui -> notifikasi tampil lagi untuk semua
-const KUNCI='kito-penguatan-tutup';
 
 /* ----- isi: teks **tebal** ditandai dengan dua bintang ----- */
 const JUDUL={
@@ -62,10 +60,10 @@ const IKON={
 };
 const tebal=t=>esc(t).replace(/\*\*(.+?)\*\*/g,'<b>$1</b>');
 
-/* ----- status tutup (per hari) ----- */
-const hariIni=()=>new Date().toISOString().slice(0,10);
-const ditutup=()=>{try{return localStorage.getItem(KUNCI)===VERSI+'|'+hariIni();}catch(e){return false;}};
-const tutupHariIni=()=>{try{localStorage.setItem(KUNCI,VERSI+'|'+hariIni());}catch(e){}};
+/* Status hanya berlaku hingga halaman dimuat ulang. */
+let tertutup=false;
+const ditutup=()=>tertutup;
+const tutupNotif=()=>{tertutup=true;};
 
 /* ===== kartu notifikasi di halaman Cabang ===== */
 function kartuPenguatan(){
@@ -139,7 +137,7 @@ function buangNotif(el,arah){
   if(!el||el.dataset.dibuang)return;
   el.dataset.dibuang='1';                         // klik yang menyusul gerakan geser diabaikan
   const pctl=el.matches('.kito-pctl-top');
-  if(!pctl)tutupHariIni();
+  if(!pctl)tutupNotif();
   el.style.transition='transform .22s ease, opacity .22s ease';
   el.style.transform=`translateX(${arah*110}%)`;el.style.opacity='0';
   setTimeout(()=>{

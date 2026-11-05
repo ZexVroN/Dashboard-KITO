@@ -1,5 +1,5 @@
 /* Add-on pegawai (tab Cabang): kartu "Informasi Sales Pegawai & Akuisisi".
-   Data: assets/js/sales-pegawai-data.js (tools/build_sales_pegawai.py, sheet "Monitoring Ind Pegawai"):
+   Data: data/kito.json [KITO_SALES_PEGAWAI] (tools/build_sales_pegawai.py, sheet "Monitoring Ind Pegawai"):
      PROFILE PEGAWAI INBRANCH · EKSTENSIFIKASI (New CIF) · INTENSIFIKASI (New Acc ETB).
    Aturan sama dengan Excel:
      Ekstensifikasi : % = Akuisisi ÷ Target;          Status dari Akuisisi vs Target

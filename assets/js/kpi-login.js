@@ -18,7 +18,7 @@
     atom: '24194830a2ecb9b2d9b384d0fe184d59c327e175bf59779d34551fb67794d7e0',
     bom: '4e88c3acbfdf57bd8a6634d2d4110a8a51b00b48fe3f0609815fb63a97ac1d50',
   };
-  // akses tab KPI per jabatan login: '*' = semua, selain itu daftar kunci jabatan (lihat kpi-data.js)
+  // akses tab KPI per jabatan login: '*' = semua, selain itu daftar kunci jabatan (lihat kito.json [KITO_KPI])
   const AKSES = {
     roh: '*',
     sqor: ['SQOR', 'SQOA'],

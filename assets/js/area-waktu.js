@@ -1,5 +1,5 @@
 /* Dashboard Waktu Tunggu per Area (DtD & MTD) pada navigasi Area.
-   Sumber data: assets/js/area-waktu-data.js (sheet "Area" · P90 · update 21 Oktober 2026).
+   Sumber data: data/kito.json [KITO_AREA_WAKTU] (sheet "Area" · P90 · update 21 Oktober 2026).
    Mendaftarkan diri ke registri tampilan tab Area (lihat area-o2o.js). */
 (()=>{'use strict';
 const src=window.KITO_AREA_WAKTU;
@@ -80,7 +80,7 @@ function p100Card(e,isRegion){
 
 function periodCard(per,e,isRegion){
   if(per==='mtd'&&baru())return p100Card(e,isRegion);
-  const title=per==='dtd'?`DtD ${pctl()} · ${isoLong(dtdIso())}`:'MTD · Oktober 2026';
+  const title=per==='dtd'?`DtD ${pctl()} · ${isoLong(dtdIso())}`:'MTD · '+(window.KITO_BULAN?window.KITO_BULAN.nama:'Oktober 2026');
   const has=per==='mtd'||e.d[dtdIso()];
   return `<section class="cd wt-period"><h2>${title}</h2>${has?'':`<p class="wt-warn">Data area untuk tanggal ini belum ada di laporan. Pilih tanggal lain di filter atas (tersedia: ${src.dates.map(isoShort).join(', ')}).</p>`}<div class="wt-tiles">${tile('Teller',per,e,isRegion,'teller')}${tile('CS',per,e,isRegion,'cs')}${tile('All Trx',per,e,isRegion,'all')}</div>${isRegion?'':'<p class="wt-note">▲ lebih cepat · ▼ lebih lambat dibanding Region II (semakin kecil semakin baik).</p>'}${per==='dtd'&&baru()?over20(e):''}</section>`;
 }
@@ -109,7 +109,7 @@ function ranking(e,isRegion){
     return `<button type="button" class="wt-row ${me?'me':''}" data-wt-area="${clean(r.a.name)}" aria-label="Buka ${clean(r.a.name)}"><span class="wt-no">${i+1}</span><span class="wt-mid"><span class="wt-nm">${clean(r.a.name)}</span><span class="wt-bar"><i class="${cls(r.v,p95)}" style="width:${r.v/max*100}%"></i><u class="t5" style="left:${300/max*100}%"></u>${reg!=null?`<u class="rg" style="left:${reg/max*100}%"></u>`:''}</span></span><span class="wt-val ${tk(r.v,p95)}">${clock(r.v)}</span></button>`;
   }).join('');
   const svcName=SVC.find(x=>x[0]===svc)[1];
-  const perName=per==='dtd'?`DtD ${pctl()} ${isoShort(dtdIso())}`:per==='p100'?`P100 ${isoShort(dtdIso())}`:'MTD Oktober';
+  const perName=per==='dtd'?`DtD ${pctl()} ${isoShort(dtdIso())}`:per==='p100'?`P100 ${isoShort(dtdIso())}`:(window.KITO_BULAN?window.KITO_BULAN.mtdLabel:'MTD Oktober');
   return `<section class="cd"><h2>Ranking Area · ${svcName} · ${perName}</h2>${seg('per',baru()?[['dtd','DtD P95'],['p100','P100'],['mtd','MTD P90']]:[['dtd','DtD'],['mtd','MTD']],per)}${seg('svc',SVC,svc)}${rows.length?`<div>${list}</div>`:'<p class="wt-warn">Belum ada data untuk periode ini.</p>'}<div class="wt-legend"><span><i class="ok"></i>&lt; 5 mnt</span><span><i class="md"></i>5–10</span><span><i class="wr"></i>10–${ta}</span><span><i class="bd"></i>&gt; ${ta}</span><span><u class="t5"></u>Batas 5 menit</span><span><u class="rg"></u>Region II ${clock(reg)}</span></div><p class="wt-note">Urut dari tercepat. Ketuk area untuk membuka dashboard-nya.</p></section>`;
 }
 
@@ -181,7 +181,7 @@ const bk=(n,p95)=>n==null?-1:n<300?0:n<600?1:n<atas(p95)?2:3;
 const kelP95=per=>per==='dtd'&&isP95(KEL_ISO);       // DtD kelompok = tanggal laporan terbaru
 const kb=p95=>[['Under 5 Menit','green','ok'],['5–10 Menit','yellow','md'],[`10–${p95?20:15} Menit`,'orange','wr'],[`Over ${p95?20:15} Menit`,'red','bd']];
 const kelRows=isRegion=>kel.filter(r=>isRegion||norm(r.area)===norm(st.a));
-const perName=per=>per==='dtd'?`DtD · ${isoLong(KEL_ISO)}`:'MTD · Oktober 2026';
+const perName=per=>per==='dtd'?`DtD · ${isoLong(KEL_ISO)}`:'MTD · '+(window.KITO_BULAN?window.KITO_BULAN.nama:'Oktober 2026');
 function perSeg(cur){
   return `<div class="seg wt-perseg" role="group" aria-label="Periode">${[['dtd','DtD'],['mtd','MTD']].map(([k,t])=>`<button type="button" data-wt-cat="${k}" class="${k===cur?'on':''}">${t}</button>`).join('')}</div>`;
 }
@@ -231,7 +231,7 @@ function wait10(e,isRegion){
 
 function tabel(e){
   const rowHtml=(label,arr,ref,on,p95)=>`<tr class="${on?'on':''}"><td>${label}</td>${[2,5,6].map(i=>`<td class="${tk(arr?arr[i]:null,p95)}"><b>${clock(arr?arr[i]:null)}</b></td>`).join('')}<td class="mu">${e===region?'–':clock(ref?ref[6]:null)}</td></tr>`;
-  const body=[rowHtml('<b>MTD Oktober</b>',e.m,region.m,false)].concat(src.dates.slice().reverse().map(d=>rowHtml(isoLong(d),e.d[d],region.d[d],d===dtdIso(),isP95(d)))).join('');
+  const body=[rowHtml('<b>'+(window.KITO_BULAN?window.KITO_BULAN.mtdLabel:'MTD Oktober')+'</b>',e.m,region.m,false)].concat(src.dates.slice().reverse().map(d=>rowHtml(isoLong(d),e.d[d],region.d[d],d===dtdIso(),isP95(d)))).join('');
   return `<section class="cd"><h2>Detail P90 per Tanggal</h2><div class="tw"><table><tr><th>Tanggal</th><th>Teller</th><th>CS</th><th>All Trx</th><th>All Reg. II</th></tr>${body}</table></div><p class="wt-note">Format mm:ss. Teller/CS = P90 overall; All Trx = P90 gabungan. Sumber: ${clean(src.sumber)}.</p></section>`;
 }
 

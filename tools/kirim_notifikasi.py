@@ -22,6 +22,8 @@ import os
 import sys
 import urllib.request
 
+import kito_data  # data/kito.json
+
 JS = "assets/js/"
 BATAS_P95 = 600     # 10 menit
 BATAS_P100 = 1800   # 30 menit
@@ -29,8 +31,7 @@ BULAN = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "
 
 
 def baca(path, awalan):
-    t = open(path, encoding="utf-8").read().strip()
-    return json.loads(t[len(awalan):-1])
+    return kito_data.baca(path)          # bagian data di data/kito.json
 
 
 def jam(s):

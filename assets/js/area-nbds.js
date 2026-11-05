@@ -1,5 +1,5 @@
 /* Dashboard Utilisasi NBDS per Area (DtD & MTD) pada navigasi Area.
-   Sumber data: assets/js/area-nbds-data.js (dibuat oleh tools/convert_nbds.py dari laporan
+   Sumber data: data/kito.json [KITO_AREA_NBDS] (dibuat oleh tools/convert_nbds.py dari laporan
    "Dashboard Monitoring Utilisasi NBDS Region 2 DtD").
    Mendaftarkan diri ke registri tampilan tab Area (lihat area-o2o.js); tidak mengubah modul lain.
    Utilisasi NBDS = New BDS ÷ (New BDS + Old BDS); target ≥ 98%. */

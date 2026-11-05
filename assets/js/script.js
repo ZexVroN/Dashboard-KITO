@@ -237,7 +237,7 @@ const segPer = (k, tanpaDtd) =>
     })
     .join("")}</div>`;
 
-// waktu antrian MTD (P90) per cabang dari area-kelompok-data.js
+// waktu antrian MTD (P90) per cabang dari kito.json [KITO_AREA_KELOMPOK]
 const kelCabang = () => (window.KITO_AREA_KELOMPOK || []).find((r) => String(r.kode) === String(D.B[st.b][0]));
 function qcardMtd(name, k) {
   const v = kelCabang()?.mtd?.[["teller", "cs", "all"][k]] ?? null,
@@ -272,6 +272,7 @@ function kartuTren() {
 
 // Data Kelompok: kotak Teller dan CS, masing-masing dua periode
 function kartuKelompok() {
+  if (window.KITO_BULAN && window.KITO_BULAN.aktif !== "2026-10") return ""; // kelompok 07 & 23 Okt hanya untuk Oktober
   const b = D.B[st.b];
   return `<div class="cd"><h2>Data Kelompok</h2><div class="kel-grid">${[
     ["Teller", 6, 7, 8],
@@ -325,7 +326,7 @@ function kartuShifting() {
   </div>`;
 }
 
-// Utilisasi NBDS: tiga baris dengan bar. DtD = tanggal terpilih, MTD = akumulasi bulan berjalan (area-nbds-data.js)
+// Utilisasi NBDS: tiga baris dengan bar. DtD = tanggal terpilih, MTD = akumulasi bulan berjalan (kito.json [KITO_AREA_NBDS])
 function kartuUtilisasi() {
   const N = window.KITO_AREA_NBDS,
     c = N?.cabang?.find((x) => String(x.kode) === String(D.B[st.b][0]));

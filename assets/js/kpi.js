@@ -1,6 +1,6 @@
 /* Halaman KPI (navigasi "KPI"): infografis skor KPI September 2026 per jabatan.
    Jabatan: ROH, TOH, SQO Region (regional) · ASM, SQO Area, ATOM (area) · BOM-BOS (cabang Region II).
-   Data: assets/js/kpi-data.js (dibuat oleh tools/build_kpi.py dari file Excel KPI). Add-on non-destruktif: membungkus render(). */
+   Data: data/kito.json [KITO_KPI] (dibuat oleh tools/build_kpi.py dari file Excel KPI). Add-on non-destruktif: membungkus render(). */
 (()=>{'use strict';
 const K=window.KITO_KPI;
 if(!K||typeof D==='undefined'||typeof render!=='function')return;

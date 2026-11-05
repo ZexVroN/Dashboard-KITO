@@ -1,4 +1,4 @@
-"""Membuat assets/js/pimpinan-data.js: nama Branch Manager dan BOM/BOS per cabang (kartu cabang, tab Cabang).
+"""Membuat data/kito.json [KITO_PIMPINAN]: nama Branch Manager dan BOM/BOS per cabang (kartu cabang, tab Cabang).
 
 Pemakaian (dari folder Dashboard-KITO):
     python tools/build_pimpinan.py <BOS-BM.xlsx>
@@ -12,8 +12,10 @@ import sys
 
 import openpyxl
 
+import kito_data  # data/kito.json
+
 SRC = sys.argv[1] if len(sys.argv) > 1 else sys.exit("Pemakaian: python tools/build_pimpinan.py <BOS-BM.xlsx>")
-OUT = sys.argv[2] if len(sys.argv) > 2 else "assets/js/pimpinan-data.js"
+OUT = sys.argv[2] if len(sys.argv) > 2 else "KITO_PIMPINAN"
 
 ws = openpyxl.load_workbook(SRC, read_only=True, data_only=True).worksheets[0]
 rows = list(ws.iter_rows(values_only=True))
@@ -40,8 +42,7 @@ for r in rows[hi + 1:]:
     data[kode] = [nama(r[c_bm]), nama(r[c_bom])]          # [Branch Manager, BOM/BOS]
 
 out = {"sumber": SRC.replace("\\", "/").split("/")[-1], "data": data}
-with open(OUT, "w", encoding="utf-8") as f:
-    f.write("window.KITO_PIMPINAN=" + json.dumps(out, ensure_ascii=False, separators=(",", ":")) + ";\n")
+kito_data.tulis(OUT, out)
 kosong_bm = [k for k, v in data.items() if not v[0]]
 kosong_bom = [k for k, v in data.items() if not v[1]]
 print(f"{len(data)} cabang -> {OUT}; tanpa BM: {kosong_bm}; tanpa BOM/BOS: {kosong_bom}")

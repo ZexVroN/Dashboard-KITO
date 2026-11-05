@@ -7,8 +7,8 @@ Sheet yang dibaca:
     Cab F P / Cab F NP / Cab NF : New BDS & Old BDS harian per cabang (Teller Perorangan, Teller Badan, CS)
     Raw                         : baris transaksi tanggal laporan -> rincian Old BDS
 Hasil:
-    assets/js/area-nbds-data.js : dashboard Utilisasi NBDS (format sama dengan convert_nbds.py)
-    assets/js/data.js           : D.M[i][4..9] (utilisasi DtD tanggal laporan) dan D.O (detail Old BDS)
+    data/kito.json [KITO_AREA_NBDS] : dashboard Utilisasi NBDS (format sama dengan convert_nbds.py)
+    data/kito.json [D]           : D.M[i][4..9] (utilisasi DtD tanggal laporan) dan D.O (detail Old BDS)
 
 Catatan metode:
     - MTD bulan berjalan = jumlah harian tanggal 1 s.d. tanggal laporan. Ini konsisten dengan kolom
@@ -24,6 +24,8 @@ import re
 import sys
 
 import openpyxl
+
+import kito_data  # data/kito.json
 
 R2 = "REGION II / SUMATERA 2"
 JS = "assets/js/"
@@ -45,14 +47,11 @@ def num(v):
 
 
 def baca_js(path, awalan):
-    teks = open(path, encoding="utf-8").read().strip()
-    assert teks.startswith(awalan) and teks.endswith(";"), path
-    return json.loads(teks[len(awalan):-1])
+    return kito_data.baca(path)          # bagian data di data/kito.json (nama file lama = alamat bagian)
 
 
 def tulis_js(path, awalan, data):
-    with open(path, "w", encoding="utf-8") as f:
-        f.write(awalan + json.dumps(data, ensure_ascii=False, separators=(",", ":")) + ";\n")
+    kito_data.tulis(path, data)
 
 
 def label_kolom(lbl, tahun):

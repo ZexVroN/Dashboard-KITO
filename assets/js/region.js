@@ -1,6 +1,6 @@
 /* Dashboard Region (navigasi "Region"): 12 region bankwide, fokus Region II / Sumatera 2.
    Tiga indikator: Waktu Antri (DtD P95 sejak 27 Okt; MTD dan riwayat P90), Utilisasi NBDS, O2O & Shifting Digital.
-   Data: assets/js/region-data.js (tools/build_region.py). Add-on non-destruktif: membungkus render().
+   Data: data/kito.json [KITO_REGION] (tools/build_region.py). Add-on non-destruktif: membungkus render().
    Pasangan gaya: assets/css/region.css (memakai juga .rg-* dari ranking.css dan .wt-* dari area-waktu.css). */
 (()=>{'use strict';
 const R=window.KITO_REGION;
@@ -16,7 +16,7 @@ const pctR=p=>p==null?'–':(p*100).toLocaleString('id-ID',{minimumFractionDigit
 const pctT=p=>{if(p==null)return '–';const v=Math.floor(p*1000+1e-9)/10;return v.toLocaleString('id-ID',{minimumFractionDigits:1,maximumFractionDigits:1})+'%';};
 const isoShort=iso=>new Date(iso+'T00:00').toLocaleDateString('id-ID',{day:'numeric',month:'short'});
 const isoLong=iso=>new Date(iso+'T00:00').toLocaleDateString('id-ID',{day:'numeric',month:'long',year:'numeric'});
-// persentil waktu antri per tanggal (region-data.js: queueMetricByDate)
+// persentil waktu antri per tanggal (kito.json [KITO_REGION]: queueMetricByDate)
 const QM=R.queueMetricByDate||{};
 const metrikTgl=t=>QM[t]||'P90';
 const tglP95=Object.keys(QM).filter(k=>QM[k]==='P95').sort();
@@ -63,7 +63,7 @@ const GRUP=[
 ];
 const metOf=k=>MET.find(m=>m.key===k)||MET[0];
 const perOf=(m,per)=>m.per.includes(per)?per:m.per[0];
-const perLabel=(m,per)=>perOf(m,per)==='mtd'?(m.jenis==='o2o'?`MTD s.d. ${isoShort(R.tglO2O)}`:(m.jenis==='waktu'?`MTD ${BULAN} · P90`:`MTD ${BULAN}`)):(m.jenis==='waktu'?`DtD ${isoShort(iso())} · ${metrikTgl(iso())}`:`DtD ${isoShort(iso())}`);
+const perLabel=(m,per)=>perOf(m,per)==='mtd'?(m.jenis==='o2o'?`MTD s.d. ${isoShort(R.tglO2O)}`:(m.jenis==='waktu'?`${window.KITO_BULAN?window.KITO_BULAN.mtdLabel:'MTD '+BULAN} · P90`:`MTD ${BULAN}`)):(m.jenis==='waktu'?`DtD ${isoShort(iso())} · ${metrikTgl(iso())}`:`DtD ${isoShort(iso())}`);
 // tgl: tanggal nilai waktu (bawaan: DtD terpilih bila periode DtD); P95 memakai batas 20 menit, P90 & P100 15 menit
 const kelas=(m,v,tgl=perOf(m,ui.per)==='dtd'?iso():null)=>{
   if(v==null)return 'n';
@@ -275,7 +275,7 @@ function antrian(){
   const rk=new Map(urut.map((r,i)=>[r.e,i+1]));
   const row=e=>{const n=e.waktu.n?.[t],w=e.waktu.w?.[t];
     return `<tr class="${e===FOKUS?'on':''}"><td class="rg-sticky2" style="left:0"><b>${clean(nama(e))}</b><small>${clean(e===NAS?'bankwide':e.nama)}</small></td><td>${n?num(n[2]):'–'}</td><td>${w?num(w[1]):'–'}</td><td><b>${pc(wp(e))}</b>${rk.has(e)?`<small>#${rk.get(e)}</small>`:''}</td></tr>`;};
-  // cabang Region II dengan persentase wait < 10 detik tertinggi (data cabang di data.js)
+  // cabang Region II dengan persentase wait < 10 detik tertinggi (data cabang di kito.json [D])
   const j=st.d,cab=D.B.map((b,i)=>({b,w:D.QW?.[i]?.[j]})).filter(r=>r.w&&r.w[1]>0).map(r=>({...r,p:r.w[1]/r.w[0]})).sort((a,b)=>b.p-a.p||b.w[1]-a.w[1]);
   const top=cab.slice(0,10).map((r,k)=>`<tr><td class="mu">${k+1}</td><td style="text-align:left"><button type="button" class="wt-lnk" data-ak-code="${clean(r.b[0])}"><b>${clean(r.b[1])}</b><small>${clean(r.b[2])}</small></button></td><td>${num(r.w[0])}</td><td>${num(r.w[1])}</td><td><b>${pc(r.p)}</b></td></tr>`).join('');
   return `<section class="cd"><h2>Reservasi & Wait &lt; 10 Detik · ${isoLong(t)}</h2>

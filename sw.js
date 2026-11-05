@@ -3,7 +3,7 @@
 
    Offline:
    - Halaman (navigasi): network-first (batas 4 detik) -> cache -> offline.html.
-   - File data dashboard (assets/js/*data.js): network-first, sehingga online selalu terbaru dan offline memakai data terakhir.
+   - Data dashboard (satu file data/kito.json): network-first, sehingga online selalu terbaru dan offline memakai data terakhir.
    - CSS/JS/gambar/font: stale-while-revalidate (cepat dari cache, diperbarui di latar belakang).
    - API notifikasi & situs lain: tidak di-cache.
    Background sync:
@@ -12,12 +12,12 @@
 'use strict';
 const API = new URL(self.location).searchParams.get('api') || '';
 const ICON = 'assets/images/ios/icon-192.png';
-const VERSI = 'kito-v6';
+const VERSI = 'kito-v9';
 const SHELL = `${VERSI}-shell`, RUNTIME = `${VERSI}-runtime`, DATA = `${VERSI}-data`;
 const MAKS_RUNTIME = 180;
 const scope = () => self.registration.scope;
 const lokal = (u) => u.origin === self.location.origin;
-const isData = (u) => /\/assets\/js\/[^/]*data\.js$/.test(u.pathname);
+const isData = (u) => /\/data\/kito\.json$/.test(u.pathname);
 
 /* ---------- install: simpan kerangka aplikasi (HTML + semua CSS/JS lokal dari index.html) ---------- */
 async function simpanShell() {
@@ -28,6 +28,7 @@ async function simpanShell() {
     const html = await (await fetch('index.html', { cache: 'no-store' })).text();
     const aset = [...html.matchAll(/(?:src|href)="(assets\/(?:js|css)\/[^"]+)"/g)].map((m) => m[1]);
     const dc = await caches.open(DATA);
+    await dc.add(new Request('data/kito.json', { cache: 'reload' })).catch(() => {});
     await Promise.allSettled([...new Set(aset)].map((p) => (isData(new URL(p, scope())) ? dc : c).add(new Request(p, { cache: 'reload' }))));
   } catch (e) { /* offline saat install: cukup dasar */ }
 }

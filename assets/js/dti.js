@@ -1,5 +1,5 @@
 /* Halaman "DTI Dana & Cendup" (view tersendiri: tampil==='dti'), dibuka dari tombol menu di atas halaman Cabang.
-   Data: assets/js/dti-data.js (tools/build_dti.py dari "Dashboard dan Data Detail NTB <tgl>.xlsx").
+   Data: data/kito.json [KITO_DTI] (tools/build_dti.py dari "Dashboard dan Data Detail NTB <tgl>.xlsx").
    Isi per cabang terpilih (dropdown Area/Cabang di header):
      1) DTI Score 2026 vs target 98,50
      2) Progres perbaikan data NTB & ETB: Data Error CIF Dana, D01 Slik emas, Cendup Weekly, User SSIM

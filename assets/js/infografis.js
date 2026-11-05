@@ -1,9 +1,9 @@
 /* Kartu "Informasi Sales Akuisisi Cabang" (halaman Informasi Sales): profil pegawai inbranch + ringkasan sales.
-   Sumber: KITO_SALES_PEGAWAI (sales-pegawai-data.js) dan KITO_SP_RINGKAS (pegawai.js). */
+   Sumber: KITO_SALES_PEGAWAI (kito.json [KITO_SALES_PEGAWAI]) dan KITO_SP_RINGKAS (pegawai.js). */
 (()=>{'use strict';
  if(typeof URUTAN==='undefined'||typeof D==='undefined')return;
  // Profil Pegawai Inbranch (dipindahkan dari kartu Pegawai): dari KITO_SALES_PEGAWAI agar jumlahnya sama.
- // Dibaca lazy karena sales-pegawai-data.js dimuat SETELAH script ini (urutan di index.html).
+ // Dibaca lazy karena kito.json [KITO_SALES_PEGAWAI] dimuat SETELAH script ini (urutan di index.html).
  let spByKode=null;
  function indeksSP(){
    if(spByKode)return spByKode;

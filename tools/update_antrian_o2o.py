@@ -4,7 +4,7 @@ Pemakaian (dari folder Dashboard-KITO):
     python tools/update_antrian_o2o.py --antrian <Dashboard_Antrian_Cabang.xlsx> --o2o <Dashboard_Monitoring_Ganti_Kartu.xlsx>
 
 Yang diperbarui (hanya Region II / Sumatera 2):
-  assets/js/data.js
+  data/kito.json [D]
     - D.dates + D.Q  : P90 Teller / CS / Semua TRX per cabang per tanggal   (sheet "Calc", kunci C|kode|tgl)
     - D.QD / D.QDM   : rincian Single & Multipel per cabang [Teller single, Teller multipel,
                        CS single, CS multipel] per tanggal (QD) dan MTD (QDM)     (sheet "Calc")
@@ -12,11 +12,11 @@ Yang diperbarui (hanya Region II / Sumatera 2):
     - D.M[i][0..3]   : Livin O2O, NBDS O2O, CSM, Old BDS                      ("Cabang O2O" + "Cabang by Channel")
     - D.M[i][10]     : NBDS seluruh transaksi ganti kartu (penyebut Shifting Digital resmi, "Cabang by Channel")
     - D.bw           : rata-rata O2O Bankwide                                 ("Region O2O", baris GRAND TOTAL)
-  assets/js/area-waktu-data.js
+  data/kito.json [KITO_AREA_WAKTU]
     - P90 per area & Region II per tanggal + MTD                             (sheet "Calc", kunci A|… dan R|…)
-  assets/js/area-kelompok-data.js
+  data/kito.json [KITO_AREA_KELOMPOK]
     - P90 per cabang: DtD tanggal terakhir + MTD ("Gabungan")                (sheet "Calc", kunci C|…)
-  assets/js/area-o2o-data.js
+  data/kito.json [KITO_AREA_O2O]
     - Utilisasi O2O per segmen: area Region II, Region II, Bankwide          ("Area O2O", "Region O2O")
   D.mdate = tanggal laporan O2O ("Mtd sd 22 Okt 26'").
 Data lain (NBDS, pegawai, infografis, Old BDS) tidak disentuh.
@@ -29,6 +29,8 @@ import json
 import re
 
 import openpyxl
+
+import kito_data  # data/kito.json
 
 R2 = "REGION II / SUMATERA 2"
 JS = "assets/js/"
@@ -63,14 +65,11 @@ def norm(s):
 
 
 def baca_js(path, awalan):
-    teks = open(path, encoding="utf-8").read().strip()
-    assert teks.startswith(awalan) and teks.endswith(";"), path
-    return json.loads(teks[len(awalan):-1])
+    return kito_data.baca(path)          # bagian data di data/kito.json (nama file lama = alamat bagian)
 
 
 def tulis_js(path, awalan, data):
-    with open(path, "w", encoding="utf-8") as f:
-        f.write(awalan + json.dumps(data, ensure_ascii=False, separators=(",", ":")) + ";\n")
+    kito_data.tulis(path, data)
 
 
 def tanggal_calc(lbl, tahun):

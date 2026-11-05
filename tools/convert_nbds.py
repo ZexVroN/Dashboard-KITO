@@ -1,8 +1,8 @@
 """Konversi laporan "Dashboard Monitoring Utilisasi NBDS Region 2 DtD" (.xlsx)
-menjadi assets/js/area-nbds-data.js untuk tampilan "Dashboard Utilisasi NBDS" di tab Area.
+menjadi data/kito.json [KITO_AREA_NBDS] untuk tampilan "Dashboard Utilisasi NBDS" di tab Area.
 
 Pemakaian:
-    python tools/convert_nbds.py <file.xlsx> [assets/js/area-nbds-data.js]
+    python tools/convert_nbds.py <file.xlsx> [data/kito.json [KITO_AREA_NBDS]]
 
 Sheet yang dibaca:
     - Area                      : New BDS / Old BDS per area (3 kanal), harian + MTD
@@ -22,6 +22,8 @@ import sys
 from collections import defaultdict
 
 import openpyxl
+
+import kito_data  # data/kito.json
 
 KANAL = [
     {"key": "fp", "label": "Teller Perorangan", "short": "Teller Perorangan"},
@@ -215,12 +217,11 @@ def main(src, out):
         "oldbds": oldbds,
     }
     teks = "window.KITO_AREA_NBDS=" + json.dumps(data, ensure_ascii=False, separators=(",", ":")) + ";\n"
-    with open(out, "w", encoding="utf-8") as fh:
-        fh.write(teks)
+    kito_data.tulis_teks_js(out, teks)
     print(f"{out}: {len(data['areas'])} area, {len(data['cabang'])} cabang, {len(dates)} tanggal ({dates[0]}..{dates[-1]}), {len(teks)/1024:.1f} KB")
 
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:
         sys.exit(__doc__)
-    main(sys.argv[1], sys.argv[2] if len(sys.argv) > 2 else "assets/js/area-nbds-data.js")
+    main(sys.argv[1], sys.argv[2] if len(sys.argv) > 2 else "KITO_AREA_NBDS")

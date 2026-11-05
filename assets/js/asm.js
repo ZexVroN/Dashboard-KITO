@@ -1,6 +1,6 @@
 /* Halaman Area: nama Area Service Manager (ASM) di kartu judul setiap tampilan Area
    (Waktu Tunggu, Utilisasi NBDS, O2O, Kelompok, ...). Saat "Semua Area Region II": daftar ASM tiap area.
-   Data: assets/js/asm-data.js (tools/build_asm.py). Add-on non-destruktif: membungkus render(). */
+   Data: data/kito.json [KITO_ASM] (tools/build_asm.py). Add-on non-destruktif: membungkus render(). */
 (()=>{'use strict';
 const A=window.KITO_ASM;
 if(!A||typeof render!=='function'||typeof st==='undefined')return;

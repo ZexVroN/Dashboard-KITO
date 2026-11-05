@@ -9,7 +9,7 @@ Urutan (penting, karena saling memakai data.js):
     1. update_antrian_o2o.py   -> data.js (antrian, O2O, Shifting), area-waktu, area-kelompok, area-o2o
     2. convert_nbds_bankwide.py -> area-nbds-data.js, data.js (D.M[4..9], D.O)
     3. build_region.py         -> region-data.js (Dashboard Region)
-Setelah selesai, naikkan angka ?v= file data di index.html agar browser memuat data baru.
+Semua hasil tersimpan di satu file data/kito.json (lihat tools/kito_data.py); index.html tidak perlu diubah.
 """
 
 import argparse
@@ -32,4 +32,4 @@ for cmd in langkah:
     hasil = subprocess.run([sys.executable] + cmd)
     if hasil.returncode != 0:
         sys.exit(f"Gagal di {cmd[0]}; data berikutnya tidak diproses.")
-print("Selesai. Ingat menaikkan ?v= pada file data di index.html.")
+print("Selesai. Data tersimpan di data/kito.json.")

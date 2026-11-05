@@ -1,4 +1,4 @@
-"""Membuat assets/js/dti-data.js (menu "DTI Dana & Cendup" di halaman Cabang) dari
+"""Membuat data/kito.json [KITO_DTI] (menu "DTI Dana & Cendup" di halaman Cabang) dari
 "Dashboard dan Data Detail NTB <tgl>.xlsx".
 
 Pemakaian (dari folder Dashboard-KITO):
@@ -26,8 +26,10 @@ from collections import Counter, defaultdict
 
 import openpyxl
 
+import kito_data  # data/kito.json
+
 SRC = sys.argv[1] if len(sys.argv) > 1 else sys.exit("Pemakaian: python tools/build_dti.py <xlsx>")
-OUT = sys.argv[2] if len(sys.argv) > 2 else "assets/js/dti-data.js"
+OUT = sys.argv[2] if len(sys.argv) > 2 else "KITO_DTI"
 TARGET_DTI = 98.5
 
 wb = openpyxl.load_workbook(SRC, read_only=True, data_only=True)
@@ -213,8 +215,7 @@ out = {
     "ntb": ntb, "etb": etb_out, "cendup": cendup, "ssim": ssim,
 }
 js = "window.KITO_DTI=" + json.dumps(out, ensure_ascii=False, separators=(",", ":")) + ";\n"
-with open(OUT, "w", encoding="utf-8") as fh:
-    fh.write(js)
+kito_data.tulis_teks_js(OUT, js)
 print(f"{len(cabang)} cabang, {len(area)} area/region, NTB {sum(map(len, ntb.values()))} baris, "
       f"Cendup NTB {sum(map(len, cendup['ntb'].values()))} / ETB {sum(map(len, cendup['etb'].values()))}, "
       f"user SSIM {sum(map(len, ssim.values()))}, kamus {len(KAMUS)} -> {OUT} ({len(js):,} byte)")

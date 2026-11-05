@@ -5,7 +5,7 @@ window.KITO_APK = {
   versi: '1.1',
   kode: 2,                                  // versionCode APK
   paket: 'com.zexvron.dashboardkito',
-  file: 'download/Dashboard-Kito.apk',      // relatif terhadap akar website
+  file: 'download/Dashboard-Kitov1.1.apk', // relatif terhadap akar website
   ukuran: '6,0 MB',
   tanggal: '2026-11-04',
 };

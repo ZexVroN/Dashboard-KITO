@@ -62,7 +62,7 @@ const waktu=(key,n,s)=>({key:'w-'+key,g:'Waktu Antrian',n,s,tinggi:false,jenis:'
   area:(a,per)=>wVal(wArea(a),key,per),
   reg:per=>wVal(W?.region,key,per),
   kelas:v=>kWaktu(v,ui.per),fmt:clock,
-  sumber:per=>per==='mtd'?'P90 MTD Oktober 2026':`${qP95(iso())?'P95':'P90'} DtD`});
+  sumber:per=>per==='mtd'?'P90 '+(window.KITO_BULAN?window.KITO_BULAN.mtdLabel:'MTD Oktober'):`${qP95(iso())?'P95':'P90'} DtD`});
 MET.push(waktu('teller','Teller','Teller'),waktu('cs','Customer Service','CS'),waktu('all','Semua Transaksi','All Trx'));
 MET.push({key:'o2o',g:'O2O & Digital',n:'Overall O2O',s:'O2O',tinggi:true,jenis:'pct',per:['tgl'],
   cab:i=>o2oP(mSum([i])),area:a=>o2oP(mSum(cabOfArea(a))),reg:()=>o2oP(mSum(D.B.map((b,i)=>i))),
@@ -78,7 +78,7 @@ if(N)N.kanal.forEach(kn=>MET.push({key:'nb-'+kn.key,g:'Utilisasi NBDS',n:kn.labe
   kelas:v=>kNbds(v),fmt:pct,ket:`Target ≥ ${pct(TGT)}`,sumber:()=>'New BDS ÷ (New BDS + Old BDS)'}));
 const metOf=k=>MET.find(m=>m.key===k)||MET[2];
 const perOf=(m,per)=>m.per.includes(per)?per:m.per[0];
-const perLabel=(m,per)=>{const p=perOf(m,per);return p==='mtd'?'MTD Oktober':p==='dtd'?`DtD ${isoShort(iso())}`:`per ${isoShort(D.mdate)}`;};
+const perLabel=(m,per)=>{const p=perOf(m,per);return p==='mtd'?(m.jenis==='waktu'?(window.KITO_BULAN?window.KITO_BULAN.mtdLabel:'MTD Oktober'):'MTD Oktober'):p==='dtd'?`DtD ${isoShort(iso())}`:`per ${isoShort(D.mdate)}`;};
 
 /* ----- state ----- */
 const ui={level:'cabang',m:'w-all',per:'dtd',semua:false,rekapSemua:false,fokus:false}; // fokus: lingkup "Cabang"
@@ -133,7 +133,7 @@ function hero(){
 }
 
 function pilihPeriode(){
-  return `<section class="cd"><div class="rg-per rg-per-only"><span class="rg-g">Periode</span>${seg('per',[['dtd',`DtD ${isoShort(iso())}`],['mtd','MTD Oktober']],ui.per==='mtd'?'mtd':'dtd')}</div><p class="rg-note">O2O dan Shifting Digital hanya tersedia per ${isoShort(D.mdate)} (tanggal laporan).</p></section>`;
+  return `<section class="cd"><div class="rg-per rg-per-only"><span class="rg-g">Periode</span>${seg('per',[['dtd',`DtD ${isoShort(iso())}`],['mtd','MTD']],ui.per==='mtd'?'mtd':'dtd')}</div><p class="rg-note">O2O dan Shifting Digital hanya tersedia per ${isoShort(D.mdate)} (tanggal laporan).</p></section>`;
 }
 
 /* Rapor satu cabang: nilai + peringkat di Region II dan di area, untuk semua indikator */
@@ -163,7 +163,7 @@ function rapor(){
 function pilihIndikator(){
   const m=metOf(ui.m),grup=[...new Set(MET.map(x=>x.g))];
   const tombol=grup.map(g=>`<div class="seg rg-seg"><span class="rg-g">${clean(g)}</span>${MET.filter(x=>x.g===g).map(x=>`<button type="button" data-rg-m="${x.key}" class="${x.key===m.key?'on':''}">${clean(x.n)}</button>`).join('')}</div>`).join('');
-  const per=m.per.length>1?seg('per',[['dtd',`DtD ${isoShort(iso())}`],['mtd','MTD Oktober']],perOf(m,ui.per)):`<p class="rg-sub">Indikator ini hanya tersedia ${perLabel(m,ui.per)} (tanggal laporan).</p>`;
+  const per=m.per.length>1?seg('per',[['dtd',`DtD ${isoShort(iso())}`],['mtd','MTD']],perOf(m,ui.per)):`<p class="rg-sub">Indikator ini hanya tersedia ${perLabel(m,ui.per)} (tanggal laporan).</p>`;
   return `<section class="cd"><h2>Indikator</h2>${tombol}<div class="rg-per"><span class="rg-g">Periode</span>${per}</div></section>`;
 }
 
@@ -234,7 +234,7 @@ function rekap(){
   const body=tbl.map(e=>`<tr class="${e.id===meId?'on':''}" ${isArea?`data-rg-area="${clean(e.id)}"`:`data-rg-code="${clean(e.id)}"`}><td class="rg-sticky"><b>${e.rk}</b></td><td class="rg-sticky2"><b>${clean(e.nama)}</b>${e.area&&isRegion()?`<small>${clean(e.area)}</small>`:''}</td>${cols.map(c=>sel(c,e)).join('')}<td><b>${e.avg.toLocaleString('id-ID',{maximumFractionDigits:1})}</b>${e.cnt<cols.length?`<small>${e.cnt}/${cols.length}</small>`:''}</td></tr>`).join('')
     ||`<tr><td colspan="${cols.length+3}" class="rg-na" style="padding:16px;text-align:center">Tidak ada ${isArea?'area':'cabang'} yang cocok dengan pencarian.</td></tr>`;
   const more=!isArea&&!cariAktif&&ada.length>LIM?`<button type="button" class="rg-more" data-rg-rekap="1">${ui.rekapSemua?`Tampilkan ${LIM} teratas`:`Tampilkan semua ${ada.length} cabang`}</button>`:'';
-  const perTxt=ui.per==='mtd'?'MTD Oktober (O2O & Shifting per tanggal laporan)':`DtD ${isoShort(iso())} (O2O & Shifting per ${isoShort(D.mdate)})`;
+  const perTxt=ui.per==='mtd'?'MTD (waktu antri '+(window.KITO_BULAN?window.KITO_BULAN.mtdLabel:'MTD Oktober')+', NBDS MTD Oktober; O2O & Shifting per tanggal laporan)':`DtD ${isoShort(iso())} (O2O & Shifting per ${isoShort(D.mdate)})`;
   const info=cariAktif?`Menampilkan <b>${tbl.length}</b> ${isArea?'area':'cabang'} sesuai pencarian`:`Cari nama/kode ${isArea?'area':'cabang'} di kotak pencarian atas untuk menyaring tabel`;
   return `<section class="cd" id="rg-rekap"><h2>Rekap Peringkat Semua Indikator</h2><p class="rg-sub">${perTxt}. Angka di sel = peringkat ${isArea?'area':'cabang'} pada indikator tersebut; kolom # = peringkat gabungan dan Rata² = rata-rata peringkat; diurutkan dari yang terkecil (naik). ${info}.</p><div class="tw rg-tw"><table class="rg-tbl">${head}${body}</table></div>${more}<div class="rg-leg"><span><i class="q1"></i>25% teratas</span><span><i class="q2"></i>25–50%</span><span><i class="q3"></i>50–75%</span><span><i class="q4"></i>25% terbawah</span><span><i class="rg-na-i"></i>tidak ada data</span></div><p class="rg-note">Peringkat gabungan memberi bobot sama pada ${cols.length} indikator. Kolom "Rata²" menampilkan x/${cols.length} bila sebagian indikator tidak tersedia. Ketuk baris untuk membuka ${isArea?'ranking cabang area tersebut':'dashboard cabang'}.</p></section>`;
 }

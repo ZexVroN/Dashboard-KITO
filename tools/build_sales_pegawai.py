@@ -1,4 +1,4 @@
-"""Membuat assets/js/sales-pegawai-data.js dari "Dashboard_Sales_Inbranch_R2*.xlsx" (sheet "Monitoring Ind Pegawai").
+"""Membuat data/kito.json [KITO_SALES_PEGAWAI] dari "Dashboard_Sales_Inbranch_R2*.xlsx" (sheet "Monitoring Ind Pegawai").
 
 Pemakaian (dari folder Dashboard-KITO):
     python tools/build_sales_pegawai.py <Dashboard_Sales_Inbranch_R2.xlsx>
@@ -16,7 +16,7 @@ Yang disimpan per pegawai (Gap, %, dan Status dihitung ulang di browser dengan a
 NIP disamarkan (******1234), sama seperti User ID pada data Old BDS.
 
 Riwayat tanggal: laporan baru sering hanya memuat tanggal update terakhir. Nilai tanggal sebelumnya diambil dari
-data yang sudah ada (assets/js/sales-pegawai-data.js), dicocokkan per pegawai (kode cabang + nama), lalu
+data yang sudah ada (data/kito.json [KITO_SALES_PEGAWAI]), dicocokkan per pegawai (kode cabang + nama), lalu
 ditampilkan N tanggal terakhir (bawaan 3). Target, balance, dan target balance selalu dari laporan terbaru.
 
     python tools/build_sales_pegawai.py <xlsx> [--tampil 3] [--ganti-label 2026-10-28=2026-10-30]
@@ -32,9 +32,11 @@ import openpyxl
 import argparse
 import os
 
+import kito_data  # data/kito.json
+
 ap = argparse.ArgumentParser()
 ap.add_argument("xlsx")
-ap.add_argument("--out", default="assets/js/sales-pegawai-data.js")
+ap.add_argument("--out", default="KITO_SALES_PEGAWAI")
 ap.add_argument("--riwayat", help="data lama untuk tanggal sebelumnya (bawaan: file --out yang sudah ada)")
 ap.add_argument("--tampil", type=int, default=3, help="jumlah tanggal update yang ditampilkan (bawaan 3)")
 ap.add_argument("--ganti-label", action="append", default=[], metavar="LAMA=BARU",
@@ -104,10 +106,13 @@ def kode(v):
 # ---------- riwayat (data lama) ----------
 ganti = dict(x.split("=", 1) for x in A.ganti_label)
 riwayat = {}                      # (kode, nama) -> {"e": {tgl: nilai}, "i": {tgl: nilai}}
-path_riwayat = A.riwayat or (OUT if os.path.exists(OUT) else None)
+path_riwayat = A.riwayat or (OUT if kito_data.ada(OUT) else None)
 if path_riwayat:
-    teks = open(path_riwayat, encoding="utf-8").read()
-    lama = json.loads(teks[teks.index("{"):teks.rindex("}") + 1])
+    if os.path.exists(path_riwayat) and not path_riwayat.endswith("kito.json"):
+        teks = open(path_riwayat, encoding="utf-8").read()   # file data lama (.js) sebagai riwayat
+        lama = json.loads(teks[teks.index("{"):teks.rindex("}") + 1])
+    else:
+        lama = kito_data.baca(path_riwayat)
     tgl_lama = [ganti.get(t, t) for t in lama["update"]]
     for r in lama["rows"]:
         riwayat[(r[4], r[0].upper())] = {"e": dict(zip(tgl_lama, r[5])), "i": dict(zip(tgl_lama, r[9]))}
@@ -153,6 +158,5 @@ out = {
     "rows": data,
 }
 js = "window.KITO_SALES_PEGAWAI=" + json.dumps(out, ensure_ascii=False, separators=(",", ":")) + ";\n"
-with open(OUT, "w", encoding="utf-8") as fh:
-    fh.write(js)
+kito_data.tulis_teks_js(OUT, js)
 print(f"{len(data)} pegawai, {len({r[4] for r in data})} cabang, update {out['update']} -> {OUT} ({len(js):,} byte)")

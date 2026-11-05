@@ -145,52 +145,43 @@
       </button>
     </nav>
     <link rel="stylesheet" href="assets/css/infografis.css?v=1" />
-    <script src="assets/js/data.js?v=20261103-30okt"></script>
-    <script src="assets/js/script.js?v=20261103-bersih"></script>
+    <script src="assets/js/muat-data.js?v=2"></script>
+    <script src="assets/js/periode-bulan.js?v=1"></script>
+    <script src="assets/js/script.js?v=20261105-bulan"></script>
     <script src="assets/js/infografis.js?v=20261103-bersih"></script>
     <link rel="stylesheet" href="assets/css/pegawai.css?v=8" />
-    <script src="assets/js/sales-pegawai-data.js?v=20261103-31okt"></script>
     <script src="assets/js/pegawai.js?v=13"></script>
     <link rel="stylesheet" href="assets/css/sales.css?v=7" />
     <script src="assets/js/sales.js?v=20261103-bersih"></script>
     <link rel="stylesheet" href="assets/css/dti.css?v=6" />
-    <script src="assets/js/dti-data.js?v=20261026"></script>
     <script src="assets/js/dti.js?v=6"></script>
     <link rel="stylesheet" href="assets/css/area.css?v=1" />
     <script src="assets/js/area.js?v=1"></script>
     <script src="assets/js/splash.js?v=5"></script>
     <link rel="stylesheet" href="assets/css/area-kelompok.css?v=1" />
-    <script src="assets/js/area-kelompok-data.js?v=20261103-30okt"></script>
-    <script src="assets/js/area-kelompok.js?v=20261102-p95"></script>
+    <script src="assets/js/area-kelompok.js?v=20261105-bulan"></script>
     <link rel="stylesheet" href="assets/css/area-o2o.css?v=3" />
-    <script src="assets/js/area-o2o-data.js?v=20261103-30okt"></script>
     <script src="assets/js/area-o2o.js?v=5"></script>
     <link rel="stylesheet" href="assets/css/area-waktu.css?v=20261102-p95" />
-    <script src="assets/js/area-waktu-data.js?v=20261103-30okt"></script>
-    <script src="assets/js/area-waktu.js?v=20261102-p95"></script>
+    <script src="assets/js/area-waktu.js?v=20261105-bulan"></script>
     <link rel="stylesheet" href="assets/css/area-nbds.css?v=2" />
-    <script src="assets/js/area-nbds-data.js?v=20261102-29okt"></script>
     <script src="assets/js/area-nbds.js?v=6"></script>
     <script src="assets/js/cabang-tren.js?v=20261102-p95"></script>
     <link rel="stylesheet" href="assets/css/ranking.css?v=20261028-bullet" />
-    <script src="assets/js/ranking.js?v=20261102-p95"></script>
+    <script src="assets/js/ranking.js?v=20261105-bulan"></script>
     <link rel="stylesheet" href="assets/css/region.css?v=20261105-tooltip-v3" />
-    <script src="assets/js/region-data.js?v=20261103-30okt"></script>
-    <script src="assets/js/region.js?v=20261105-tooltip-v3"></script>
+    <script src="assets/js/region.js?v=20261105-bulan"></script>
     <link rel="stylesheet" href="assets/css/animasi.css?v=3" />
     <link rel="stylesheet" href="assets/css/kpi.css?v=11" />
-    <script src="assets/js/kpi-data.js?v=5"></script>
     <script src="assets/js/kpi.js?v=13"></script>
     <link rel="stylesheet" href="assets/css/kpi-login.css?v=6" />
     <script src="assets/js/kpi-login.js?v=7"></script>
     <link rel="stylesheet" href="assets/css/pimpinan.css?v=2" />
-    <script src="assets/js/pimpinan-data.js?v=20261102"></script>
     <script src="assets/js/pimpinan.js?v=3"></script>
     <link rel="stylesheet" href="assets/css/asm.css?v=1" />
-    <script src="assets/js/asm-data.js?v=20261102"></script>
     <script src="assets/js/asm.js?v=1"></script>
     <link rel="stylesheet" href="assets/css/unduh-apk.css?v=2" />
-    <script src="assets/js/apk-config.js?v=3"></script>
+    <script src="assets/js/apk-config.js?v=4"></script>
     <link rel="stylesheet" href="assets/css/penguatan.css?v=5" />
     <script src="assets/js/penguatan.js?v=7"></script>
     <script src="assets/js/unduh-apk.js?v=6"></script>
@@ -230,7 +221,10 @@ body.dark .kito-pctl-close,[data-theme="dark"] .kito-pctl-close{color:#fff}
       const pgn=app.querySelector('#pgn-notif');if(pgn)pgn.after(box);else app.prepend(box);busy=false;
     }
     const title=p95?`Waktu Antrian · P95 (${tg(date)})`:`Waktu Antrian · P90 (hingga ${tg(p90Tgl[p90Tgl.length-1]||date)})`;
-    const desc=`Data ${p95Tgl.map(t=>new Date(t+'T00:00').getDate()).join(', ')} Okt menggunakan P95; riwayat sampai ${tg(p90Tgl[p90Tgl.length-1]||date)} dan MTD historis menggunakan P90. Kedua persentil tidak dibandingkan langsung.`;
+    const bln=p95Tgl.length?new Date(p95Tgl[0]+'T00:00').toLocaleDateString('id-ID',{month:'short'}):'';
+    const desc=p90Tgl.length
+      ?`Data ${p95Tgl.map(t=>new Date(t+'T00:00').getDate()).join(', ')} ${bln} menggunakan P95; riwayat sampai ${tg(p90Tgl[p90Tgl.length-1])} dan MTD historis menggunakan P90. Kedua persentil tidak dibandingkan langsung.`
+      :`Seluruh data ${window.KITO_BULAN?window.KITO_BULAN.nama:''} (${p95Tgl.map(t=>new Date(t+'T00:00').getDate()).join(', ')} ${bln}) menggunakan P95. MTD waktu antrian belum tersedia di laporan harian.`;
     if(box.querySelector('strong').textContent!==title)box.querySelector('strong').textContent=title;
     if(box.querySelector('small').textContent!==desc)box.querySelector('small').textContent=desc;
   }
@@ -243,5 +237,5 @@ body.dark .kito-pctl-close,[data-theme="dark"] .kito-pctl-close{color:#fff}
   });
 })();
 </script>
-<script src="assets/js/mobile-table.js?v=3"></script><script src="assets/js/push-config.js?v=4"></script><script src="assets/js/offline.js?v=1"></script><script src="assets/js/push.js?v=20261102-p95"></script><script src="assets/js/month-filter.js?v=20261030"></script><script src="assets/js/browser-dropdown.js?v=20261030-v5"></script></body>
+<script src="assets/js/mobile-table.js?v=3"></script><script src="assets/js/push-config.js?v=4"></script><script src="assets/js/offline.js?v=1"></script><script src="assets/js/push.js?v=20261102-p95"></script><script src="assets/js/month-filter.js?v=20261105-bulan"></script><script src="assets/js/browser-dropdown.js?v=20261030-v5"></script></body>
 </html>

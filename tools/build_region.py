@@ -1,4 +1,4 @@
-"""Bangun assets/js/region-data.js (Dashboard Region: 12 region + Nasional) dari tiga laporan bankwide.
+"""Bangun data/kito.json [KITO_REGION] (Dashboard Region: 12 region + Nasional) dari tiga laporan bankwide.
 
 Pemakaian (dari folder Dashboard-KITO):
     python tools/build_region.py --antrian <Dashboard_Antrian_Cabang.xlsx> \
@@ -17,6 +17,8 @@ import json
 import re
 
 import openpyxl
+
+import kito_data  # data/kito.json
 
 JS = "assets/js/"
 BULAN = {"januari": 1, "februari": 2, "maret": 3, "april": 4, "mei": 5, "juni": 6, "juli": 7,
@@ -177,8 +179,7 @@ def main():
         },
         "regions": urut, "nasional": nas,
     }
-    with open(JS + "region-data.js", "w", encoding="utf-8") as f:
-        f.write("window.KITO_REGION=" + json.dumps(out, ensure_ascii=False, separators=(",", ":")) + ";\n")
+    kito_data.tulis("region-data.js", out)
     lengkap = [e["id"] for e in urut if e["waktu"]["d"] and e["nbds"] and e["o2o"] and e["ch"]]
     print(f"region-data.js: {len(urut)} region (lengkap {len(lengkap)}) + Nasional · waktu {len(tgl_w)} tgl · "
           f"NBDS {len(dates_n)} tgl s.d. {akhir_n} · O2O per {tgl_o}")

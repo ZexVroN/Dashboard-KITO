@@ -1,4 +1,4 @@
-"""Membuat assets/js/kpi-data.js dari file KPI_OBO_*.xlsx (format "KPI_OBO_Final_Sept").
+"""Membuat data/kito.json [KITO_KPI] dari file KPI_OBO_*.xlsx (format "KPI_OBO_Final_Sept").
 
 Pemakaian (dari folder Dashboard-KITO):
     python tools/build_kpi.py <KPI_OBO_Final_Sept.xlsx>
@@ -22,8 +22,10 @@ import sys
 
 import openpyxl
 
+import kito_data  # data/kito.json
+
 SRC = sys.argv[1] if len(sys.argv) > 1 else sys.exit("Pemakaian: python tools/build_kpi.py <KPI_OBO_*.xlsx>")
-OUT = sys.argv[2] if len(sys.argv) > 2 else "assets/js/kpi-data.js"
+OUT = sys.argv[2] if len(sys.argv) > 2 else "KITO_KPI"
 FOKUS = "REGION II / SUMATERA 2"
 FOKUS_KODE = "R02"
 PERIODE = "September 2026"
@@ -230,8 +232,7 @@ js = "window.KITO_KPI=" + json.dumps(
     {"periode": PERIODE, "fokus": FOKUS, "sumber": SRC.replace("\\", "/").split("/")[-1],
      "jabatan": jab, "detail": DET, "areaDetail": AD},
     ensure_ascii=False, separators=(",", ":")) + ";\n"
-with open(OUT, "w", encoding="utf-8") as fh:
-    fh.write(js)
+kito_data.tulis_teks_js(OUT, js)
 print(f"Tulis {OUT}: {len(js):,} byte")
 for x in laporan[:40]:
     print("  ", x)

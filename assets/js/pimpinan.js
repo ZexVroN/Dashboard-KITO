@@ -1,5 +1,5 @@
 /* Kartu cabang (tab Cabang): tambahan nama Branch Manager dan BOM/BOS di bawah nama cabang.
-   Data: assets/js/pimpinan-data.js (tools/build_pimpinan.py dari BOS-BM.xlsx).
+   Data: data/kito.json [KITO_PIMPINAN] (tools/build_pimpinan.py dari BOS-BM.xlsx).
    Add-on non-destruktif: membungkus kartuCabang di URUTAN, tidak mengubah script.js. */
 (()=>{'use strict';
 const P=window.KITO_PIMPINAN;

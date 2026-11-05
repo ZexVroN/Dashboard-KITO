@@ -32,6 +32,8 @@ import sys
 
 import openpyxl
 
+import kito_data  # data/kito.json
+
 R2 = "REGION II / SUMATERA 2"
 JS = "assets/js/"
 BULAN = {"Jan": 1, "Feb": 2, "Mar": 3, "Apr": 4, "Mei": 5, "May": 5, "Jun": 6, "Jul": 7, "Agu": 8, "Agt": 8,
@@ -44,15 +46,11 @@ URUT_ROMAWI = ["I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X", "XI"
 
 # ---------- util ----------
 def baca_js(path, awalan):
-    teks = open(path, encoding="utf-8").read()
-    isi = teks.strip()
-    assert isi.startswith(awalan) and isi.endswith(";"), path
-    return json.loads(isi[len(awalan):-1]), teks.endswith("\n")
+    return kito_data.baca(path), True    # bagian data di data/kito.json (nama file lama = alamat bagian)
 
 
 def tulis_js(path, awalan, data, newline):
-    with open(path, "w", encoding="utf-8", newline="") as f:
-        f.write(awalan + json.dumps(data, ensure_ascii=False, separators=(",", ":")) + ";" + ("\n" if newline else ""))
+    kito_data.tulis(path, data)
 
 
 def detik(v):
@@ -409,7 +407,7 @@ def main():
     print(f"area-kelompok-data : DtD = P95 {tgl} untuk {len(K)} cabang")
     print(f"area-o2o-data.js   : {len(AO['areas'])} area, tanggal {AO['tanggal']}")
     print(f"region-data.js     : {len(R['regions'])} region + nasional · waktu {tgl} · NBDS s.d. {tgl_nbds[-1]} · O2O {R['tglO2O']}")
-    print("Selesai. Naikkan angka ?v= pada file data di index.html agar browser memuat data baru.")
+    print("Selesai. Data tersimpan di data/kito.json (index.html tidak perlu diubah).")
 
     # notifikasi push (opsional): hanya bila KITO_PUSH_URL & KITO_PUSH_TOKEN diisi
     if os.environ.get("KITO_PUSH_URL") and os.environ.get("KITO_PUSH_TOKEN"):

@@ -1,5 +1,5 @@
 /* Dashboard Infografis O2O pada navigasi Area.
-   Sumber data: assets/js/area-o2o-data.js (sheet "Area Okt" · 21 Oktober 2026).
+   Sumber data: data/kito.json [KITO_AREA_O2O] (sheet "Area Okt" · 21 Oktober 2026).
    Modul ini membungkus render() tanpa mengubah modul lain. */
 (()=>{'use strict';
 const src=window.KITO_AREA_O2O;

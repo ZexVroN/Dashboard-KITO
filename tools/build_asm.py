@@ -1,4 +1,4 @@
-"""Membuat assets/js/asm-data.js: nama Area Service Manager (ASM) per area untuk halaman Area.
+"""Membuat data/kito.json [KITO_ASM]: nama Area Service Manager (ASM) per area untuk halaman Area.
 
 Pemakaian (dari folder Dashboard-KITO):
     python tools/build_asm.py <asm.xlsx>
@@ -12,8 +12,10 @@ import sys
 
 import openpyxl
 
+import kito_data  # data/kito.json
+
 SRC = sys.argv[1] if len(sys.argv) > 1 else sys.exit("Pemakaian: python tools/build_asm.py <asm.xlsx>")
-OUT = sys.argv[2] if len(sys.argv) > 2 else "assets/js/asm-data.js"
+OUT = sys.argv[2] if len(sys.argv) > 2 else "KITO_ASM"
 
 ws = openpyxl.load_workbook(SRC, read_only=True, data_only=True).worksheets[0]
 rows = list(ws.iter_rows(values_only=True))
@@ -28,7 +30,5 @@ for r in rows[hi + 1:]:
         continue
     asm[kunci(r[c_area])] = {"area": str(r[c_area]).strip(), "nama": re.sub(r"\s+", " ", str(r[c_nama])).strip()}
 
-with open(OUT, "w", encoding="utf-8") as f:
-    f.write("window.KITO_ASM=" + json.dumps({"sumber": SRC.replace("\\", "/").split("/")[-1], "data": asm},
-                                            ensure_ascii=False, separators=(",", ":")) + ";\n")
+kito_data.tulis(OUT, {"sumber": SRC.replace("\\", "/").split("/")[-1], "data": asm})
 print(f"{len(asm)} ASM -> {OUT}: " + ", ".join(f"{v['area']}={v['nama']}" for v in asm.values()))

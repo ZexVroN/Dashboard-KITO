@@ -1,4 +1,5 @@
 /* Tabel versi mobile (assets/js/mobile-table.js): baris tabel menjadi kartu */
+table td.mt-actions { display: none !important; }
 @media (max-width: 640px) {
   table.mt, table.mt tbody { display: block; width: 100% !important; min-width: 0 !important; max-width: 100%; }
   table.mt thead, table.mt tr.mt-h { display: none; }
@@ -79,3 +80,22 @@
   table.mt td[data-label]:has(.chip, .pg-chip) { grid-column: span 2; }
 }
 @media (max-width: 640px) { table.mt td.mt-w { grid-column: span 2; } }
+
+/* Ringkasan dua kolom dan detail yang dapat dibuka per baris. */
+@media (max-width: 640px) {
+  table.mt { margin: 0 !important; width: 100% !important; max-width: 100% !important; }
+  table.mt tr { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 12px 16px; padding: 14px; }
+  table.mt td { font-size: 14px; line-height: 1.5; }
+  table.mt td.mt-t { font-size: 15px; font-weight: 700; }
+  table.mt td[data-label]::before { font-size: 11px; letter-spacing: 0; text-transform: none; line-height: 1.4; }
+  table.mt tr:not(.mt-open) > td.mt-detail { display: none; }
+  table.mt td.mt-actions { display: block !important; grid-column: 1 / -1; padding-top: 10px !important; border-top: 1px solid var(--ln, #e3e8f2) !important; }
+  .mt-toggle { display: flex; align-items: center; justify-content: space-between; gap: 12px; width: 100%; min-height: 44px; padding: 8px 12px; border: 1px solid var(--ln, #e3e8f2); border-radius: 8px; background: var(--cd, #fff); color: var(--c1, #1f4fd1); font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; text-align: left; }
+  .mt-toggle::after { content: '+'; font-size: 20px; line-height: 1; }
+  .mt-toggle[aria-expanded="true"]::after { content: '\2212'; }
+  .mt-toggle:focus-visible { outline: 2px solid var(--c1, #1f4fd1); outline-offset: 3px; }
+}
+@media print {
+  table.mt td.mt-actions { display: none !important; }
+  table.mt tr > td.mt-detail { display: table-cell !important; }
+}

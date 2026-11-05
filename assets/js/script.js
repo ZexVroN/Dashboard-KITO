@@ -249,9 +249,10 @@ function qcardMtd(name, k) {
 
 // Tiga kotak: Teller, CS, Semua TRX pada tanggal terpilih (DtD) atau MTD
 function kartuAntrian() {
+  const november = D.dates[st.d]?.slice(0, 7) === "2026-11";
   if (perKartu.q === "mtd")
-    return `<div class="cd"><h2>Waktu Antrian · MTD ${BULAN_DATA} · P90</h2>${segPer("q")}<div class="g3">${qcardMtd("TELLER", 0)}${qcardMtd("CS", 1)}${qcardMtd("SEMUA TRX", 2)}</div></div>`;
-  return `<div class="cd"><h2>Waktu Antrian · ${dlong(D.dates[st.d])}</h2>${segPer("q")}<div class="g3">${qcard("TELLER", 0)}${qcard("CS", 1)}${qcard("SEMUA TRX", 2)}</div>${wait10()}</div>`;
+    return `<div class="cd"><h2>Waktu Antrian · MTD ${BULAN_DATA} · ${november ? "P95" : "P90"}</h2>${segPer("q")}<div class="g3">${qcardMtd("TELLER", 0)}${qcardMtd("CS", 1)}${qcardMtd("SEMUA TRX", 2)}</div></div>`;
+  return `<div class="cd"><h2>Waktu Antrian · ${dlong(D.dates[st.d])}${november ? " · P95" : ""}</h2>${segPer("q")}<div class="g3">${qcard("TELLER", 0)}${qcard("CS", 1)}${qcard("SEMUA TRX", 2)}</div>${wait10()}</div>`;
 }
 
 // sejak 27 Okt: reservasi dengan waktu tunggu < 10 detik (sheet "Wait <10 Detik"), peringkat di Region II

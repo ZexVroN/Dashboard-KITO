@@ -147,7 +147,7 @@
     <link rel="stylesheet" href="assets/css/infografis.css?v=1" />
     <script src="assets/js/muat-data.js?v=3"></script>
     <script src="assets/js/periode-bulan.js?v=20261105-live-bulan"></script>
-    <script src="assets/js/script.js?v=20261105-live-bulan"></script>
+    <script src="assets/js/script.js?v=20261105-november-p95"></script>
     <script src="assets/js/infografis.js?v=20261103-bersih"></script>
     <link rel="stylesheet" href="assets/css/pegawai.css?v=8" />
     <script src="assets/js/pegawai.js?v=13"></script>
@@ -200,20 +200,21 @@ body.dark .kito-pctl-close,[data-theme="dark"] .kito-pctl-close{color:#fff}
 </style>
 <script>
 (function(){
-  let closed=false, busy=false;
+  let closed=false, nbdsClosed=false, busy=false;
   function update(){
     if(busy)return;
     const app=document.getElementById('app');if(!app)return;
     const kpi=document.querySelector('#nav button.on[data-v="kpi"], #nav button.on[data-v="KPI"]');
     const otherKpi=document.body.classList.contains('kpi-active');
     let box=document.getElementById('kito-pctl-top');
-    if(closed||kpi||otherKpi){if(box)box.remove();return;}
+    let nbds=document.getElementById('kito-nbds-top');
+    if(kpi||otherKpi){if(box)box.remove();if(nbds)nbds.remove();return;}
     const QM=(typeof D!=='undefined'&&D.queueMetricByDate)||{};
     const date=(typeof D!=='undefined')?(D.dates[(typeof st!=='undefined'&&st.d!=null)?st.d:D.dates.length-1]||D.dates[D.dates.length-1]):'';
     const p95=QM[date]==='P95';
     const tg=t=>new Date(t+'T00:00').toLocaleDateString('id-ID',{day:'numeric',month:'short',year:'numeric'});
     const p95Tgl=Object.keys(QM).filter(k=>QM[k]==='P95').sort(),p90Tgl=Object.keys(QM).filter(k=>QM[k]==='P90').sort();
-    if(!box){
+    if(!box&&!closed){
       busy=true;
       box=document.createElement('div');box.id='kito-pctl-top';box.className='kito-pctl-top';box.setAttribute('role','status');
       box.innerHTML='<div class="kito-pctl-copy"><strong></strong><small></small></div><button type="button" class="kito-pctl-close" aria-label="Tutup informasi persentil waktu antrian" title="Tutup">&times;</button>';
@@ -222,11 +223,30 @@ body.dark .kito-pctl-close,[data-theme="dark"] .kito-pctl-close{color:#fff}
     }
     const title=p95?`Waktu Antrian · P95 (${tg(date)})`:`Waktu Antrian · P90 (hingga ${tg(p90Tgl[p90Tgl.length-1]||date)})`;
     const bln=p95Tgl.length?new Date(p95Tgl[0]+'T00:00').toLocaleDateString('id-ID',{month:'short'}):'';
-    const desc=p90Tgl.length
-      ?`Data ${p95Tgl.map(t=>new Date(t+'T00:00').getDate()).join(', ')} ${bln} menggunakan P95; riwayat sampai ${tg(p90Tgl[p90Tgl.length-1])} dan MTD historis menggunakan P90. Kedua persentil tidak dibandingkan langsung.`
-      :`Seluruh data ${window.KITO_BULAN?window.KITO_BULAN.nama:''} (${p95Tgl.map(t=>new Date(t+'T00:00').getDate()).join(', ')} ${bln}) menggunakan P95. MTD waktu antrian belum tersedia di laporan harian.`;
-    if(box.querySelector('strong').textContent!==title)box.querySelector('strong').textContent=title;
-    if(box.querySelector('small').textContent!==desc)box.querySelector('small').textContent=desc;
+    const descWaktu=p90Tgl.length
+      ?(p95Tgl.length?`Data waktu antrean tanggal ${p95Tgl.map(t=>new Date(t+'T00:00').getDate()).join(', ')} ${bln} menggunakan persentil P95. `:'')+`Data harian hingga ${tg(p90Tgl[p90Tgl.length-1])} dan data kumulatif bulanan (MTD) menggunakan persentil P90. Hasil pengukuran dengan persentil berbeda tidak dapat dibandingkan secara langsung.`
+      :`Seluruh data waktu antrean ${window.KITO_BULAN?window.KITO_BULAN.nama:''} menggunakan persentil P95. Data kumulatif bulanan (MTD) waktu antrean belum tersedia dalam laporan harian.`;
+    const nbdsTanggal=window.KITO_AREA_NBDS&&window.KITO_AREA_NBDS.tanggal;
+    const nbdsTerakhir=nbdsTanggal?new Date(nbdsTanggal+'T00:00').toLocaleDateString('id-ID',{day:'numeric',month:'long',year:'numeric'}):'';
+    const desc=descWaktu;
+    if(box){
+      if(box.querySelector('strong').textContent!==title)box.querySelector('strong').textContent=title;
+      if(box.querySelector('small').textContent!==desc)box.querySelector('small').textContent=desc;
+    }
+    if(!nbdsClosed&&nbdsTanggal&&date>nbdsTanggal){
+      if(!nbds){
+        nbds=document.createElement('div');nbds.id='kito-nbds-top';nbds.className='kito-pctl-top';
+        nbds.setAttribute('role','status');
+        nbds.innerHTML='<div class="kito-pctl-copy"><strong></strong><small></small></div><button type="button" class="kito-pctl-close" aria-label="Tutup informasi utilisasi NBDS" title="Tutup">&times;</button>';
+        nbds.querySelector('button').addEventListener('click',()=>{nbdsClosed=true;nbds.remove()});
+        const anchor=box||app.querySelector('#pgn-notif');
+        if(anchor)anchor.after(nbds);else app.prepend(nbds);
+      }
+      const nbdsTitle=`Utilisasi NBDS (${tg(nbdsTanggal)})`;
+      const nbdsDesc=`Data utilisasi NBDS terbaru belum tersedia. Pembaruan terakhir tercatat pada ${nbdsTerakhir}.`;
+      if(nbds.querySelector('strong').textContent!==nbdsTitle)nbds.querySelector('strong').textContent=nbdsTitle;
+      if(nbds.querySelector('small').textContent!==nbdsDesc)nbds.querySelector('small').textContent=nbdsDesc;
+    }else if(nbds)nbds.remove();
   }
   document.addEventListener('DOMContentLoaded',()=>{
     const app=document.getElementById('app');if(!app)return;

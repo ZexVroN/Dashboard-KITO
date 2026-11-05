@@ -153,13 +153,22 @@ function lebarGrafik() {
 }
 
 // baris utilisasi dengan bar warna
-function util(label, n, o) {
+function util(label, n, o, lalu) {
   const p = pc(n, o),
     [c, cc] = club(p);
   const warna = cc === "n" ? "mu" : cc === "mid" ? "md" : cc === "warn" ? "wr" : cc === "bad" ? "bd" : "ok";
+  // pembanding MTD bulan lalu (mis. MTD Oktober) bila ada: lalu = { lbl, n, o }
+  const pl = lalu ? pc(lalu.n, lalu.o) : null;
+  let vs = "";
+  if (pl != null) {
+    const sel = p != null ? p - pl : null,
+      sama = sel != null && Math.abs(sel) < 0.0005,
+      tanda = sel == null ? "" : sama ? '<span class="nb-vs-dl mu">≈ setara</span>' : `<span class="nb-vs-dl ${sel > 0 ? "ok" : "bd"}">${sel > 0 ? "▲" : "▼"} ${(Math.abs(sel) * 100).toFixed(1).replace(".", ",")} %</span>`;
+    vs = `<div class="row sub nb-vs" style="justify-content:space-between"><span>vs ${lalu.lbl} <b>${P(pl)}</b> <small>(NBDS ${lalu.n ?? "–"} · Old BDS ${lalu.o ?? "–"})</small></span>${tanda}</div>`;
+  }
   return `<div class="u"><div class="row" style="justify-content:space-between"><b>${label}</b>${chip(c,cc)}</div>
   <div class="bar"><b style="width:${(p || 0) * 100}%;background:var(--${warna})"></b></div>
-  <div class="row sub" style="justify-content:space-between"><span>NBDS <b>${n ?? "–"}</b> · Old BDS <b>${o ?? "–"}</b></span><b>${P(p)}${p != null && p >= 0.98 ? " " : ""}</b></div></div>`;
+  <div class="row sub" style="justify-content:space-between"><span>NBDS <b>${n ?? "–"}</b> · Old BDS <b>${o ?? "–"}</b></span><b>${P(p)}${p != null && p >= 0.98 ? " " : ""}</b></div>${vs}</div>`;
 }
 
 // lingkaran O2O
@@ -349,7 +358,14 @@ function kartuUtilisasi() {
     judul = dlong(D.mdate);
   }
   const ada = ["fp", "fnp", "nf"].some((k) => pasang(k)[0] != null);
-  return `<div class="cd"><h2>Utilisasi NBDS · ${judul}</h2>${segPer("nb", !c)}${util("Teller Perorangan", ...pasang("fp"))}${util("Teller Badan", ...pasang("fnp"))}${util("Customer Service", ...pasang("nf"))}${ada ? "" : '<div class="note">Data utilisasi untuk tanggal ini belum ada di laporan.</div>'}</div>`;
+  // MTD: pembanding MTD bulan sebelumnya dari arsip akhir bulan (kito.json [KITO_ARSIP_BULAN][bulanLalu].nbds)
+  const blnLalu = N?.bulanLalu,
+    cLalu = mtd && c && blnLalu ? window.KITO_ARSIP_BULAN?.[blnLalu]?.nbds?.area?.cabang?.find((x) => String(x.kode) === String(c.kode)) : null,
+    tglLalu = cLalu ? window.KITO_ARSIP_BULAN[blnLalu].nbds.area.tanggal : null,
+    lblLalu = cLalu ? `MTD ${new Date(blnLalu + "-01T00:00").toLocaleDateString("id-ID", { month: "long" })}` : "",
+    lalu = (k) => (cLalu?.m?.[k] ? { lbl: lblLalu, n: cLalu.m[k][0], o: cLalu.m[k][1] } : null);
+  const catLalu = cLalu ? `<div class="note">Pembanding ${lblLalu}: akumulasi s.d. ${dlong(tglLalu)} (laporan NBDS terakhir bulan itu).</div>` : "";
+  return `<div class="cd"><h2>Utilisasi NBDS · ${judul}</h2>${segPer("nb", !c)}${util("Teller Perorangan", ...pasang("fp"), lalu("fp"))}${util("Teller Badan", ...pasang("fnp"), lalu("fnp"))}${util("Customer Service", ...pasang("nf"), lalu("nf"))}${catLalu}${ada ? "" : '<div class="note">Data utilisasi untuk tanggal ini belum ada di laporan.</div>'}</div>`;
 }
 
 
@@ -423,7 +439,8 @@ function ringkasOldBds(rows) {
 function kartuOldBds() {
   const ob = barisOldBds(st.b);
   const total = ob.reduce((a, x) => a + x.n, 0);
-  const tgl = (window.KITO_AREA_NBDS || {}).tanggal || D.mdate;
+  // rincian Old BDS = tanggal laporan (arsip bulan lampau bisa lebih awal dari DtD NBDS: oldbdsTanggal)
+  const tgl = (window.KITO_AREA_NBDS || {}).oldbdsTanggal || (window.KITO_AREA_NBDS || {}).tanggal || D.mdate;
   return `<div class="cd"><h2>Detail Data Old BDS (${ob.length})</h2>${ob.length ? `<p class="sub ob-sub">Transaksi yang masih lewat Old BDS · DtD ${dlong(tgl)}</p>${ringkasOldBds(ob)}${tabelOldBds(ob)}<div class="note">Total ${total} transaksi dari ${ob.length} baris · User ID disamarkan</div>` : '<div class="sub">Tidak ada transaksi Old BDS.</div>'}</div>`;
 }
 

@@ -174,6 +174,14 @@ function kotakVs(m,me,judul,v,ket,kls){
   const sel=s?`<em class="${s.sama?'mu':s.baik?'ok':'bad'}">Reg. ${clean(FOKUS.no)} ${s.sama?'≈ setara':(s.baik?'▲ ':'▼ ')+s.kata}</em>`:'';
   return `<div class="${kls}"><small>${judul}</small><b class="${kelas(m,v)}">${m.fmt(v)}</b><span>${ket}</span>${sel}</div>`;
 }
+// NBDS MTD: pembanding MTD bulan lalu (kolom bulan lalu di laporan NBDS: nbds[kanal].mp)
+function nbLalu(m,per,me){
+  if(m.jenis!=='nbds'||per!=='mtd'||!me||!R.bulanLalu)return '';
+  const b=FOKUS.nbds?.[m.key.slice(3)],v=b?.mp?util(b.mp):null;
+  if(v==null)return '';
+  const lbl='MTD '+new Date(R.bulanLalu+'-01T00:00').toLocaleDateString('id-ID',{month:'short'}),s=me.v-v;
+  return `<em class="${Math.abs(s)<0.0005?'mu':s>0?'ok':'bad'}">vs ${lbl} ${m.fmt(v)} ${Math.abs(s)<0.0005?'≈':s>0?'▲':'▼'}</em>`;
+}
 // kotak ke-3: pembanding terpilih (bawaan Nasional)
 function kotakCmp(m,per,rows,me,cmp){
   if(cmp===NAS)return kotakVs(m,me,'Nasional',m.val(NAS,per),'bankwide','rx-sum-cmp');
@@ -197,7 +205,7 @@ function daftar(){
   const x=v=>Math.max(0,Math.min(100,(v-min)/(max-min)*100));
   const list=rows.map(r=>{const k=kelas(m,r.v),me=r.e===FOKUS,c=r.e===cmp;return `<button type="button" class="rg-row rx-row ${me?'me':''} ${c?'cmp':''}" data-rx-pilih="${clean(r.e.id)}" aria-label="Bandingkan dengan ${clean(namaPanjang(r.e))}"><span class="rg-no ${r.rk<=3?'top':''}">${r.rk<=3?['🥇','🥈','🥉'][r.rk-1]:r.rk}</span><span class="rg-mid"><span class="rg-nm">${clean(nama(r.e))}<small>${clean(r.e.nama)}${me?' · fokus':c?' · pembanding':''}</small></span><span class="rg-bar"><i class="${me?k:'rx-grey'}" style="width:${x(r.v)}%"></i>${ref!=null?`<u style="left:${x(ref)}%"></u>`:''}${m.jenis==='nbds'?`<u class="tgt" style="left:${x(TGT)}%"></u>`:''}</span></span><span class="rg-val ${me?k:''}">${m.fmt(r.v)}</span></button>`;}).join('');
   const me=rows.find(r=>r.e===FOKUS),best=rows[0],worst=rows[rows.length-1];
-  const ringkas=`<div class="rg-sum">${kotakTerbaik(m,rows,me)}<div class="rx-sum-me"><small>Region ${clean(FOKUS.no)}</small><b class="${kelas(m,me?.v)}">${me?m.fmt(me.v):'–'}</b><span>${me?`peringkat #${me.rk} dari ${rows.length}`:'tidak ada data'}</span></div>${kotakCmp(m,per,rows,me,cmp)}</div>`;
+  const ringkas=`<div class="rg-sum">${kotakTerbaik(m,rows,me)}<div class="rx-sum-me"><small>Region ${clean(FOKUS.no)}</small><b class="${kelas(m,me?.v)}">${me?m.fmt(me.v):'–'}</b><span>${me?`peringkat #${me.rk} dari ${rows.length}`:'tidak ada data'}</span>${nbLalu(m,per,me)}</div>${kotakCmp(m,per,rows,me,cmp)}</div>`;
   const lg=`<div class="wt-legend"><span><i class="rx-dot-me"></i>Region ${clean(FOKUS.no)}</span><span><i class="rx-dot-cmp"></i>Pembanding</span><span><u class="rg"></u>Nasional ${m.fmt(ref)}</span>${m.jenis==='nbds'?`<span><u class="t5"></u>Target ${pctT(TGT)}</span>`:''}</div>`;
   return `<section class="cd" id="rx-daftar"><h2>Perbandingan Region · ${clean(m.n)} · ${perLabel(m,ui.per)}<button type="button" class="unduh" data-rx-csv="1">⬇ CSV</button></h2>${pilihMetrik()}${ringkas}<div>${list}</div>${lg}<p class="rg-note">${m.jenis==='waktu'?'Semakin kecil semakin baik.':'Semakin besar semakin baik.'} Nilai sama = peringkat sama. Ketuk region untuk menjadikannya pembanding.</p></section>`;
 }

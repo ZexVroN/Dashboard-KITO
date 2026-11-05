@@ -727,3 +727,9 @@ footer .kredit{display:flex;flex-direction:column;align-items:center;text-align:
 .w10 .w10-p { margin-left: auto; font-size: 15px; }
 .w10 > small { flex-basis: 100%; color: var(--mu); font-size: 10.5px; }
 [data-theme="dark"] .w10 { background: #1b2744; }
+
+/* Utilisasi NBDS: pembanding MTD bulan lalu (script.js util) */
+.u .nb-vs{margin-top:4px;font-size:12px}
+.u .nb-vs small{color:var(--mu);font-size:11px}
+.nb-vs-dl{font-weight:800;white-space:nowrap}
+.nb-vs-dl.ok{color:var(--ok)}.nb-vs-dl.bd{color:var(--bd)}.nb-vs-dl.mu{color:var(--mu)}

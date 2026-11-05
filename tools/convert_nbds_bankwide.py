@@ -73,7 +73,11 @@ def jumlah(pairs):
     return [sum(p[0] or 0 for p in ada), sum(p[1] or 0 for p in ada)] if ada else None
 
 
-def main(src):
+def hitung(src, bulan=None):
+    """Baca laporan NBDS tanpa menulis apa pun.
+    bulan=None -> bulan tanggal terakhir di laporan (normal). bulan='2026-10' -> bulan lampau yang masih ada di
+    kolom harian laporan (mis. laporan s.d. 3 Nov masih memuat 1-30 Okt): dipakai untuk melengkapi arsip bulan.
+    Hasil: (N, nilai_dm, D_O, ada_raw) dengan nilai_dm = {kode: [fp nb, fp ob, fnp nb, fnp ob, nf nb, nf ob]}."""
     D = baca_js(JS + "data.js", "const D = ")
     N_lama = baca_js(JS + "area-nbds-data.js", "window.KITO_AREA_NBDS=")
     nama_lama = {c["kode"]: c["nama"] for c in N_lama["cabang"]}
@@ -99,6 +103,10 @@ def main(src):
                     d[lbl] = [num(r[c]), num(r[c + 1])]
 
     harian = sorted({t for x in data.values() for d in x.values() for t in d if not t.startswith("M:")})
+    if bulan:
+        harian = [t for t in harian if t.startswith(bulan)]
+        if not harian:
+            raise SystemExit(f"Laporan tidak memuat tanggal harian bulan {bulan}")
     tanggal = harian[-1]
     bulan = tanggal[:7]
     th, bl = map(int, bulan.split("-"))
@@ -171,9 +179,10 @@ def main(src):
             sh = (c["d"][k][j] or [0, 0])[1] or 0
             if raw != sh:
                 beda.append((c["kode"], k, raw, sh))
-    if beda:
+    if beda and oldbds:
         print(f"PERINGATAN: {len(beda)} sel Old BDS Raw ≠ sheet cabang, contoh {beda[:5]}")
 
+    ada_raw = bool(oldbds)   # Raw hanya memuat tanggal laporan; bulan lampau -> tidak ada rincian Old BDS
     N = {
         "tanggal": tanggal, "bulan": bulan, "bulanLalu": bulan_lalu,
         "sumber": re.sub(r".*[\\/]", "", src) + " · sheet Cab F P, Cab F NP, Cab NF, Raw",
@@ -181,22 +190,28 @@ def main(src):
         "areas": list(areas.values()), "cabang": cabang, "oldbds": oldbds,
         "metodeMTD": "Jumlah harian 1 s.d. tanggal laporan (konsisten dengan kolom bulanan laporan)",
     }
-    tulis_js(JS + "area-nbds-data.js", "window.KITO_AREA_NBDS=", N)
-
-    # data.js: D.M[4..9] utilisasi DtD tanggal laporan + D.O
-    by = {c["kode"]: c for c in cabang}
-    for kode, i in kode_ke_i.items():
-        m = D["M"][i]
-        c = by.get(kode)
-        if m is None or not c:
-            continue
+    # D.M[4..9] utilisasi DtD tanggal laporan
+    nilai_dm = {}
+    for c in cabang:
         vals = []
         for k in ("fp", "fnp", "nf"):
             p = c["d"][k][j] or [0, 0]
             vals += [p[0] or 0, p[1] or 0]
-        m[4:10] = vals
+        nilai_dm[c["kode"]] = vals
+    return N, nilai_dm, D_O, ada_raw
+
+
+def main(src):
+    N, nilai_dm, D_O, _ = hitung(src)
+    tulis_js(JS + "area-nbds-data.js", "window.KITO_AREA_NBDS=", N)
+    D = baca_js(JS + "data.js", "const D = ")
+    for i, b in enumerate(D["B"]):
+        m, v = D["M"][i], nilai_dm.get(str(b[0]))
+        if m is not None and v:
+            m[4:10] = v
     D["O"] = D_O
     tulis_js(JS + "data.js", "const D = ", D)
+    tanggal, dates, cabang, areas, oldbds = N["tanggal"], N["dates"], N["cabang"], N["areas"], N["oldbds"]
     print(f"area-nbds-data.js: {len(cabang)} cabang, {len(areas)} area, {len(dates)} tanggal ({dates[0]}..{dates[-1]}), "
           f"Old BDS {len(oldbds)} baris / {sum(r[7] for r in oldbds)} trx · data.js: D.M[4..9] & D.O per {tanggal}")
 

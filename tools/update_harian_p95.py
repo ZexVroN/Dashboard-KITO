@@ -217,7 +217,8 @@ def baca_o2o(path):
 
 
 # ---------- 3. NBDS untuk region-data ----------
-def baca_nbds_region(path):
+def baca_nbds_region(path, bulan_pilih=None):
+    """bulan_pilih='2026-10' -> ambil bulan lampau yang masih ada di kolom harian laporan (untuk arsip)."""
     wb = openpyxl.load_workbook(path, read_only=True, data_only=True)
     blok = head = None
     data, tgl_n = {}, set()
@@ -244,6 +245,8 @@ def baca_nbds_region(path):
                 d[l] = [num(r[c]), num(r[c + 1])]
                 if not l.startswith("M:"):
                     tgl_n.add(l)
+    if bulan_pilih:
+        tgl_n = {t for t in tgl_n if t.startswith(bulan_pilih)}
     akhir = max(tgl_n)
     bulan = akhir[:7]
     th, bl = map(int, bulan.split("-"))

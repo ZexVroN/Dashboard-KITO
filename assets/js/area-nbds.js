@@ -249,7 +249,7 @@ function layanan(e,isRegion){
   const semuaOpen=ui.svcOpen===SEMUA;
   const semua=rows.length?`<button type="button" class="nb-more nb-all-ob ${semuaOpen?'on':''}" data-nb-svc="${SEMUA}" aria-expanded="${semuaOpen}">📋 ${semuaOpen?'Tutup':'Lihat'} Detail Data Old BDS seluruh layanan (${num(rows.length)} baris)</button>${semuaOpen?panelLayanan(rows,isRegion):''}`:'';
   const filter=seg('svck',[['all','Semua kanal'],...KANAL.map(k=>[k.key,k.short])],ui.svcK);
-  return `<section class="cd" id="nb-layanan"><h2>Layanan Masih Lewat Old BDS · ${isoShort(src.tanggal)}</h2>${filter}<p class="wt-sub">${num(tot)} transaksi Old BDS pada ${isoLong(src.tanggal)} di ${isRegion?'Region II':clean(e.name)}. Ketuk layanan untuk melihat cabang, jenis transaksi, dan Detail Data Old BDS.</p>${svc.length?`<div class="nb-svc-list">${list}</div>${more}${semua}`:'<p class="nb-ok">✓ Tidak ada transaksi Old BDS untuk pilihan ini.</p>'}<p class="wt-note">Sumber: sheet Raw Data (transaksi eligible) tanggal ${isoLong(src.tanggal)}; tidak mengikuti filter Tanggal.</p></section>`;
+  return `<section class="cd" id="nb-layanan"><h2>Layanan Masih Lewat Old BDS · ${isoShort(src.oldbdsTanggal||src.tanggal)}</h2>${filter}<p class="wt-sub">${num(tot)} transaksi Old BDS pada ${isoLong(src.oldbdsTanggal||src.tanggal)} di ${isRegion?'Region II':clean(e.name)}. Ketuk layanan untuk melihat cabang, jenis transaksi, dan Detail Data Old BDS.</p>${svc.length?`<div class="nb-svc-list">${list}</div>${more}${semua}`:'<p class="nb-ok">✓ Tidak ada transaksi Old BDS untuk pilihan ini.</p>'}<p class="wt-note">Sumber: sheet Raw Data (transaksi eligible) tanggal ${isoLong(src.tanggal)}; tidak mengikuti filter Tanggal.</p></section>`;
 }
 
 // unduh CSV rincian layanan yang sedang dibuka
@@ -258,9 +258,9 @@ function unduhLayanan(){
   let rows=obRows(e,isRegion);
   if(ui.svcOpen&&ui.svcOpen!==SEMUA)rows=rows.filter(r=>svcKey(r)===ui.svcOpen);
   const nama=(isRegion?'region-ii':norm(e.name))+(ui.svcOpen&&ui.svcOpen!==SEMUA?'-'+norm(ui.svcOpen.split('|')[1]):'');
-  csv('old-bds-'+nama+'-'+src.tanggal,[
+  csv('old-bds-'+nama+'-'+(src.oldbdsTanggal||src.tanggal),[
     ['No','Tanggal','Area','Kode Cabang','Cabang','Kanal','Layanan','Jenis Transaksi','Nasabah','User ID','Total Transaksi'],
-    ...rows.map((r,j)=>[j+1,src.tanggal,r[OB.area],r[OB.kode],namaCabang.get(r[OB.kode])||'',KNAME[r[OB.k]],r[OB.f],r[OB.jenis],r[OB.nas],r[OB.uid],r[OB.n]]),
+    ...rows.map((r,j)=>[j+1,src.oldbdsTanggal||src.tanggal,r[OB.area],r[OB.kode],namaCabang.get(r[OB.kode])||'',KNAME[r[OB.k]],r[OB.f],r[OB.jenis],r[OB.nas],r[OB.uid],r[OB.n]]),
   ]);
 }
 

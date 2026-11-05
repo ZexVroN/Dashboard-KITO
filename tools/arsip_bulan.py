@@ -9,6 +9,10 @@ update_harian_p95.py memanggil modul ini OTOMATIS sebelum menimpa data dengan la
     python tools/arsip_bulan.py            # arsip O2O (bulan D.mdate) dan NBDS (bulan KITO_AREA_NBDS.bulan)
     python tools/arsip_bulan.py --o2o      # hanya O2O
     python tools/arsip_bulan.py --nbds     # hanya NBDS
+    python tools/arsip_bulan.py --nbds-dari LAPORAN.xlsx --bulan 2026-10
+        # lengkapi arsip NBDS bulan lampau dari laporan NBDS yang lebih baru (mis. laporan s.d. 3 Nov masih memuat
+        # kolom harian 1-30 Okt): DtD s.d. 30 Okt dan MTD Oktober ikut diperbarui. Rincian Old BDS per transaksi
+        # (sheet Raw) hanya ada untuk tanggal laporan, jadi rincian arsip lama dipertahankan.
 Waktu antri tidak perlu diarsip: riwayat hariannya tetap ada di D / KITO_AREA_WAKTU / KITO_REGION.
 """
 import argparse
@@ -63,11 +67,52 @@ def arsip_nbds():
     return bulan
 
 
+def arsip_nbds_dari_laporan(path, bulan):
+    import os
+    import re
+    import convert_nbds_bankwide as C
+    import update_harian_p95 as U
+    N, nilai_dm, D_O, ada_raw = C.hitung(path, bulan)
+    reg, tgl_reg, bln_reg, lalu_reg = U.baca_nbds_region(path, bulan)
+    arsip = _arsip()
+    lama = (arsip.get(bulan) or {}).get("nbds") or {}
+    if not ada_raw and lama:
+        # Raw tidak memuat tanggal bulan lampau: pertahankan rincian Old BDS arsip sebelumnya
+        N["oldbds"] = lama.get("area", {}).get("oldbds", [])
+        D_O = lama.get("O", [])
+        N["oldbdsTanggal"] = lama.get("area", {}).get("oldbdsTanggal") or lama.get("area", {}).get("tanggal")
+    nama = re.sub(r".*[\\/]", "", path)
+    N["sumber"] = nama + f" · kolom harian {bulan} · sheet Cab F P, Cab F NP, Cab NF"
+    r = kito_data.baca("KITO_REGION")
+    data_reg = {}
+    for e in r["regions"] + [dict(r["nasional"], id="NASIONAL")]:
+        data_reg[e["id"]] = reg.get(e["id"], (lama.get("region", {}).get("data", {}) or {}).get(e["id"]))
+    arsip.setdefault(bulan, {})["nbds"] = {
+        "M": nilai_dm,
+        "O": D_O,
+        "area": N,
+        "region": {"tglNbds": tgl_reg, "bulan": bln_reg, "bulanLalu": lalu_reg,
+                   "sumberNbds": f"{nama} · sheet Region · kolom harian {bulan} · DtD dan MTD s.d. {tgl_reg[-1]}",
+                   "data": data_reg},
+    }
+    _simpan(arsip)
+    print(f"Arsip NBDS {bulan} dari {nama}: {len(N['dates'])} tanggal s.d. {N['tanggal']}, "
+          f"{len(N['cabang'])} cabang, region s.d. {tgl_reg[-1]}"
+          + ("" if ada_raw else f" · rincian Old BDS tetap per {N.get('oldbdsTanggal') or '-'}"))
+
+
 if __name__ == "__main__":
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--o2o", action="store_true")
     ap.add_argument("--nbds", action="store_true")
+    ap.add_argument("--nbds-dari", help="laporan NBDS yang masih memuat kolom harian bulan --bulan")
+    ap.add_argument("--bulan", help="YYYY-MM, dipakai bersama --nbds-dari")
     a = ap.parse_args()
+    if a.nbds_dari:
+        if not a.bulan:
+            ap.error("--nbds-dari perlu --bulan YYYY-MM")
+        arsip_nbds_dari_laporan(a.nbds_dari, a.bulan)
+        raise SystemExit
     semua = not (a.o2o or a.nbds)
     if a.o2o or semua:
         arsip_o2o()

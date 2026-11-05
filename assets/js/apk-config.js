@@ -16,7 +16,15 @@ window.KITO_APK = {
 window.KITO_PERANGKAT = function () {
   var ua = navigator.userAgent || '';
   var android = /Android/i.test(ua);
-  var aplikasi = /; wv\)|KITO-Android/i.test(ua);
+  var bridge = window.KitoAndroid;
+  var aplikasi = /; wv\)|KITO-Android/i.test(ua) || !!bridge;
+  var versiTerpasang = null;
+  try {
+    if (bridge && typeof bridge.getAppVersion === 'function') {
+      var versi = String(bridge.getAppVersion()).trim();
+      if (/^\d+(\.\d+)*$/.test(versi)) versiTerpasang = versi;
+    }
+  } catch (e) {}
   var brands = (navigator.userAgentData && navigator.userAgentData.brands) || null;
   var chrome = brands
     ? brands.some(function (b) { return b.brand === 'Google Chrome'; })
@@ -24,6 +32,7 @@ window.KITO_PERANGKAT = function () {
   return {
     android: android,
     aplikasi: android && aplikasi,
+    versiTerpasang: versiTerpasang,
     chromeAndroid: android && !aplikasi && chrome,
     // APK 1.0 hanya memakai WebViewClient polos (tanpa DownloadListener): tautan unduhan diabaikan diam-diam.
     // APK berikutnya menambahkan "KITO-Android/<versionCode>" di user agent dan menangani unduhan sendiri.

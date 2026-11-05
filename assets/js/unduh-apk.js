@@ -13,8 +13,19 @@ if(!A||typeof URUTAN==='undefined'||typeof render!=='function')return;
 const ua=navigator.userAgent||'';
 const P=window.KITO_PERANGKAT?window.KITO_PERANGKAT():{};
 const diAplikasi=!!P.aplikasi;
+// Versi dari bridge native tetap dikenali meskipun user agent APK belum menyertakan versionCode.
+function bandingVersi(a,b){
+  const x=a.split('.').map(Number),y=b.split('.').map(Number);
+  for(let i=0;i<Math.max(x.length,y.length);i++){
+    const beda=(x[i]||0)-(y[i]||0);if(beda)return beda;
+  }
+  return 0;
+}
+const perluUpdate=P.versiTerpasang
+  ? bandingVersi(P.versiTerpasang,A.versi)<0
+  : P.kodeTerpasang<Number(A.kode);
 // tampil hanya di Google Chrome Android, atau di aplikasi KITO yang versinya lebih lama dari APK terbaru
-if(!(P.chromeAndroid||(diAplikasi&&P.kodeTerpasang<Number(A.kode))))return;
+if(!(diAplikasi?perluUpdate:P.chromeAndroid))return;
 const app=document.getElementById('app');if(!app)return;
 const KUNCI='kito-apk-tutup';
 const ditutup=()=>{try{return localStorage.getItem(KUNCI)===String(A.kode);}catch(e){return false;}};

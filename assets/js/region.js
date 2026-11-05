@@ -110,8 +110,27 @@ function hero(){
 }
 
 /* ===== 2. Kartu skor per indikator ===== */
-function strip(rows,cmp){
-  return `<div class="rx-strip" aria-hidden="true">${rows.map(r=>`<i class="${r.e===FOKUS?'me':r.e===cmp?'cmp':''}" title="#${r.rk} ${clean(nama(r.e))}">${r.e===FOKUS?clean(FOKUS.no):''}</i>`).join('')}</div><div class="rx-strip-lg"><span>#1 terbaik</span><span>#${rows.length}</span></div>`;
+function bandingFokus(m,v,fokus){
+  const s=selisih(m,v,fokus);
+  if(!s)return 'Data perbandingan belum tersedia';
+  if(s.sama)return `Setara dengan ${nama(FOKUS)}`;
+  const beda=m.jenis==='waktu'
+    ? `${clock(Math.abs(s.d))} ${s.d<0?'lebih cepat':'lebih lambat'}`
+    : `${Math.abs(s.d*100).toLocaleString('id-ID',{minimumFractionDigits:1,maximumFractionDigits:1})} poin persentase ${s.d>0?'lebih tinggi':'lebih rendah'}`;
+  return `${beda} dibanding ${nama(FOKUS)}`;
+}
+function strip(rows,cmp,m){
+  const fokus=m.val(FOKUS,perOf(m,ui.per));
+  return `<div class="rx-strip" role="group" aria-label="Posisi peringkat region">${rows.map(r=>{
+    const identitas=r.e===FOKUS?'rx-focus-text':r.e===cmp?'rx-compare-text':'';
+    const label=r.e===FOKUS?'Fokus':r.e===cmp?'Pembanding':'Region';
+    const beda=r.e===FOKUS?`${namaPanjang(cmp)}: ${bandingFokus(m,m.val(cmp,perOf(m,ui.per)),fokus)}`:bandingFokus(m,r.v,fokus);
+    const nilaiBanding=r.e===FOKUS?m.val(cmp,perOf(m,ui.per)):r.v;
+    const hasil=selisih(m,nilaiBanding,fokus);
+    const warnaWaktu=m.jenis==='waktu'&&hasil&&!hasil.sama?(hasil.d<0?'rx-time-fast':'rx-time-slow'):'';
+    const detail=`${namaPanjang(r.e)} · ${label} · Peringkat #${r.rk} · ${m.n}: ${m.fmt(r.v)} · ${beda}`;
+    return `<button type="button" class="rx-strip-box ${r.e===FOKUS?'me':r.e===cmp?'cmp':''}" aria-label="${clean(detail)}"><span aria-hidden="true">${r.e===FOKUS||r.e===cmp?clean(r.e.no):''}</span><span class="rx-strip-tip" aria-hidden="true"><strong class="${identitas}">${clean(namaPanjang(r.e))} · ${label}</strong><span>Peringkat #${r.rk} · ${clean(m.n)}: <b class="${r.e!==FOKUS?warnaWaktu:''}">${clean(m.fmt(r.v))}</b></span><span class="rx-focus-text">Fokus ${clean(nama(FOKUS))}: ${clean(m.fmt(fokus))}</span><span class="${warnaWaktu}">${clean(beda)}</span></span></button>`;
+  }).join('')}</div><div class="rx-strip-lg"><span>#1 terbaik</span><span>#${rows.length}</span></div>`;
 }
 function kartuGrup(g){
   const subs=MET.filter(m=>m.g===g.key),cmp=cmpEnt();
@@ -125,7 +144,7 @@ function kartuGrup(g){
   }).join('');
   return `<section class="cd rx-card"><div class="rx-card-h"><span class="rx-ik">${g.ik}</span><div><h2>${clean(g.n)}</h2><p class="rg-sub">${clean(g.ket)} · ${perLabel(m,ui.per)}</p></div></div>
     <div class="rx-big"><div><small>${clean(m.n)} · Region ${clean(FOKUS.no)}</small><b class="${kelas(m,v)}">${m.fmt(v)}</b></div><div class="rx-rank"><b>${me?'#'+me.rk:'–'}</b><small>dari ${rows.length} region</small></div></div>
-    <div class="rx-vs">${vsCmp}${vsBest}</div>${strip(rows,cmp)}
+    <div class="rx-vs">${vsCmp}${vsBest}</div>${strip(rows,cmp,m)}
     <div class="rx-subs"><div class="rx-sub-h"><span>Indikator</span><span>Region ${clean(FOKUS.no)}</span><span>Rank</span><span>vs ${clean(nama(cmp))}</span></div>${baris}</div></section>`;
 }
 

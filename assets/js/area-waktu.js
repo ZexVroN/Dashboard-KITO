@@ -12,7 +12,8 @@ const P100_MULAI='2026-10-27';                    // mulai tanggal ini: Antrian 
 const SVC=[['all','All Trx'],['teller','Teller'],['cs','Customer Service']];
 const ui={svc:'all',per:'dtd',catPer:'dtd',kelSvc:'all',trend:'gab',tip:null};
 const kel=window.KITO_AREA_KELOMPOK||[];          // P90 per cabang (DtD 21 Okt & MTD)
-const KEL_ISO=src.tanggal;
+let KEL_ISO=src.tanggal;
+window.addEventListener('kito:bulan',()=>{KEL_ISO=src.tanggal;ui.tip=null;});
 
 const clean=x=>String(x??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const norm=s=>String(s||'').toLowerCase().replace(/^area\s+/,'').replace(/[^a-z0-9]/g,'');

@@ -224,7 +224,8 @@ function kartuCabang() {
 
 /* --- pilihan periode DtD / MTD per kartu (Waktu Antrian, Utilisasi NBDS) --- */
 const perKartu = { q: "dtd", nb: "dtd" };
-const BULAN_DATA = new Date(D.dates[D.dates.length - 1] + "T00:00").toLocaleDateString("id-ID", { month: "long", year: "numeric" });
+let BULAN_DATA = new Date(D.dates[D.dates.length - 1] + "T00:00").toLocaleDateString("id-ID", { month: "long", year: "numeric" });
+window.addEventListener('kito:bulan', () => { BULAN_DATA = window.KITO_BULAN.nama; });
 // tombol DtD | MTD; tanpaDtd = data harian tidak tersedia (tombol DtD nonaktif)
 const segPer = (k, tanpaDtd) =>
   `<div class="seg seg-per" role="group" aria-label="Periode">${[

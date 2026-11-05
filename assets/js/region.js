@@ -19,8 +19,9 @@ const isoLong=iso=>new Date(iso+'T00:00').toLocaleDateString('id-ID',{day:'numer
 // persentil waktu antri per tanggal (kito.json [KITO_REGION]: queueMetricByDate)
 const QM=R.queueMetricByDate||{};
 const metrikTgl=t=>QM[t]||'P90';
-const tglP95=Object.keys(QM).filter(k=>QM[k]==='P95').sort();
-const rentangP95=tglP95.length?(tglP95.length>1?`${isoShort(tglP95[0])}–${isoShort(tglP95[tglP95.length-1])}`:isoShort(tglP95[0])):'';
+const rentangTanggalP95=()=>{const tglP95=Object.keys(QM).filter(k=>QM[k]==='P95').sort();return tglP95.length?(tglP95.length>1?`${isoShort(tglP95[0])}–${isoShort(tglP95[tglP95.length-1])}`:isoShort(tglP95[0])):'';};
+let rentangP95=rentangTanggalP95();
+window.addEventListener('kito:bulan',()=>{rentangP95=rentangTanggalP95();ui.tip=null;GRUP[0].ket=`DtD ${rentangP95}: P95 & P100 · riwayat dan MTD: P90 · semakin kecil semakin baik`;});
 const BULAN=new Date(R.bulan+'-01T00:00').toLocaleDateString('id-ID',{month:'long'});
 const util=p=>p&&p[0]+p[1]>0?p[0]/(p[0]+p[1]):null;
 const TGT=0.98;

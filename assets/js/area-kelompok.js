@@ -2,10 +2,15 @@
 const source=window.KITO_AREA_KELOMPOK||[];
 // tanggal DtD mengikuti laporan terbaru (kito.json [KITO_AREA_WAKTU]); P95 bila tanggal itu bertanda P95
 const KW=window.KITO_AREA_WAKTU||{};
-const dtdIso=KW.tanggal||(typeof D!=='undefined'?D.dates[D.dates.length-1]:'');
-const dtdPct=(KW.metricByDate&&KW.metricByDate[dtdIso])||'P90';
-const dtdShort=dtdIso?new Date(dtdIso+'T00:00').toLocaleDateString('id-ID',{day:'numeric',month:'short'}):'';
-const dtdLong=dtdIso?new Date(dtdIso+'T00:00').toLocaleDateString('id-ID',{day:'numeric',month:'long',year:'numeric'}):'';
+let dtdIso,dtdPct,dtdShort,dtdLong;
+function segarkanTanggal(){
+ dtdIso=KW.tanggal||(typeof D!=='undefined'?D.dates[D.dates.length-1]:'');
+ dtdPct=(KW.metricByDate&&KW.metricByDate[dtdIso])||'P90';
+ dtdShort=dtdIso?new Date(dtdIso+'T00:00').toLocaleDateString('id-ID',{day:'numeric',month:'short'}):'';
+ dtdLong=dtdIso?new Date(dtdIso+'T00:00').toLocaleDateString('id-ID',{day:'numeric',month:'long',year:'numeric'}):'';
+}
+segarkanTanggal();
+window.addEventListener('kito:bulan',segarkanTanggal);
 const clean=x=>String(x??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 // batas atas kategori: P90 15 menit, P95 20 menit
 const buckets=p95=>[{label:'Under 5 Menit',className:'green'},{label:'5–10 Menit',className:'yellow'},{label:`10–${p95?20:15} Menit`,className:'orange'},{label:`Over ${p95?20:15} Menit`,className:'red'}];

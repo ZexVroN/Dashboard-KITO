@@ -7,13 +7,15 @@
 (function () {
   'use strict';
   var URL_DATA = 'data/kito.json', SIMPAN = 'kito-data', TANDA = 'kito-data-tanda';
-  var teks = null, tanda = '';
+  var teks = null, tanda = '', status = null;
+  var berkasLokal = window.location.protocol === 'file:';
   try {
     var x = new XMLHttpRequest();
     x.open('GET', URL_DATA, false);
     x.setRequestHeader('Cache-Control', 'no-cache');
     x.send(null);
-    if (x.status >= 200 && x.status < 300 && x.responseText) {
+    status = x.status;
+    if (((x.status >= 200 && x.status < 300) || (berkasLokal && x.status === 0)) && x.responseText) {
       teks = x.responseText;
       tanda = (x.getResponseHeader('ETag') || x.getResponseHeader('Last-Modified') || '') + '|' + teks.length;
     }
@@ -36,8 +38,16 @@
       var p = document.createElement('div');
       p.setAttribute('role', 'alert');
       p.style.cssText = 'position:fixed;left:16px;right:16px;top:16px;z-index:99999;padding:14px 16px;border-radius:12px;background:#b42318;color:#fff;font:600 14px/1.45 Inter,system-ui,sans-serif;box-shadow:0 8px 24px rgba(0,0,0,.25)';
-      p.textContent = 'Data dashboard gagal dimuat. Periksa koneksi internet lalu muat ulang halaman.';
+      p.textContent = berkasLokal
+        ? 'Browser membatasi pembacaan data lewat file://. Jalankan python tools/serve_local.py dari folder Dashboard-KITO, lalu buka http://localhost:8000.'
+        : status >= 200 && status < 300
+          ? 'Data dashboard tidak valid. Periksa isi data/kito.json lalu muat ulang halaman.'
+          : status
+            ? 'Data dashboard gagal dimuat (HTTP ' + status + '). Pastikan data/kito.json tersedia pada server lalu muat ulang halaman.'
+            : 'Server dashboard tidak dapat dihubungi. Pastikan server lokal atau koneksi jaringan aktif lalu muat ulang halaman.';
       document.body.appendChild(p);
+      var app = document.getElementById('app');
+      if (app) app.textContent = 'Dashboard belum dapat ditampilkan karena data gagal dimuat.';
     });
     return;
   }

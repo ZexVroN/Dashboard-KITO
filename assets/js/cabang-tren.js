@@ -6,6 +6,7 @@
 (()=>{'use strict';
 if(typeof URUTAN==='undefined'||typeof kartuTren!=='function'||typeof D==='undefined'||typeof st==='undefined')return;
 const ui={mode:'gab',tip:null};
+window.addEventListener('kito:bulan',()=>{ui.tip=null;});
 const COL=['var(--c1)','var(--c2)','var(--c3)'];
 const NAME=['Teller','Customer Service','Semua TRX'];
 const TABS=[['gab','Gabungan'],[0,'Teller'],[1,'CS'],[2,'Semua TRX']];

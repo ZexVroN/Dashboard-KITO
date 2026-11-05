@@ -12,7 +12,7 @@ const norm=s=>String(s||'').toLowerCase().replace(/^area\s+/,'').replace(/[^a-z0
 const num=n=>Number(n||0).toLocaleString('id-ID');
 const pct=p=>p==null?'–':(p*100).toLocaleString('id-ID',{minimumFractionDigits:1,maximumFractionDigits:1})+'%';
 const shortName=n=>String(n||'').replace(/^AREA\s+/i,'');
-const tgl=new Date(src.tanggal+'T00:00').toLocaleDateString('id-ID',{day:'numeric',month:'long',year:'numeric'});
+let tgl=new Date(src.tanggal+'T00:00').toLocaleDateString('id-ID',{day:'numeric',month:'long',year:'numeric'});
 
 const ui={sub:'waktu',rank:'overall',sdAll:false};  // sub: kunci tampilan terdaftar ('waktu' | 'o2o'); selain itu tampilan lama
 const segs=src.segments;
@@ -20,9 +20,15 @@ const region=src.region,bank=src.bankwide,areas=src.areas;
 
 // peringkat area per segmen (persentase tertinggi = peringkat 1)
 const rankOf={};
-segs.forEach(({key})=>{
+function segarkanPeringkat(){segs.forEach(({key})=>{
   const sorted=areas.slice().sort((a,b)=>b.s[key][3]-a.s[key][3]);
   rankOf[key]=new Map(sorted.map((a,i)=>[a.name,i+1]));
+});}
+segarkanPeringkat();
+window.addEventListener('kito:bulan',()=>{
+ tgl=new Date(src.tanggal+'T00:00').toLocaleDateString('id-ID',{day:'numeric',month:'long',year:'numeric'});
+ sdTgl=new Date(D.mdate+'T00:00').toLocaleDateString('id-ID',{day:'numeric',month:'long',year:'numeric'});
+ segarkanPeringkat();
 });
 
 function current(){
@@ -105,7 +111,7 @@ const SD_PART=[['O2O',0,'sh-o2o'],['CSM',2,'sh-csm'],['NBDS',1,'sh-nbds'],['OBDS
 const sdSum=idx=>{const s=[0,0,0,0];idx.forEach(i=>{const m=D.M[i];if(!m)return;s[0]+=Number(m[0])||0;s[1]+=Number(m[10]??m[1])||0;s[2]+=Number(m[2])||0;s[3]+=Number(m[3])||0;});return s;};
 const sdTot=s=>s[0]+s[1]+s[2]+s[3];
 const sdPct=s=>sdTot(s)?(s[0]+s[2])/sdTot(s):null;
-const sdTgl=new Date(D.mdate+'T00:00').toLocaleDateString('id-ID',{day:'numeric',month:'long',year:'numeric'});
+let sdTgl=new Date(D.mdate+'T00:00').toLocaleDateString('id-ID',{day:'numeric',month:'long',year:'numeric'});
 const SD_LIM=5;
 function sdAreas(){
   return [...new Set(D.B.map(b=>b[2]))].map(a=>{

@@ -1,6 +1,6 @@
 /* Periode bulan: dashboard menampilkan SATU bulan saja (Oktober 2026, November 2026, ...).
    Dimuat setelah semua file data dan sebelum script.js. Bulan dipilih lewat ?bulan=YYYY-MM (atau pilihan terakhir
-   di sessionStorage); bawaan = bulan data terbaru. Saat bulan diganti, halaman dimuat ulang (month-filter.js).
+   di sessionStorage); bawaan = bulan data terbaru. Pergantian bulan memperbarui data dan render tanpa navigasi.
 
    Yang dipisah per bulan:
    - kito.json [D]        : dates, Q, QP, QN, QW, QD (dipotong ke tanggal bulan terpilih), queueMetricByDate
@@ -17,6 +17,23 @@
   var bulanList = SEMUA.map(function (d) { return d.slice(0, 7); }).filter(function (m, i, a) { return a.indexOf(m) === i; }).sort();
   var terbaru = bulanList[bulanList.length - 1];
   var MTD_P90 = '2026-10';                       // bulan yang punya MTD P90 waktu antri di laporan lama
+  var bagian = ['D', 'KITO_AREA_WAKTU', 'KITO_AREA_KELOMPOK', 'KITO_AREA_O2O', 'KITO_REGION'];
+  var asli = {};
+  bagian.forEach(function (k) { if (window[k]) asli[k] = window[k]; });
+  asli = JSON.stringify(asli);
+
+  // Pertahankan referensi objek yang dipakai modul tampilan dan indeks cabang/area.
+  function salinKe(target, sumber) {
+    Object.keys(target).forEach(function (k) { if (!Object.prototype.hasOwnProperty.call(sumber, k)) delete target[k]; });
+    Object.keys(sumber).forEach(function (k) {
+      var v = sumber[k], lama = target[k];
+      if (v && typeof v === 'object') {
+        if (!lama || typeof lama !== 'object' || Array.isArray(lama) !== Array.isArray(v)) lama = target[k] = Array.isArray(v) ? [] : {};
+        salinKe(lama, v);
+      } else target[k] = v;
+    });
+    if (Array.isArray(sumber)) target.length = sumber.length;
+  }
 
   var pilih = null;
   try { pilih = new URLSearchParams(location.search).get('bulan'); } catch (e) {}
@@ -27,29 +44,20 @@
   var namaBulan = function (m, gaya) {
     return new Date(m + '-01T00:00:00').toLocaleDateString('id-ID', gaya === 'pendek' ? { month: 'long' } : { month: 'long', year: 'numeric' });
   };
+  function terapkan(m) {
+  pilih = m;
+  var data = JSON.parse(asli), D = data.D;
   var idx = [];
   SEMUA.forEach(function (d, i) { if (d.slice(0, 7) === pilih) idx.push(i); });
   var tglAkhir = SEMUA[idx[idx.length - 1]];
   var adaMtd = pilih === MTD_P90;
 
-  window.KITO_BULAN = {
+  Object.assign(window.KITO_BULAN, {
     aktif: pilih, terbaru: terbaru, semua: bulanList, tanggalAkhir: tglAkhir,
     nama: namaBulan(pilih), namaPendek: namaBulan(pilih, 'pendek'),
     adaMtdWaktu: adaMtd,
     mtdLabel: 'MTD ' + namaBulan(pilih, 'pendek'),
-    ganti: function (m) {
-      if (bulanList.indexOf(m) < 0 || m === pilih) return;
-      try {
-        sessionStorage.setItem('kito-bulan', m);
-        // kembali ke tab, area, dan cabang yang sama setelah dimuat ulang (dipulihkan di month-filter.js)
-        sessionStorage.setItem('kito-bulan-kembali', JSON.stringify({ tab: typeof tampil !== 'undefined' ? tampil : 'cabang',
-          a: typeof st !== 'undefined' ? st.a : null, b: typeof st !== 'undefined' ? st.b : null, y: window.scrollY || 0 }));
-      } catch (e) {}
-      var u = new URL(location.href);
-      if (m === terbaru) u.searchParams.delete('bulan'); else u.searchParams.set('bulan', m);
-      location.replace(u.toString());
-    },
-  };
+  });
 
   var potong = function (arr) { return Array.isArray(arr) ? idx.map(function (i) { return arr[i]; }) : arr; };
   var saringKunci = function (obj) {
@@ -77,11 +85,11 @@
       if (!m || !row) return;
       row[0] = m[0]; row[1] = m[1]; row[2] = m[2]; row[3] = m[3]; row[10] = m[4];
     });
-    if (arsip.areaO2O) window.KITO_AREA_O2O = arsip.areaO2O;
+    if (arsip.areaO2O) data.KITO_AREA_O2O = arsip.areaO2O;
   }
 
   /* ---------- kito.json [KITO_AREA_WAKTU] ---------- */
-  var KW = window.KITO_AREA_WAKTU;
+  var KW = data.KITO_AREA_WAKTU;
   if (KW) {
     if (Array.isArray(KW.dates)) KW.dates = KW.dates.filter(function (d) { return d.slice(0, 7) === pilih; });
     KW.tanggal = tglAkhir;
@@ -94,7 +102,7 @@
   }
 
   /* ---------- kito.json [KITO_AREA_KELOMPOK]: DtD = tanggal terakhir bulan terpilih ---------- */
-  var KK = window.KITO_AREA_KELOMPOK;
+  var KK = data.KITO_AREA_KELOMPOK;
   if (Array.isArray(KK)) {
     var posisi = {};
     D.B.forEach(function (b, i) { posisi[String(b[0])] = i; });
@@ -110,7 +118,7 @@
   }
 
   /* ---------- kito.json [KITO_REGION] ---------- */
-  var R = window.KITO_REGION;
+  var R = data.KITO_REGION;
   if (R) {
     if (Array.isArray(R.tglWaktu)) R.tglWaktu = R.tglWaktu.filter(function (d) { return d.slice(0, 7) === pilih; });
     if (R.queueMetricByDate) R.queueMetricByDate = saringKunci(R.queueMetricByDate);
@@ -131,4 +139,26 @@
       if (R.sumber) R.sumber.o2o = arsip.region.sumberO2O;
     }
   }
+  bagian.forEach(function (k) { if (data[k]) salinKe(window[k], data[k]); });
+  }
+
+  window.KITO_BULAN = {
+    ganti: function (m) {
+      if (bulanList.indexOf(m) < 0 || m === pilih) return;
+      terapkan(m);
+      try { sessionStorage.setItem('kito-bulan', m); } catch (e) {}
+      try {
+        var u = new URL(location.href);
+        if (m === terbaru) u.searchParams.delete('bulan'); else u.searchParams.set('bulan', m);
+        history.replaceState(null, '', u.toString());
+      } catch (e) {}
+      if (typeof st !== 'undefined') st.d = D.dates.length - 1;
+      var month = document.getElementById('sm');
+      if (month) month.value = m;
+      window.dispatchEvent(new Event('kito:bulan'));
+      if (typeof fill === 'function') fill();
+      if (typeof render === 'function') render();
+    },
+  };
+  terapkan(pilih);
 })();

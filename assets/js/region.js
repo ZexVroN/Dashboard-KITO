@@ -21,7 +21,8 @@ const QM=R.queueMetricByDate||{};
 const metrikTgl=t=>QM[t]||'P90';
 const rentangTanggalP95=()=>{const tglP95=Object.keys(QM).filter(k=>QM[k]==='P95').sort();return tglP95.length?(tglP95.length>1?`${isoShort(tglP95[0])}–${isoShort(tglP95[tglP95.length-1])}`:isoShort(tglP95[0])):'';};
 let rentangP95=rentangTanggalP95();
-window.addEventListener('kito:bulan',()=>{rentangP95=rentangTanggalP95();ui.tip=null;GRUP[0].ket=`DtD ${rentangP95}: P95 & P100 · riwayat dan MTD: P90 · semakin kecil semakin baik`;});
+window.addEventListener('kito:bulan',()=>{rentangP95=rentangTanggalP95();ui.tip=null;GRUP[0].ket=`DtD ${rentangP95}: P95 & P100 · ${mtdTag()==='P95'?'MTD: P95':'riwayat dan MTD: P90'} · semakin kecil semakin baik`;});
+const mtdTag=()=>(window.KITO_BULAN&&window.KITO_BULAN.mtdMetrik)||'P90';
 const BULAN=new Date(R.bulan+'-01T00:00').toLocaleDateString('id-ID',{month:'long'});
 const util=p=>p&&p[0]+p[1]>0?p[0]/(p[0]+p[1]):null;
 const TGT=0.98;
@@ -58,17 +59,17 @@ const MET=[
   {key:'shift',g:'o2o',n:'Shifting Digital',s:'Shifting',tinggi:true,jenis:'o2o',per:['mtd'],val:e=>shift(e),fmt:pctR},
 ];
 const GRUP=[
-  {key:'waktu',ik:'⏱',n:'Waktu Antri',main:'w-all',pendek:'Waktu Antri',ket:`DtD ${rentangP95}: P95 & P100 · riwayat dan MTD: P90 · semakin kecil semakin baik`},
+  {key:'waktu',ik:'⏱',n:'Waktu Antri',main:'w-all',pendek:'Waktu Antri',ket:`DtD ${rentangP95}: P95 & P100 · ${mtdTag()==='P95'?'MTD: P95':'riwayat dan MTD: P90'} · semakin kecil semakin baik`},
   {key:'nbds',ik:'🖥️',n:'Utilisasi NBDS',main:'nb-agg',pendek:'NBDS',ket:'New BDS ÷ (New BDS + Old BDS) · target ≥ 98%'},
   {key:'o2o',ik:'📊',n:'O2O & Shifting Digital',main:'o2o',pendek:'O2O',ket:'Transaksi ganti kartu · semakin besar semakin baik'},
 ];
 const metOf=k=>MET.find(m=>m.key===k)||MET[0];
 const perOf=(m,per)=>m.per.includes(per)?per:m.per[0];
-const perLabel=(m,per)=>perOf(m,per)==='mtd'?(m.jenis==='o2o'?`MTD s.d. ${isoShort(R.tglO2O)}`:(m.jenis==='waktu'?`${window.KITO_BULAN?window.KITO_BULAN.mtdLabel:'MTD '+BULAN} · P90`:`MTD ${BULAN}`)):(m.jenis==='waktu'?`DtD ${isoShort(iso())} · ${metrikTgl(iso())}`:`DtD ${isoShort(iso())}`);
+const perLabel=(m,per)=>perOf(m,per)==='mtd'?(m.jenis==='o2o'?`MTD s.d. ${isoShort(R.tglO2O)}`:(m.jenis==='waktu'?`${window.KITO_BULAN?window.KITO_BULAN.mtdLabel:'MTD '+BULAN} · ${mtdTag()}`:`MTD ${BULAN}`)):(m.jenis==='waktu'?`DtD ${isoShort(iso())} · ${metrikTgl(iso())}`:`DtD ${isoShort(iso())}`);
 // tgl: tanggal nilai waktu (bawaan: DtD terpilih bila periode DtD); P95 memakai batas 20 menit, P90 & P100 15 menit
 const kelas=(m,v,tgl=perOf(m,ui.per)==='dtd'?iso():null)=>{
   if(v==null)return 'n';
-  if(m.jenis==='waktu')return mp(v,m.key.startsWith('w-')&&!!tgl&&metrikTgl(tgl)==='P95')[1];
+  if(m.jenis==='waktu')return mp(v,m.key.startsWith('w-')&&((!!tgl&&metrikTgl(tgl)==='P95')||(!tgl&&perOf(m,ui.per)==='mtd'&&mtdTag()==='P95')))[1];
   if(m.jenis==='nbds')return v>=TGT?'ok':v>=.9?'mid':v>=.8?'warn':'bad';
   const ref=m.val(NAS,'mtd');return ref==null?'n':v>=ref?'ok':'bad';
 };
@@ -294,7 +295,7 @@ function antrian(){
 }
 
 function catatan(){
-  return `<section class="cd"><p class="rg-note" style="margin:0">Sumber: ${clean(R.sumber.waktu)} · ${clean(R.sumber.nbds)} · ${clean(R.sumber.o2o)}. Waktu antri DtD ${rentangP95} = P95; tanggal sebelumnya dan MTD historis = P90 (tidak sebanding langsung); Utilisasi NBDS MTD = jumlah harian 1 s.d. tanggal laporan; Shifting Digital = (CSM + O2O) ÷ (CSM + O2O + Old BDS + New BDS) transaksi ganti kartu.</p></section>`;
+  return `<section class="cd"><p class="rg-note" style="margin:0">Sumber: ${clean(R.sumber.waktu)} · ${clean(R.sumber.nbds)} · ${clean(R.sumber.o2o)}. Waktu antri DtD ${rentangP95} = P95; ${mtdTag()==='P95'?'MTD = rata-rata P95 harian bulan berjalan':'tanggal sebelumnya dan MTD historis = P90 (tidak sebanding langsung)'}; Utilisasi NBDS MTD = jumlah harian 1 s.d. tanggal laporan; Shifting Digital = (CSM + O2O) ÷ (CSM + O2O + Old BDS + New BDS) transaksi ganti kartu.</p></section>`;
 }
 
 const page=()=>hero()+`<div class="rx-grid">${GRUP.map(kartuGrup).join('')}</div>`+versus()+antrian()+daftar()+tren()+rekap()+catatan();

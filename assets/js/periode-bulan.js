@@ -144,7 +144,8 @@
       var w = e.waktu;
       if (w) {
         ['d', 'n', 'p', 'w'].forEach(function (k) { if (w[k]) w[k] = saringKunci(w[k]); });
-        if (!adaMtd) { w.m = kosongkan(w.m); if (w.mn) w.mn = kosongkan(w.mn); }
+        if (!adaMtd) { w.m = (w.mb && w.mb[pilih]) || kosongkan(w.m); if (w.mn) w.mn = kosongkan(w.mn); }
+        delete w.mb;
       }
       if (arsip && arsip.region) {
         var a = arsip.region.data[e.id];

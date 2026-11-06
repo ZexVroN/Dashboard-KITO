@@ -8,6 +8,7 @@ Dipanggil otomatis oleh update_harian_p95.py; bisa dijalankan sendiri.
 Yang ditulis (kunci "mb" = MTD per bulan "YYYY-MM", P95; MTD Oktober tetap P90 di "m"/"mtd"):
   KITO_AREA_WAKTU    : areas[].mb / region.mb = rata-rata P95 harian bulan itu [.., Teller(2), .., .., CS(5), All(6)]
                        (rata-rata nilai harian di data, sama dengan definisi "Average ... P95" di laporan cabang)
+  KITO_REGION        : regions[].waktu.mb / nasional.waktu.mb = rata-rata P95 harian [Teller, CS, All]
   KITO_AREA_KELOMPOK : [].mb = {teller, cs, all} dari kolom "MTD <Bulan> 26 (... P95)" sheet cabang laporan antrian
 """
 
@@ -44,6 +45,16 @@ def mtd_area(W):
     return bulan
 
 
+def mtd_region(R, bulan):
+    """waktu.mb[bulan] = rata-rata P95 harian [Teller, CS, All] untuk 12 region + nasional."""
+    qm = R.get("queueMetricByDate", {})
+    for b in bulan:
+        tgl = [t for t in R["tglWaktu"] if t.startswith(b) and qm.get(t) == "P95"]
+        for e in R["regions"] + [R["nasional"]]:
+            w = e["waktu"]
+            w.setdefault("mb", {})[b] = [_rata([(w["d"].get(t) or [None] * 3)[i] for t in tgl]) for i in range(3)]
+
+
 def mtd_cabang(path, K, bulan):
     wb = openpyxl.load_workbook(path, read_only=True, data_only=True)
     nama = next(n for n in wb.sheetnames if n not in ("Area", "RAW"))
@@ -74,6 +85,9 @@ def terapkan(path):
     W = kito_data.baca(JS + "area-waktu-data.js")
     K = kito_data.baca(JS + "area-kelompok-data.js")
     bulan = mtd_area(W)
+    R = kito_data.baca(JS + "region-data.js")
+    mtd_region(R, bulan)
+    kito_data.tulis(JS + "region-data.js", R)
     n, ada = mtd_cabang(path, K, bulan)
     kito_data.tulis(JS + "area-waktu-data.js", W)
     kito_data.tulis(JS + "area-kelompok-data.js", K)

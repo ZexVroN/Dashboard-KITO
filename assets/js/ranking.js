@@ -49,7 +49,8 @@ const wArea=a=>W?.areas.find(x=>norm(x.name)===norm(a));
 const wVal=(ent,key,per)=>{if(!ent)return null;const arr=per==='mtd'?ent.m:ent.d[iso()];return arr?arr[WIDX[key]]:null;};
 
 /* ----- kelas warna ----- */
-const kWaktu=(v,per)=>mp(v,per!=='mtd'&&qP95(iso()))[1];            // ok/mid/warn/bad (bawaan script.js); DtD P95 batas 20 menit
+const mtdTag=()=>(window.KITO_BULAN&&window.KITO_BULAN.mtdMetrik)||'P90';
+const kWaktu=(v,per)=>mp(v,per==='mtd'?mtdTag()==='P95':qP95(iso()))[1];            // ok/mid/warn/bad (bawaan script.js); DtD P95 batas 20 menit
 const kNbds=v=>v==null?'n':v>=TGT?'ok':v>=.9?'mid':v>=.8?'warn':'bad';
 const kRel=(v,ref)=>v==null||ref==null?'n':v>=ref?'ok':'bad';
 
@@ -62,7 +63,7 @@ const waktu=(key,n,s)=>({key:'w-'+key,g:'Waktu Antrian',n,s,tinggi:false,jenis:'
   area:(a,per)=>wVal(wArea(a),key,per),
   reg:per=>wVal(W?.region,key,per),
   kelas:v=>kWaktu(v,ui.per),fmt:clock,
-  sumber:per=>per==='mtd'?'P90 '+(window.KITO_BULAN?window.KITO_BULAN.mtdLabel:'MTD Oktober'):`${qP95(iso())?'P95':'P90'} DtD`});
+  sumber:per=>per==='mtd'?mtdTag()+' '+(window.KITO_BULAN?window.KITO_BULAN.mtdLabel:'MTD Oktober'):`${qP95(iso())?'P95':'P90'} DtD`});
 MET.push(waktu('teller','Teller','Teller'),waktu('cs','Customer Service','CS'),waktu('all','Semua Transaksi','All Trx'));
 MET.push({key:'o2o',g:'O2O & Digital',n:'Overall O2O',s:'O2O',tinggi:true,jenis:'pct',per:['tgl'],
   cab:i=>o2oP(mSum([i])),area:a=>o2oP(mSum(cabOfArea(a))),reg:()=>o2oP(mSum(D.B.map((b,i)=>i))),
@@ -186,7 +187,7 @@ function daftar(){
   const judul=`Ranking ${isArea?'Area':'Cabang'} · ${clean(m.g)} ${clean(m.n)} · ${perLabel(m,ui.per)}`;
   if(!rows.length)return `<section class="cd"><h2>${judul}</h2><p class="rg-warn">Data ${clean(m.n)} belum tersedia untuk ${perLabel(m,ui.per)}. Pilih tanggal lain di filter atas atau periode MTD.</p></section>`;
   const best=rows[0],worst=rows[rows.length-1];
-  const ringkas=`<div class="rg-sum"><div><small>Terbaik</small><b class="${m.kelas(best.v,ref)}">${m.fmt(best.v)}</b><span>${clean(best.nama)}</span></div><div><small>Region II</small><b>${m.fmt(ref)}</b><span>${m.jenis==='waktu'?'P90 Region':'Jumlah seluruh cabang'}</span></div><div><small>Terendah</small><b class="${m.kelas(worst.v,ref)}">${m.fmt(worst.v)}</b><span>${clean(worst.nama)}</span></div></div>`;
+  const ringkas=`<div class="rg-sum"><div><small>Terbaik</small><b class="${m.kelas(best.v,ref)}">${m.fmt(best.v)}</b><span>${clean(best.nama)}</span></div><div><small>Region II</small><b>${m.fmt(ref)}</b><span>${m.jenis==='waktu'?(ui.per==='mtd'?mtdTag():'P90')+' Region':'Jumlah seluruh cabang'}</span></div><div><small>Terendah</small><b class="${m.kelas(worst.v,ref)}">${m.fmt(worst.v)}</b><span>${clean(worst.nama)}</span></div></div>`;
   const pin=meRow?`<p class="rg-pin">📌 <b>${clean(meRow.nama)}</b> di peringkat <b>#${meRow.rk}</b> dari ${rows.length} ${isArea?'area':'cabang'} · ${m.fmt(meRow.v)}</p>`:'';
   let isi;
   if(isArea||ui.semua||rows.length<=20){

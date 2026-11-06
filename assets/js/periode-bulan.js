@@ -8,7 +8,8 @@
    - region-data    : tglWaktu, waktu.d/n/p/w per region & nasional, queueMetricByDate, tanggal
    - kelompok area  : DtD = tanggal terakhir bulan terpilih (dari D.Q)
    - O2O & Shifting : bulan lama memakai arsip akhir bulan (kito.json [KITO_ARSIP_BULAN])
-   - MTD waktu antri (P90) hanya ada untuk Oktober 2026; bulan lain tampil "–".
+   - MTD waktu antri: Oktober 2026 = P90 (laporan lama); mulai November 2026 = P95 (rata-rata P95 harian, kunci "mb"
+     per bulan pada area-waktu & kelompok area); bulan tanpa data MTD tampil "–".
    - Utilisasi NBDS : bulan lama memakai arsip NBDS akhir bulan (KITO_ARSIP_BULAN[bulan].nbds); bila bulan terpilih
      belum punya laporan NBDS, tampil laporan NBDS terakhir (DtD & MTD dengan tanggal/bulannya sendiri). */
 (function () {
@@ -57,6 +58,7 @@
     aktif: pilih, terbaru: terbaru, semua: bulanList, tanggalAkhir: tglAkhir,
     nama: namaBulan(pilih), namaPendek: namaBulan(pilih, 'pendek'),
     adaMtdWaktu: adaMtd,
+    mtdMetrik: adaMtd ? 'P90' : 'P95',             // Oktober: MTD P90; mulai November: MTD P95 (rata-rata P95 harian)
     mtdLabel: 'MTD ' + namaBulan(pilih, 'pendek'),
   });
 
@@ -110,7 +112,8 @@
     (KW.region ? [KW.region] : []).concat(KW.areas || []).forEach(function (e) {
       if (e.d) e.d = saringKunci(e.d);
       if (e.x) e.x = saringKunci(e.x);
-      if (!adaMtd && e.m) e.m = kosongkan(e.m);
+      if (!adaMtd) e.m = (e.mb && e.mb[pilih]) || (e.m ? kosongkan(e.m) : e.m);
+      delete e.mb;
     });
   }
 
@@ -126,7 +129,8 @@
         var q = D.Q[i] && D.Q[i][j];
         r.dtd = { teller: q ? q[0] : null, cs: q ? q[1] : null, all: q ? q[2] : null };
       }
-      if (!adaMtd) r.mtd = { teller: null, cs: null, all: null };
+      if (!adaMtd) r.mtd = (r.mb && r.mb[pilih]) || { teller: null, cs: null, all: null };
+      delete r.mb;
     });
   }
 

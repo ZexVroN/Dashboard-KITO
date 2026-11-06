@@ -409,6 +409,10 @@ def main():
     from update_p100_antrian import terapkan
     terapkan(a.antrian)
 
+    # MTD P95 bulan berjalan (navigasi Area): rata-rata P95 harian per area + MTD per cabang dari laporan
+    from update_mtd_p95 import terapkan as terapkan_mtd
+    terapkan_mtd(a.antrian)
+
     print(f"data.js           : tanggal {tgl} ditambah (P95) · M O2O/CSM/OldBDS/NBDS-kanal berubah {beda_m} cabang · bw {D['bw']:.4%} · mdate {D['mdate']}")
     print(f"area-waktu-data.js : {len(W['areas'])} area + Region II, tanggal {W['tanggal']}")
     if diperbaiki:

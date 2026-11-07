@@ -48,3 +48,9 @@
 .as-val.ok{color:var(--ok)}.as-val.bd{color:var(--bd)}
 .as-more{display:block;width:100%;margin-top:10px;padding:10px;border:1px dashed var(--ln);border-radius:12px;background:transparent;color:var(--c1);font:inherit;font-weight:700;cursor:pointer}
 .as-more:hover{background:rgba(37,99,235,.06)}
+
+.as-ar .as-val{min-width:58px;text-align:right}
+.as-ar.as-sel{outline:2px solid var(--blue,#2563eb);outline-offset:-2px}
+.as-arh{display:flex;justify-content:flex-end;gap:0;font-size:.68rem;opacity:.65;padding:0 4px}
+.as-arh span:first-child{margin-right:auto;padding-left:34px}
+.as-arh span:not(:first-child){min-width:58px;text-align:right;margin-left:8px}

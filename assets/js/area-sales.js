@@ -127,13 +127,24 @@ function rankPegawai(c){
   return `<section class="cd"><h2>Ranking Pegawai · ${K.judul} · ${clean(nm)}</h2>${tabs}${jabTabs}<p class="wt-note">${nf(xs.length)} pegawai · ${K.dasar}. Urut dari persentase tertinggi; status Bugar ≥ target, IGD belum ada realisasi. Ketuk pegawai untuk membuka cabangnya.</p><div>${body||'<p class="wt-warn">Tidak ada pegawai untuk pilihan ini.</p>'}</div>${lagi}</section>`;
 }
 
+// persentase semua area sekaligus (Ekstensifikasi & Intensifikasi), area terpilih disorot
+function semuaArea(c){
+  const g=new Map();rows.forEach(x=>{const a=areaOf(x.kode);if(!g.has(a))g.set(a,[]);g.get(a).push(x);});
+  const b=[...g].map(([a,l])=>({a,l,e:ringkas(l,'e'),i:ringkas(l,'i')})).sort((x,y)=>(y.e.pct??-1)-(x.e.pct??-1));
+  const reg={e:ringkas(rows,'e'),i:ringkas(rows,'i')};
+  const sel=a=>!c.isRegion&&norm(a)===norm(c.nama);
+  const sel2=(p,r)=>p==null||r==null?'':p>=r?'ok':'bd';
+  const body=b.map((r,n)=>`<button type="button" class="as-row as-ar ${sel(r.a)?'as-sel':''}" data-as-area="${clean(r.a)}" aria-label="Buka ${clean(r.a)}"><span class="as-no">${n+1}</span><span class="as-mid"><span class="as-nm">${clean(r.a)}</span><span class="as-sm">${r.l.length} pegawai</span></span><span class="as-val ${sel2(r.e.pct,reg.e.pct)}" title="Ekstensifikasi">${pc(r.e.pct)}</span><span class="as-val ${sel2(r.i.pct,reg.i.pct)}" title="Intensifikasi">${pc(r.i.pct)}</span></button>`).join('');
+  return `<section class="cd"><h2>Persentase Semua Area</h2><p class="wt-note">Urut menurut Ekstensifikasi. Hijau = di atas Region II (Ekstensifikasi ${pc(reg.e.pct)} · Intensifikasi ${pc(reg.i.pct)}), merah = di bawah.</p><div class="as-arh"><span>Area</span><span>Ekstensif</span><span>Intensif</span></div><div>${body}</div></section>`;
+}
+
 function page(){
   const c=current();
   if(!c.list.length)return `<section class="cd"><p class="wt-warn">Data sales pegawai untuk <b>${clean(c.nama)}</b> tidak ditemukan.</p></section>`;
   const reg={e:ringkas(rows,'e'),i:ringkas(rows,'i')};
   const R={e:c.isRegion?reg.e:ringkas(c.list,'e'),i:c.isRegion?reg.i:ringkas(c.list,'i')};
   const regJab=ringkas(ui.jab==='all'?rows:rows.filter(x=>kelOf(x.r[2]||'')[0]===ui.jab),ui.tab);
-  return `${hero(c)}<div class="wt-pair">${blok('e',R.e,c.isRegion?null:reg.e.pct)}${blok('i',R.i,c.isRegion?null:reg.i.pct)}</div>${profil(c)}${ranking(c,regJab.pct)}${rankPegawai(c)}`;
+  return `${hero(c)}<div class="wt-pair">${blok('e',R.e,c.isRegion?null:reg.e.pct)}${blok('i',R.i,c.isRegion?null:reg.i.pct)}</div>${semuaArea(c)}${profil(c)}${ranking(c,regJab.pct)}${rankPegawai(c)}`;
 }
 
 views.push({key:'sales',order:40,label:'📈 Informasi Sales',html:page});

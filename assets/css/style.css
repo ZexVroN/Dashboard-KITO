@@ -733,3 +733,6 @@ footer .kredit{display:flex;flex-direction:column;align-items:center;text-align:
 .u .nb-vs small{color:var(--mu);font-size:11px}
 .nb-vs-dl{font-weight:800;white-space:nowrap}
 .nb-vs-dl.ok{color:var(--ok)}.nb-vs-dl.bd{color:var(--bd)}.nb-vs-dl.mu{color:var(--mu)}
+
+/* keterangan kecil kanal NBDS: Teller Perorangan / Badan / Customer Service */
+.nb-ket{display:block;font-size:.68rem;font-weight:500;font-style:normal;opacity:.7;line-height:1.3;margin-top:1px}

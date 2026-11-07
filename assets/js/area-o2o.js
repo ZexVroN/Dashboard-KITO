@@ -49,7 +49,7 @@ function donut(p,color){
 
 // Registri tampilan tab Area: modul lain (mis. area-waktu.js) mendaftarkan tampilannya di sini.
 const views=(window.KITO_AREA_VIEWS=window.KITO_AREA_VIEWS||[]);
-views.push({key:'o2o',order:30,label:'📊 Dashboard Infografis O2O',html:page});
+views.push({key:'o2o',order:30,label:'📊 Infografis O2O',html:page});
 function subNav(){
   const all=views.slice().sort((a,b)=>a.order-b.order);
   return `<div class="seg o2o-subnav" role="group" aria-label="Tampilan Area">${all.map(v=>`<button type="button" data-o2o-sub="${clean(v.key)}" class="${ui.sub===v.key?'on':''}">${clean(v.label)}</button>`).join('')}</div>`;

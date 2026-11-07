@@ -153,6 +153,8 @@ function lebarGrafik() {
 }
 
 // baris utilisasi dengan bar warna
+// keterangan kecil di bawah nama kanal NBDS
+const KET_KANAL = { "Teller Perorangan": "Finansial Perorangan", "Teller Badan": "Finansial Non Perorangan", "Customer Service": "Non Finansial" };
 function util(label, n, o, lalu) {
   const p = pc(n, o),
     [c, cc] = club(p);
@@ -166,7 +168,7 @@ function util(label, n, o, lalu) {
       tanda = sel == null ? "" : sama ? '<span class="nb-vs-dl mu">≈ setara</span>' : `<span class="nb-vs-dl ${sel > 0 ? "ok" : "bd"}">${sel > 0 ? "▲" : "▼"} ${(Math.abs(sel) * 100).toFixed(1).replace(".", ",")} %</span>`;
     vs = `<div class="row sub nb-vs" style="justify-content:space-between"><span>vs ${lalu.lbl} <b>${P(pl)}</b> <small>(NBDS ${lalu.n ?? "–"} · Old BDS ${lalu.o ?? "–"})</small></span>${tanda}</div>`;
   }
-  return `<div class="u"><div class="row" style="justify-content:space-between"><b>${label}</b>${chip(c,cc)}</div>
+  return `<div class="u"><div class="row" style="justify-content:space-between"><b>${label}${KET_KANAL[label] ? `<small class="nb-ket">${KET_KANAL[label]}</small>` : ""}</b>${chip(c,cc)}</div>
   <div class="bar"><b style="width:${(p || 0) * 100}%;background:var(--${warna})"></b></div>
   <div class="row sub" style="justify-content:space-between"><span>NBDS <b>${n ?? "–"}</b> · Old BDS <b>${o ?? "–"}</b></span><b>${P(p)}${p != null && p >= 0.98 ? " " : ""}</b></div>${vs}</div>`;
 }

@@ -9,7 +9,8 @@ const time=x=>x==null?'–':f(x);
 const label=(s)=>esc(s||'–');
 const safeMetric=(i,k)=>D.Q[i]&&D.Q[i][st.d]?D.Q[i][st.d][k]:null;
 const branchRows=()=>D.B.map((b,i)=>({b,i})).filter(r=>r.b[2]===st.a);
-const box=(name,value,note='')=>`<div class="area-stat"><span>${label(name)}</span><strong>${value}</strong>${note?`<small>${label(note)}</small>`:''}</div>`;
+const KET={'Teller Perorangan (FP)':'Finansial Perorangan','Teller Perusahaan (FNP)':'Finansial Non Perorangan','Customer Service (NF)':'Non Finansial'};
+const box=(name,value,note='')=>`<div class="area-stat"><span>${label(name)}${KET[name]?`<em class="nb-ket">${KET[name]}</em>`:''}</span><strong>${value}</strong>${note?`<small>${label(note)}</small>`:''}</div>`;
 function areaPage(){
  const rows=branchRows(),ids=rows.map(r=>r.i), m=ids.map(i=>D.M[i]||[]);
  const sum=k=>m.reduce((s,r)=>s+(Number(r[k])||0),0);

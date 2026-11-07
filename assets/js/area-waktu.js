@@ -248,7 +248,7 @@ function page(){
   return `${hero(e,isRegion)}<div class="wt-pair">${periodCard('dtd',e,isRegion)}${periodCard('mtd',e,isRegion)}</div>${baru()&&mtdAda(region)?p100Card(e,isRegion):''}${ranking(e,isRegion)}${trend(e)}${kategori(e,isRegion)}${wait10(e,isRegion)}${kelompok(e,isRegion)}${tabel(e)}`;
 }
 
-views.push({key:'waktu',order:10,label:'⏱ Dashboard Waktu Tunggu',html:page});
+views.push({key:'waktu',order:10,label:'⏱ Waktu Tunggu',html:page});
 
 document.getElementById('app').addEventListener('click',ev=>{
   const sv=ev.target.closest('[data-wt-svc]');if(sv){ui.svc=sv.dataset.wtSvc;render();return;}

@@ -141,6 +141,34 @@
   }
 }
 
+/* Umpan balik tombol desktop; layout dan interaksi mobile tetap sama. */
+@media screen and (min-width: 1024px) and (hover: hover) and (pointer: fine) {
+  body button:not(:disabled):not([aria-disabled="true"]) {
+    transition: filter 160ms ease, scale 160ms ease, box-shadow 160ms ease;
+  }
+  body button:not(:disabled):not([aria-disabled="true"]):hover {
+    filter: brightness(1.08);
+    box-shadow: 0 4px 12px rgb(37 99 235 / 20%);
+  }
+  body button:not(:disabled):not([aria-disabled="true"]):active {
+    filter: brightness(.92);
+    box-shadow: inset 0 2px 5px rgb(0 0 0 / 18%);
+  }
+  body button:not(:disabled):not([aria-disabled="true"]):focus-visible {
+    outline: 2px solid var(--c1, #2563eb);
+    outline-offset: 3px;
+  }
+}
+
+@media screen and (min-width: 1024px) and (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
+  body button:not(:disabled):not([aria-disabled="true"]):hover { scale: 1.025; }
+  body button:not(:disabled):not([aria-disabled="true"]):active { scale: .96; }
+}
+
+@media screen and (min-width: 1024px) and (hover: hover) and (pointer: fine) and (prefers-reduced-motion: reduce) {
+  body button:not(:disabled):not([aria-disabled="true"]) { transition: none; }
+}
+
 @media print {
   * { animation: none !important; transition: none !important; }
   .nav-pill { display: none; }

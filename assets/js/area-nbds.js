@@ -177,6 +177,7 @@ function trend(e,isRegion){
 /* ----- 5. Sebaran cabang per kategori ----- */
 const cabangOf=isRegion=>src.cabang.filter(c=>isRegion||norm(c.area)===norm(st.a));
 const cabPair=(c,per,k)=>per==='mtd'?c.m[k]:(dIdx()<0?null:c.d[k][dIdx()]);
+const KET_K={fp:'Finansial Perorangan',fnp:'Finansial Non Perorangan',nf:'Non Finansial'};
 function kategori(e,isRegion){
   const rows=cabangOf(isRegion),per=ui.catPer;
   const blok=KEYS.map(k=>{
@@ -185,7 +186,7 @@ function kategori(e,isRegion){
     const stack=BUCKET.map(([c])=>cnt[c]?`<i class="${c}" style="flex:${cnt[c]}">${cnt[c]}</i>`:'').join('')+(nd?`<i class="nd" style="flex:${nd}">${nd}</i>`:'');
     const lg=BUCKET.map(([c,t])=>`<span><i class="${c}"></i>${t} <b>${cnt[c]}</b></span>`).join('')+(nd?`<span><i class="nd"></i>Tanpa transaksi <b>${nd}</b></span>`:'');
     const tot=rows.length-nd;
-    return `<div class="wt-cat"><div class="wt-cat-h"><b>${clean(KNAME[k])}</b><span>${cnt.ok}/${tot} cabang capai target (${tot?pct(cnt.ok/tot):'–'})</span></div><div class="wt-stack">${stack}</div><div class="wt-cat-lg">${lg}</div></div>`;
+    return `<div class="wt-cat"><div class="wt-cat-h"><b>${clean(KNAME[k])}${KET_K[k]?`<small class="nb-ket">${KET_K[k]}</small>`:''}</b><span>${cnt.ok}/${tot} cabang capai target (${tot?pct(cnt.ok/tot):'–'})</span></div><div class="wt-stack">${stack}</div><div class="wt-cat-lg">${lg}</div></div>`;
   }).join('');
   return `<section class="cd"><h2>Jumlah Cabang per Kategori Utilisasi</h2>${seg('cat',PER,per)}<p class="wt-sub">${per==='mtd'?`MTD ${BULAN}`:`DtD ${isoLong(dtdIso())}`} · ${rows.length} cabang di ${isRegion?'Region II':'area ini'}.</p>${blok}</section>`;
 }
@@ -285,7 +286,7 @@ function page(){
   return `${hero(e,isRegion)}<div class="wt-pair">${periodCard('dtd',e,isRegion)}${periodCard('mtd',e,isRegion)}</div>${ranking(e,isRegion)}${trend(e,isRegion)}${kategori(e,isRegion)}${prioritas(e,isRegion)}${layanan(e,isRegion)}${tabel(e,isRegion)}<section class="cd"><p class="wt-note nb-src" style="margin:0">Sumber: ${clean(src.sumber)} · data per ${isoLong(src.tanggal)}. Angka area dan Region II = jumlah New BDS dan Old BDS seluruh cabang (bukan rata-rata persentase). Persentase dipotong ke 1 desimal agar nilai di bawah target tidak tampil sebagai ${pct(TGT)}.${src.metodeMTD?` MTD = ${clean(src.metodeMTD)}.`:''}</p></section>`;
 }
 
-views.push({key:'nbds',order:20,label:'🖥️ Dashboard Utilisasi NBDS',html:page});
+views.push({key:'nbds',order:20,label:'🖥️ Utilisasi NBDS',html:page});
 
 /* ----- Kategori "Utilisasi NBDS" pada kartu Ranking Cabang (script.js) -----
    Nilai DtD mengikuti filter Tanggal; cabang tanpa transaksi tidak ikut ranking.

@@ -99,3 +99,7 @@ body.mode-region .fl { grid-template-columns: 1fr; }
 .rx-ant td small{display:block;font-size:10px;color:var(--mu)}
 .rx-ant td.rg-sticky2,.rx-ant th.rg-sticky2{text-align:left}
 .rx-ant .ok{color:var(--ok)}.rx-ant .mid{color:#b7791f}.rx-ant .warn{color:#dd6b20}.rx-ant .bad{color:var(--bd)}
+
+/* tooltip selalu selebar strip (tidak menyempit ke satu kotak saat diklik) */
+.rx-strip .rx-strip-box{position:static!important;transform:none!important}
+.rx-strip .rx-strip-tip{position:absolute;left:0;right:0;width:auto;box-sizing:border-box;white-space:normal;overflow-wrap:break-word;word-break:normal}

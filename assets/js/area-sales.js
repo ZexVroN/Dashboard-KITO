@@ -35,6 +35,17 @@ const KAT={
 const cab=new Map(D.B.map(b=>[String(b[0]).replace(/\D/g,''),{nama:b[1],area:b[2]}]));
 const rows=S.rows.map(r=>({r,kode:String(r[4]).replace(/\D/g,'')})).filter(x=>cab.has(x.kode));
 const areaOf=kode=>cab.get(kode).area;
+const JML=new Map();rows.forEach(x=>JML.set(x.kode,(JML.get(x.kode)||0)+1));
+// seri akuisisi per tanggal update. Bila daftar = semua pegawai cabang-cabangnya, pakai total per cabang
+// (kito.json [KITO_SALES_PEGAWAI].cabang, dari sheet "Monitoring Cabang (All)") yang bisa memuat tanggal yang tidak
+// ada di sheet pegawai (mis. 01 Nov). Selain itu jumlah pegawai; tanggal tanpa nilai sama sekali = null ("–").
+function seriGabung(xs,kodes,k,jmlList){
+  const C=S.cabang;
+  if(C&&kodes.length&&kodes.every(kd=>C[kd])&&jmlList===kodes.reduce((s,kd)=>s+(JML.get(kd)||0),0))
+    return S.update.map((_,j)=>{let ada=false,s=0;kodes.forEach(kd=>{const v=C[kd][k]?.[j];if(v!=null){ada=true;s+=v;}});return ada?s:null;});
+  return S.update.map((_,j)=>{let ada=false,s=0;xs.forEach(x=>{const v=x.seri?.[j];if(v!=null){ada=true;s+=v;}});return ada?s:null;});
+}
+
 
 const KEL=[['tl','Teller',j=>/^teller/i.test(j)],['cs','Customer Service',j=>/^customer service/i.test(j)],
   ['bo','Branch Operation',j=>/^branch/i.test(j)],['gb','General Banker',j=>/^general banker/i.test(j)],['ln','Lainnya',()=>true]];
@@ -46,7 +57,7 @@ function ringkas(list,k){
   const K=KAT[k],xs=list.map(x=>K.nilai(x.r));
   const sum=f=>xs.reduce((s,x)=>s+(x[f]||0),0);
   const a=k==='e'?sum('a'):sum('bal'),t=k==='e'?sum('t'):sum('tbal');
-  const seri=S.update.map((_,j)=>xs.reduce((s,x)=>s+(x.seri?.[j]||0),0));
+  const seri=seriGabung(xs,[...new Set(list.map(x=>x.kode))],k,list.length);
   const n={BUGAR:0,'RAWAT JALAN':0,IGD:0,lain:0};
   xs.forEach(x=>{n[status(K.val(x),K.tar(x))||'lain']++;});
   return {a,t,gap:a-t,pct:t>0?a/t:null,seri,n,jml:list.length};
@@ -69,11 +80,12 @@ function hero(c){
 function blok(k,R,pembanding){
   const K=KAT[k],tot=R.jml;
   const d=K.dec;
-  const dt=R.seri.length>1?R.seri[R.seri.length-1]-R.seri[R.seri.length-2]:null;
+  const dt=R.seri.length>1&&R.seri[R.seri.length-1]!=null&&R.seri[R.seri.length-2]!=null?R.seri[R.seri.length-1]-R.seri[R.seri.length-2]:null;
   const bar=URUT.map(s=>R.n[s]?`<i class="${ST[s][1]}" style="flex:${R.n[s]}" title="${ST[s][0]}: ${R.n[s]}"></i>`:'').join('');
   const leg=URUT.map(s=>`<span><i class="${ST[s][1]}"></i>${ST[s][0]} <b>${R.n[s]}</b></span>`).join('');
   const tren=S.update.map((u,j)=>`<span><small>${tg(u)}</small><b>${nf(R.seri[j],d)}</b></span>`).join('<i>→</i>');
-  const vs=pembanding!=null&&R.pct!=null?`<small class="as-vs ${R.pct>=pembanding?'pos':'neg'}">${R.pct>=pembanding?'▲':'▼'} ${nf(Math.abs(R.pct-pembanding)*100,1)} poin vs Region II</small>`:'';
+  const pa=R.pct!=null?Math.round(R.pct*100):null,pb=pembanding!=null?Math.round(pembanding*100):null;   // persen yang tampil
+  const vs=pb!=null&&pa!=null?`<small class="as-vs ${pa>=pb?'pos':'neg'}">${pa>pb?'▲':pa<pb?'▼':'≈'} ${nf(Math.abs(Math.round(R.pct*100)-Math.round(pembanding*100)))} poin vs Region II</small>`:'';
   return `<section class="cd as-blok as-${k}"><h2>${K.judul} <small class="as-sub">${K.sub}</small></h2>
     <div class="as-angka"><strong>${nf(R.a,d)}</strong><span>dari target <b>${nf(R.t,d)}</b></span><em class="${gapCls(R.gap)}">Gap ${gapTxt(R.gap,d)}</em></div>
     <div class="as-pct">${meter(R.pct)}<b>${pc(R.pct)}</b><small>${K.dasar}</small>${vs}</div>
@@ -134,8 +146,9 @@ function semuaArea(c){
   const reg={e:ringkas(rows,'e'),i:ringkas(rows,'i')};
   const sel=a=>!c.isRegion&&norm(a)===norm(c.nama);
   const sel2=(p,r)=>p==null||r==null?'':p>=r?'ok':'bd';
-  const body=b.map((r,n)=>`<button type="button" class="as-row as-ar ${sel(r.a)?'as-sel':''}" data-as-area="${clean(r.a)}" aria-label="Buka ${clean(r.a)}"><span class="as-no">${n+1}</span><span class="as-mid"><span class="as-nm">${clean(r.a)}</span><span class="as-sm">${r.l.length} pegawai</span></span><span class="as-val ${sel2(r.e.pct,reg.e.pct)}" title="Ekstensifikasi">${pc(r.e.pct)}</span><span class="as-val ${sel2(r.i.pct,reg.i.pct)}" title="Intensifikasi">${pc(r.i.pct)}</span></button>`).join('');
-  return `<section class="cd"><h2>Persentase Semua Area</h2><p class="wt-note">Urut menurut Ekstensifikasi. Hijau = di atas Region II (Ekstensifikasi ${pc(reg.e.pct)} · Intensifikasi ${pc(reg.i.pct)}), merah = di bawah.</p><div class="as-arh"><span>Area</span><span>Ekstensif</span><span>Intensif</span></div><div>${body}</div></section>`;
+  const rg=`<button type="button" class="as-row as-ar ${c.isRegion?'as-sel':''}" data-as-area="${ALL}" aria-label="Tampilkan seluruh Region II"><span class="as-no">Σ</span><span class="as-mid"><span class="as-nm">Seluruh Region II</span><span class="as-sm">${rows.length} pegawai</span></span><span class="as-val">${pc(reg.e.pct)}</span><span class="as-val">${pc(reg.i.pct)}</span></button>`;
+  const body=rg+b.map((r,n)=>`<button type="button" class="as-row as-ar ${sel(r.a)?'as-sel':''}" data-as-area="${clean(r.a)}" aria-label="Buka ${clean(r.a)}"><span class="as-no">${n+1}</span><span class="as-mid"><span class="as-nm">${clean(r.a)}</span><span class="as-sm">${r.l.length} pegawai</span></span><span class="as-val ${sel2(r.e.pct,reg.e.pct)}" title="Ekstensifikasi">${pc(r.e.pct)}</span><span class="as-val ${sel2(r.i.pct,reg.i.pct)}" title="Intensifikasi">${pc(r.i.pct)}</span></button>`).join('');
+  return `<section class="cd" id="as-semua"><h2>Persentase Semua Area</h2><p class="wt-note">Urut menurut Ekstensifikasi. Hijau = di atas Region II (Ekstensifikasi ${pc(reg.e.pct)} · Intensifikasi ${pc(reg.i.pct)}), merah = di bawah.</p><div class="as-arh"><span>Area</span><span>Ekstensif</span><span>Intensif</span></div><div>${body}</div></section>`;
 }
 
 function page(){
@@ -159,6 +172,6 @@ document.getElementById('app').addEventListener('click',e=>{
   const t=e.target.closest('[data-as-tab]');
   if(t){ui.tab=t.dataset.asTab;render();return;}
   const a=e.target.closest('[data-as-area]');
-  if(a){const hit=D.B.find(b=>norm(b[2])===norm(a.dataset.asArea));if(hit){st.a=hit[2];fill();render();window.scrollTo({top:0,behavior:'smooth'});}}
+  if(a){const v=a.dataset.asArea;const hit=v===ALL?{2:ALL}:D.B.find(b=>norm(b[2])===norm(v));if(hit){st.a=hit[2];fill();render();const k=document.getElementById('as-semua');if(k)k.scrollIntoView({block:'start'});}}
 });
 })();

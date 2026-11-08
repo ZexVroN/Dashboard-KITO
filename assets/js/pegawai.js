@@ -19,6 +19,16 @@ for(const r of S.rows){
     e:{a:r[5],t:r[6],bal:r[7],tbal:r[8]},i:{a:r[9],t:r[10],bal:r[11],tbal:r[12]}};
   if(!byKode.has(p.kode))byKode.set(p.kode,[]);byKode.get(p.kode).push(p);
 }
+const JML=new Map([...byKode].map(([k,l])=>[k,l.length]));
+// seri akuisisi per tanggal update. Bila daftar = semua pegawai cabang-cabangnya, pakai total per cabang
+// (kito.json [KITO_SALES_PEGAWAI].cabang, dari sheet "Monitoring Cabang (All)") yang bisa memuat tanggal yang tidak
+// ada di sheet pegawai (mis. 01 Nov). Selain itu jumlah pegawai; tanggal tanpa nilai sama sekali = null ("–").
+function seriGabung(xs,kodes,k,jmlList){
+  const C=S.cabang;
+  if(C&&kodes.length&&kodes.every(kd=>C[kd])&&jmlList===kodes.reduce((s,kd)=>s+(JML.get(kd)||0),0))
+    return S.update.map((_,j)=>{let ada=false,s=0;kodes.forEach(kd=>{const v=C[kd][k]?.[j];if(v!=null){ada=true;s+=v;}});return ada?s:null;});
+  return S.update.map((_,j)=>{let ada=false,s=0;xs.forEach(x=>{const v=x.seri?.[j];if(v!=null){ada=true;s+=v;}});return ada?s:null;});
+}
 const kodeCabang=()=>String(D.B[st.b]?.[0]??'').replace(/\D/g,'');
 
 /* ----- format & aturan ----- */
@@ -53,7 +63,7 @@ function ringkas(list,k){
   const K=KAT[k],xs=list.map(K.nilai);
   const sum=f=>xs.reduce((s,x)=>s+(x[f]||0),0);
   const a=sum('a'),t=sum('t'),bal=sum('bal'),tbal=sum('tbal');
-  const seri=S.update.map((_,j)=>xs.reduce((s,x)=>s+(x.seri?.[j]||0),0));
+  const seri=seriGabung(xs,[...new Set(list.map(p=>p.kode))],k,list.length);
   const n={BUGAR:0,'RAWAT JALAN':0,IGD:0,lain:0};
   xs.forEach(x=>{const s=K.st(x);n[s||'lain']++;});
   const ag={a,t,bal,tbal};
@@ -65,7 +75,7 @@ function blok(k,R,aktif){
   const K=KAT[k],total=R.n.BUGAR+R.n['RAWAT JALAN']+R.n.IGD+R.n.lain;
   const pctBal=R.tbal>0&&R.bal!=null?R.bal/R.tbal:null;    // Balance ÷ Target Balance
   const bars=meter(pctBal,'Balance ÷ Target Balance');    // hanya bar Balance; bar Akuisisi ÷ Target dihapus
-  const dt=R.seri.length>1?R.seri[R.seri.length-1]-R.seri[R.seri.length-2]:null;
+  const dt=R.seri.length>1&&R.seri[R.seri.length-1]!=null&&R.seri[R.seri.length-2]!=null?R.seri[R.seri.length-1]-R.seri[R.seri.length-2]:null;
   const tren=S.update.map((d,j)=>`<span><small>${tg(d)}</small><b>${nf(R.seri[j])}</b></span>`).join('<i>→</i>');
   const bar=URUT_ST.map(s=>R.n[s]?`<i class="${ST[s][1]}" style="flex:${R.n[s]}" title="${ST[s][0]}: ${R.n[s]}"></i>`:'').join('');
   const leg=URUT_ST.map(s=>`<button type="button" data-sp-f="${k}|${s}"><i class="${ST[s][1]}"></i>${ST[s][0]} <b>${R.n[s]}</b></button>`).join('');

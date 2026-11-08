@@ -19,6 +19,14 @@ Riwayat tanggal: laporan baru sering hanya memuat tanggal update terakhir. Nilai
 data yang sudah ada (data/kito.json [KITO_SALES_PEGAWAI]), dicocokkan per pegawai (kode cabang + nama), lalu
 ditampilkan N tanggal terakhir (bawaan 3). Target, balance, dan target balance selalu dari laporan terbaru.
 
+Total per cabang (kunci "cabang"): sheet "Monitoring Cabang (All)" sering memuat tanggal yang tidak ada di sheet
+pegawai (mis. update 01 Nov dan 02 Nov, sedangkan sheet pegawai hanya 02 Nov). Akuisisi Ekstensifikasi &
+Intensifikasi per cabang per tanggal disimpan di
+    cabang = {kode: {"e": [akuisisi per tanggal update], "i": [...]}}
+Tanggal yang ada di sheet pegawai / riwayat = jumlah pegawai cabang itu (konsisten dengan target & tabel pegawai);
+sheet cabang hanya dipakai untuk tanggal yang tidak ada di sheet pegawai. Ringkasan cabang/area/Region II
+memakai total ini; tabel per pegawai tetap memakai nilai pegawai (tanggal tanpa data pegawai = kosong).
+
     python tools/build_sales_pegawai.py <xlsx> [--tampil 3] [--ganti-label 2026-10-28=2026-10-30]
     --ganti-label  memperbaiki label tanggal di riwayat (mis. kolom berjudul "28 Okt" yang ternyata data 30 Okt)
 """
@@ -47,6 +55,9 @@ BULAN = {"jan": 1, "feb": 2, "mar": 3, "apr": 4, "mei": 5, "jun": 6, "jul": 7, "
          "sep": 9, "okt": 10, "nov": 11, "des": 12}
 
 wb = openpyxl.load_workbook(SRC, read_only=True, data_only=True)
+# tahun untuk judul kolom tanpa tahun ("Akuisisi update 01 Nov"): ambil dari nama file / judul sheet pegawai
+_m = re.search(r"(20\d{2})", os.path.basename(SRC))
+SRC_TAHUN = (_m.group(1)[2:] if _m else "26")
 ws = wb["Monitoring Ind Pegawai"]
 rows = list(ws.iter_rows(min_row=1, values_only=True))
 blok_baris, judul = rows[2], rows[4]
@@ -130,8 +141,34 @@ for r in rows[5:]:
                   "sisa": [num(r[b["target"]]), num(r[b["bal"]]), num(r[b["tbal"]])]}
     pegawai.append(p)
 
-# tanggal yang ditampilkan: gabungan laporan baru + riwayat, ambil N terakhir
+# ---------- total per cabang (sheet "Monitoring Cabang (All)") ----------
+cab_seri = {}                     # kode -> {"e": {tgl: n}, "i": {tgl: n}}
+if "Monitoring Cabang (All)" in wb.sheetnames:
+    cr = list(wb["Monitoring Cabang (All)"].iter_rows(min_row=1, values_only=True))
+    cblok, cjudul = cr[2], cr[4]
+    cb = {str(v).strip().upper(): i for i, v in enumerate(cblok) if isinstance(v, str) and v.strip()}
+    cawal = sorted(cb.values())
+    def crentang(nama):
+        a = cb[nama]
+        return a, next((x for x in cawal if x > a), len(cjudul))
+    ckode = next(i for i, v in enumerate(cjudul) if v and re.match(r"^kode cabang", str(v), re.I))
+    ckol = {}
+    for key, nama in (("e", "EKSTENSIFIKASI"), ("i", "INTENSIFIKASI")):
+        a, b = crentang(nama)
+        ckol[key] = [(i, tanggal(str(cjudul[i]) + " '" + SRC_TAHUN)) for i in range(a, b)
+                     if cjudul[i] and re.match(r"^akuisisi update", str(cjudul[i]), re.I)]
+    for r in cr[5:]:
+        k = kode(r[ckode]) if r[ckode] is not None else ""
+        if not k or not k.isdigit():
+            continue
+        cab_seri[k] = {key: {t: num(r[i]) for i, t in ckol[key]} for key in ("e", "i")}
+    print(f"Sheet Monitoring Cabang (All): {len(cab_seri)} cabang · Ekstensifikasi {[t for _, t in ckol['e']]}"
+          f" · Intensifikasi {[t for _, t in ckol['i']]}")
+
+# tanggal yang ditampilkan: gabungan laporan baru + sheet cabang + riwayat, ambil N terakhir
 semua = set(BL["e"]["tgl"]) | set(BL["i"]["tgl"])
+for v in cab_seri.values():
+    semua |= set(v["e"]) | set(v["i"])
 for v in riwayat.values():
     semua |= set(v["e"]) | set(v["i"])
 update = sorted(semua)[-A.tampil:]
@@ -146,6 +183,25 @@ for p in pegawai:
         seri = [p[key]["seri"].get(t, (h or {}).get(key, {}).get(t)) for t in update]
         row += [seri] + p[key]["sisa"]
     data.append(row)
+# total per cabang sejajar dengan `update`: sheet cabang bila ada, selain itu jumlah pegawai (termasuk riwayat)
+cabang_out = {}
+for row in data:
+    k = row[4]
+    c = cabang_out.setdefault(k, {"e": [0] * len(update), "i": [0] * len(update), "_ada": {"e": [False] * len(update), "i": [False] * len(update)}})
+    for key, idx in (("e", 5), ("i", 9)):
+        for j, v in enumerate(row[idx]):
+            if v is not None:
+                c[key][j] += v
+                c["_ada"][key][j] = True
+for k, c in cabang_out.items():
+    for key in ("e", "i"):
+        for j, t in enumerate(update):
+            # tanggal yang ada di sheet pegawai: total = jumlah pegawai (sama dengan target & tabel pegawai);
+            # sheet cabang hanya mengisi tanggal yang tidak ada di sheet pegawai (mis. 01 Nov)
+            v = cab_seri.get(k, {}).get(key, {}).get(t)
+            if not c["_ada"][key][j]:
+                c[key][j] = v
+    del c["_ada"]
 print(f"Ekstensifikasi di laporan: {BL['e']['tgl']} · Intensifikasi: {BL['i']['tgl']}")
 print(f"Ditampilkan: {update} · pegawai tanpa riwayat (titik lama kosong): {tanpa_riwayat}")
 
@@ -156,6 +212,7 @@ out = {
     "kolom": ["nama", "nip", "jabatan", "area", "kode",
               "eAkuisisi", "eTarget", "eBal", "eTargetBal", "iAkuisisi", "iTarget", "iBal", "iTargetBal"],
     "rows": data,
+    "cabang": cabang_out,
 }
 js = "window.KITO_SALES_PEGAWAI=" + json.dumps(out, ensure_ascii=False, separators=(",", ":")) + ";\n"
 kito_data.tulis_teks_js(OUT, js)

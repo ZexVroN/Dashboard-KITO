@@ -85,3 +85,41 @@ body.kmk-open { overflow: hidden; }
 .kmk-ok b { display: block; font-size: 44px; line-height: 1.1; }
 .kmk-ok h3 { margin: 8px 0 4px; font-size: 17px; }
 .kmk-ok p { margin: 0 0 14px; color: var(--mu, #667085); font-size: 13.5px; }
+
+/* kartu notifikasi "Keluhan Cabang" di halaman Cabang: bentuk sama dengan kartu Highlight Issue (penguatan.css .pgn-notif),
+   warna biru tua, kartu berpendar dan label berkedip (seperti Highlight Issue), posisi paling atas halaman Cabang */
+.kmk-notif {
+  position: relative; display: flex; align-items: center; gap: 12px; margin: 0 0 12px; padding: 36px 44px 12px 14px;
+  border: 2px solid #8fb4ff; border-radius: 16px; overflow: hidden; cursor: pointer; user-select: none; -webkit-user-select: none;
+  touch-action: pan-y; will-change: transform;   /* geser kiri/kanan untuk menutup; gulir vertikal tetap normal */
+  background: linear-gradient(135deg, #1d4ed8 0%, #0f2a5c 100%); color: #fff; box-shadow: 0 6px 20px rgba(15, 42, 92, .3);
+  transition: transform .15s ease; animation: kmk-glow 1.4s ease-in-out infinite;
+}
+@keyframes kmk-glow {
+  0%, 100% { box-shadow: 0 6px 20px rgba(15, 42, 92, .3), 0 0 0 0 rgba(59, 130, 246, .65); border-color: #8fb4ff; }
+  50% { box-shadow: 0 6px 24px rgba(15, 42, 92, .55), 0 0 0 7px rgba(59, 130, 246, 0); border-color: #dbe7ff; }
+}
+@keyframes kmk-blink { 0%, 100% { opacity: 1; } 50% { opacity: .35; } }
+.kmk-notif::after { content: ""; position: absolute; inset: 0 auto 0 0; width: 4px; background: #8fb4ff; }
+.kmk-notif:hover { transform: translateY(-1px); }
+.kmk-notif:focus-visible { outline: 3px solid #8fb4ff; outline-offset: 2px; }
+.kmk-n-ik { flex: none; display: flex; align-items: center; justify-content: center; width: 44px; height: 44px; border-radius: 50%; border: 2px solid #bcd3ff; color: #dbe7ff; }
+.kmk-n-ik svg { width: 24px; height: 24px; }
+.kmk-n-tx { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+.kmk-n-tx small {
+  position: absolute; top: 9px; left: 16px; display: inline-flex; align-items: center; gap: 5px; padding: 3px 10px 3px 8px; border-radius: 6px;
+  background: #dbe7ff; color: #0f2a5c; box-shadow: 0 1px 3px rgba(0, 0, 0, .2);
+  font-size: 10.5px; font-weight: 900; line-height: 1.2; letter-spacing: 1.2px; text-transform: uppercase; white-space: nowrap;
+  animation: kmk-blink 1.6s ease-in-out infinite;
+}
+.kmk-n-tx small::before { content: "🏢"; font-size: 11px; letter-spacing: 0; }
+.kmk-n-tx b { font-size: 16px; font-weight: 900; line-height: 1.25; }
+.kmk-n-tx em { font-style: normal; font-size: 11px; font-weight: 700; color: #cfe0ff; }
+.kmk-n-go { flex: none; width: 20px; height: 20px; color: rgba(255, 255, 255, .8); }
+.kmk-n-go svg, .kmk-n-x svg { width: 100%; height: 100%; }
+.kmk-n-x { position: absolute; top: 8px; right: 8px; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; padding: 6px;
+  border: 0; border-radius: 50%; background: rgba(255, 255, 255, .12); color: #fff; cursor: pointer; }
+.kmk-n-x:hover, .kmk-n-x:focus-visible { background: rgba(255, 255, 255, .24); outline: none; }
+/* pengguna yang mematikan animasi di perangkatnya: tanpa kedip, tetap menonjol lewat warna */
+@media (prefers-reduced-motion: reduce) { .kmk-notif, .kmk-n-tx small { animation: none; transition: none; } .kmk-notif:hover { transform: none; } }
+@media print { .kmk-notif { display: none !important; } }

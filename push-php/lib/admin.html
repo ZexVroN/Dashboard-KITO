@@ -240,7 +240,7 @@
     $('#iss').innerHTML = issue.slice(0, 8).map((m, i) => `<div class="iss-it ${esc(m.urgensi || '')}">
         <span class="urg">${esc(m.urgensi || '–')}</span>
         <div><b>${esc(m.kode || '')} · ${esc(m.cabang || '')} — ${esc(m.kategori || '')}</b>
-          <span class="mu">${esc(m.area || '')}${m.waktu_kejadian ? ' · kejadian ' + esc(lokal(m.waktu_kejadian)) : ''} · lapor ${esc(lokal(m.created_at))} · ${esc(m.status)}${m.nama ? ' · ' + esc(m.nama) : ''}</span>
+          <span class="mu">${esc(m.area || '')}${m.waktu_kejadian ? ' · kejadian ' + esc(lokal(m.waktu_kejadian)) : ''} · lapor ${esc(lokal(m.created_at))} · ${esc(m.status)}${m.nama ? ' · ' + esc(m.nama) : ''}${m.kontak ? ' (NIP ' + esc(m.kontak) + ')' : ''}</span>
           <p>${esc(m.pesan || '')}</p></div>
         <div class="act"><button type="button" data-issue="${i}" title="Isi form notifikasi dari issue ini">🔔 Buat notifikasi</button><a href="${BASE}/admin/masukan">Tindak lanjut</a></div>
       </div>`).join('') || '<p class="mu">✅ Tidak ada issue keluhan cabang yang terbuka.</p>';

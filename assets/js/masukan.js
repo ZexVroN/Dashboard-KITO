@@ -1,8 +1,9 @@
 /* Masukan pengguna di halaman Cabang: tombol "💬 Masukan" + popup tiga tab.
    - ⭐ Rating aplikasi: 1–5 bintang, aspek yang dinilai, komentar (opsional).
-   - 📝 Keluhan: kategori + uraian, nama/kontak opsional.
+   - 📝 Keluhan: kategori + uraian, nama/NIP opsional.
    - 🏢 Keluhan Cabang: laporan masalah operasional cabang (mesin antrian, printer tiket, jaringan, antrian menumpuk, dll.)
-     dengan urgensi, waktu kejadian, dan pelapor + kontak wajib agar bisa ditindaklanjuti.
+     dengan urgensi, waktu kejadian, serta nama pelapor + NIP (angka) wajib agar bisa ditindaklanjuti.
+   NIP dikirim di field "kontak" (nama kolom database tetap).
    Cabang, area, tanggal data, dan jabatan login yang sedang dilihat ikut terkirim agar keluhan mudah ditindaklanjuti.
    Popup rating juga muncul sendiri sesekali (paling cepat setelah 3 hari pemakaian, lalu tiap 30 hari bila belum menilai).
    Bila offline, kiriman diantre di perangkat dan dikirim otomatis saat online.
@@ -73,9 +74,95 @@
   fab.addEventListener('click', () => buka(tabTerakhir));
   document.body.appendChild(fab);
   const segarFab = () => { fab.hidden = !diCabang(); };
+
+  /* ---------- kartu notifikasi "Keluhan Cabang" di halaman Cabang ----------
+     Gaya mengikuti kartu notifikasi Highlight Issue (penguatan.js: ikon, label, judul besar, panah, tombol ×),
+     warna biru tua berkedip agar tidak tertukar dengan Highlight Issue. Ditaruh paling atas halaman Cabang
+     (di atas Highlight Issue). Ketuk = buka form Keluhan Cabang; × = tutup hingga halaman dimuat ulang. */
+  const IKON_CABANG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 21h18"/><path d="M5 21V7l7-4 7 4v14"/><path d="M9 21v-5h6v5"/><path d="M9 10h.01M15 10h.01"/></svg>';
+  const IKON_PANAH = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>';
+  const IKON_X = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>';
+  let infoTutup = false;
+  function kartuInfo() {
+    const app = document.getElementById('app');
+    let el = document.getElementById('kmk-info');
+    if (!app || !diCabang() || infoTutup) { el?.remove(); return; }
+    const k = konteks();
+    if (!el) {
+      el = document.createElement('div');
+      el.id = 'kmk-info'; el.className = 'kmk-notif'; el.setAttribute('role', 'button'); el.tabIndex = 0;
+      el.innerHTML = `<span class="kmk-n-ik">${IKON_CABANG}</span>
+        <span class="kmk-n-tx"><small>KELUHAN CABANG</small><b>Lapor Masalah Operasional Cabang</b><em></em></span>
+        <span class="kmk-n-go">${IKON_PANAH}</span>
+        <button type="button" class="kmk-n-x" aria-label="Tutup notifikasi keluhan cabang">${IKON_X}</button>`;
+      el.querySelector('.kmk-n-x').addEventListener('click', (e) => { e.stopPropagation(); buangKartu(el, 1); });
+      el.addEventListener('click', (e) => {
+        if (e.target.closest('.kmk-n-x')) return;
+        if (el.dataset.barusajaGeser) { delete el.dataset.barusajaGeser; return; }   // klik sisa gerakan geser: jangan buka form
+        tabTerakhir = 'cabang'; buka('cabang');
+      });
+      el.addEventListener('keydown', (e) => { if ((e.key === 'Enter' || e.key === ' ') && e.target === el) { e.preventDefault(); tabTerakhir = 'cabang'; buka('cabang'); } });
+      pasangGeser(el);
+    }
+    const sub = `${k.kode ? `${k.kode} ${k.cabang || ''} · ` : ''}Ketuk untuk lapor`;
+    if (el.querySelector('em').textContent !== sub) el.querySelector('em').textContent = sub;
+    el.setAttribute('aria-label', `Buka form Keluhan Cabang${k.kode ? ' untuk ' + k.kode + ' ' + (k.cabang || '') : ''}`);
+    // posisi: kartu notifikasi paling atas halaman Cabang (di atas Highlight Issue)
+    if (app.firstElementChild !== el) app.prepend(el);
+  }
+  /* tutup kartu: geser keluar ke samping lalu ciutkan tingginya (sama seperti kartu Highlight Issue) */
+  function buangKartu(el, arah) {
+    if (!el || el.dataset.dibuang) return;
+    el.dataset.dibuang = '1'; infoTutup = true;
+    const halus = !matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (!halus) { el.remove(); return; }
+    el.style.animation = 'none';
+    el.style.transition = 'transform .22s ease, opacity .22s ease';
+    el.style.transform = `translateX(${arah * 110}%)`; el.style.opacity = '0';
+    setTimeout(() => {
+      el.style.height = el.offsetHeight + 'px'; void el.offsetHeight;
+      el.style.transition = 'height .2s ease, margin .2s ease, padding .2s ease';
+      el.style.height = '0'; el.style.margin = '0'; el.style.padding = '0'; el.style.borderWidth = '0';
+      setTimeout(() => el.remove(), 220);
+    }, 220);
+  }
+  /* geser kiri/kanan > 90px = tutup; gerakan vertikal tetap menggulir halaman */
+  function pasangGeser(el) {
+    let g = null;   // { x0, y0, dx, kunci, id }
+    el.addEventListener('pointerdown', (e) => {
+      if (e.target.closest('.kmk-n-x') || (e.pointerType === 'mouse' && e.button !== 0)) return;
+      g = { x0: e.clientX, y0: e.clientY, dx: 0, kunci: null, id: e.pointerId };
+    });
+    el.addEventListener('pointermove', (e) => {
+      if (!g || e.pointerId !== g.id) return;
+      const dx = e.clientX - g.x0, dy = e.clientY - g.y0;
+      if (g.kunci === null && (Math.abs(dx) > 8 || Math.abs(dy) > 8)) g.kunci = Math.abs(dx) > Math.abs(dy) ? 'x' : 'y';
+      if (g.kunci !== 'x') return;
+      g.dx = dx;
+      try { el.setPointerCapture(e.pointerId); } catch (_) {}
+      el.style.animation = 'none'; el.style.transition = 'none';
+      el.style.transform = `translateX(${dx}px)`;
+      el.style.opacity = String(Math.max(0.25, 1 - Math.abs(dx) / 260));
+    });
+    const lepas = (e) => {
+      if (!g || e.pointerId !== g.id) return;
+      const { dx, kunci } = g; g = null;
+      if (kunci === 'x' && Math.abs(dx) > 90) { el.dataset.barusajaGeser = '1'; buangKartu(el, Math.sign(dx)); return; }
+      el.style.transition = 'transform .2s ease, opacity .2s ease'; el.style.transform = ''; el.style.opacity = '';
+      setTimeout(() => { if (!el.dataset.dibuang) { el.style.animation = ''; el.style.transition = ''; } }, 220);   // kedip kembali
+      if (kunci === 'x') el.dataset.barusajaGeser = '1';
+    };
+    el.addEventListener('pointerup', lepas);
+    el.addEventListener('pointercancel', lepas);
+  }
+
+  // kartu info lain disisipkan oleh MutationObserver setelah render; posisi dirapikan sesudahnya
+  const segarInfo = () => { kartuInfo(); requestAnimationFrame(kartuInfo); };
+
   const renderAsli = render;
-  render = function () { const r = renderAsli.apply(this, arguments); segarFab(); return r; };   // eslint-disable-line no-global-assign
+  render = function () { const r = renderAsli.apply(this, arguments); segarFab(); segarInfo(); return r; };   // eslint-disable-line no-global-assign
   segarFab();
+  segarInfo();
 
   /* ---------- popup ---------- */
   const wrap = document.createElement('div');
@@ -160,7 +247,7 @@
   const TEKS_OK = {
     rating: ['Terima kasih atas penilaian Anda!', 'Masukan Anda membantu kami membuat KITO lebih baik.'],
     keluhan: ['Keluhan Anda sudah kami terima', 'Tim Operation Region II akan menindaklanjuti secepatnya.'],
-    cabang: ['Laporan masalah cabang sudah diterima', 'Tim Operation Region II akan menghubungi pelapor untuk tindak lanjut.'],
+    cabang: ['Laporan masalah cabang sudah diterima', 'Tim Operation Region II akan menindaklanjuti laporan ini. Status laporan dicatat atas NIP pelapor.'],
   };
   const selesai = (jenis, diantre) => `<div class="kmk-ok">
       <b aria-hidden="true">${jenis === 'rating' ? (draf.rating >= 4 ? '🎉' : '🙏') : '✅'}</b>

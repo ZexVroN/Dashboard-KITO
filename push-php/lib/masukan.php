@@ -95,8 +95,8 @@ function kp_fb_list(array $g): array {
     if (in_array($g['status'] ?? '', KP_FB_STATUS, true)) { $w[] = 'status = ?'; $p[] = $g['status']; }
     if (($q = trim((string)($g['q'] ?? ''))) !== '') {
         $like = '%' . str_replace(['\\', '%', '_'], ['\\\\', '\%', '\_'], $q) . '%';
-        $w[] = "(pesan LIKE ? ESCAPE '\\' OR kategori LIKE ? ESCAPE '\\' OR area LIKE ? ESCAPE '\\' OR kode LIKE ? ESCAPE '\\' OR cabang LIKE ? ESCAPE '\\' OR nama LIKE ? ESCAPE '\\' OR jabatan LIKE ? ESCAPE '\\')";
-        array_push($p, ...array_fill(0, 7, $like));
+        $w[] = "(pesan LIKE ? ESCAPE '\\' OR kategori LIKE ? ESCAPE '\\' OR area LIKE ? ESCAPE '\\' OR kode LIKE ? ESCAPE '\\' OR cabang LIKE ? ESCAPE '\\' OR nama LIKE ? ESCAPE '\\' OR jabatan LIKE ? ESCAPE '\\' OR kontak LIKE ? ESCAPE '\\')";
+        array_push($p, ...array_fill(0, 8, $like));   // kontak = NIP pelapor
     }
     $lim = max(1, min(5000, (int)($g['limit'] ?? 500)));
     $st = $db->prepare('SELECT * FROM feedback WHERE ' . implode(' AND ', $w) . " ORDER BY id DESC LIMIT $lim");
@@ -154,7 +154,7 @@ function kp_fb_update(int $id, array $b): bool {
 function kp_fb_export(array $g): array {
     $wib = function ($s) { return $s ? gmdate('Y-m-d H:i:s', strtotime($s . ' UTC') + 7 * 3600) : ''; };
     $nmJenis = ['rating' => 'Rating', 'keluhan' => 'Keluhan', 'cabang' => 'Keluhan cabang'];
-    $rows = [['No', 'Waktu lapor (WIB)', 'Jenis', 'Rating', 'Kategori keluhan', 'Urgensi', 'Waktu kejadian (WIB)', 'Aspek dinilai', 'Pesan', 'Nama', 'Kontak', 'Jabatan', 'Area', 'Kode cabang', 'Cabang',
+    $rows = [['No', 'Waktu lapor (WIB)', 'Jenis', 'Rating', 'Kategori keluhan', 'Urgensi', 'Waktu kejadian (WIB)', 'Aspek dinilai', 'Pesan', 'Nama pelapor', 'NIP', 'Jabatan', 'Area', 'Kode cabang', 'Cabang',
               'Tanggal data dilihat', 'Aplikasi', 'OS', 'Browser', 'Status', 'Catatan admin', 'Diperbarui (WIB)']];
     foreach (kp_fb_list($g + ['limit' => 5000]) as $r) $rows[] = [$r['id'], $wib($r['created_at']), $nmJenis[$r['jenis']] ?? $r['jenis'], $r['rating'], $r['kategori'],
         $r['urgensi'], $wib($r['waktu_kejadian']), $r['aspek'], $r['pesan'],

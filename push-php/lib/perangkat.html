@@ -19,6 +19,9 @@
   input, select { padding:8px 10px; border:1px solid var(--ln); border-radius:10px; background:var(--bg); color:var(--tx); font:inherit; }
   button { border:0; border-radius:10px; padding:9px 14px; font:600 13.5px inherit; background:var(--c1); color:#fff; cursor:pointer; }
   button.sec { background:transparent; color:var(--tx); border:1px solid var(--ln); padding:5px 10px; font-size:12.5px; }
+  .tot { display:inline-block; margin-left:8px; padding:2px 9px; border-radius:999px; background:color-mix(in srgb, var(--br) 14%, transparent); color:var(--br);
+    font-size:11.5px; font-weight:700; letter-spacing:0; text-transform:none; font-variant-numeric:tabular-nums; vertical-align:1px; }
+  .tot:empty { display:none; }
   button.del { background:transparent; color:var(--bd); border:1px solid var(--ln); padding:5px 10px; font-size:12.5px; }
   .bar-tools { display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
   .stats { display:grid; grid-template-columns:repeat(auto-fill,minmax(140px,1fr)); gap:10px; }
@@ -78,12 +81,12 @@
     </section>
 
     <section class="cd">
-      <h2>Pembagian lokasi akses</h2>
+      <h2><span>Pembagian lokasi akses<b class="tot" id="totLokasi"></b></span></h2>
       <div class="grid" id="lokasi"></div>
     </section>
 
     <section class="cd">
-      <h2>Pembagian perangkat & pengguna</h2>
+      <h2><span>Pembagian perangkat & pengguna<b class="tot" id="totBagi"></b></span></h2>
       <div class="grid" id="bagi"></div>
     </section>
 
@@ -93,7 +96,7 @@
     </div>
 
     <section class="cd">
-      <h2><span>Semua perangkat</span><span class="bar-tools"><input id="cari" type="search" placeholder="cari jabatan, cabang, kota, IP…" /></span></h2>
+      <h2><span>Semua perangkat<b class="tot" id="totDev"></b></span><span class="bar-tools"><input id="cari" type="search" placeholder="cari jabatan, cabang, kota, IP…" /></span></h2>
       <div class="tw"><table><thead><tr><th></th><th>Perangkat</th><th>Nama/label</th><th>Jabatan</th><th>Area / Cabang</th><th>Lokasi terakhir</th><th>IP</th><th>Sesi</th><th>Total waktu</th><th>Pertama</th><th>Terakhir</th><th></th></tr></thead><tbody id="dev"></tbody></table></div>
       <p class="mu" id="devInfo"></p>
     </section>
@@ -126,11 +129,15 @@
     return j;
   };
 
-  const bars = (judul, list, total) => {
+  // jumlah kategori yang diketahui (tanpa "Tidak diketahui"), ditampilkan di sebelah judul
+  const jumlah = (list) => list.filter((x) => x.nama !== 'Tidak diketahui').length;
+  const badge = (teks) => teks ? `<b class="tot">${esc(teks)}</b>` : '';
+  const bars = (judul, list, total, satuan) => {
+    const n = jumlah(list);
     const max = Math.max(1, ...list.map((x) => x.n));
     const isi = list.length ? list.slice(0, 12).map((x) => `<div class="br" title="${esc(nm(x.nama))}: ${x.n}"><span>${esc(nm(x.nama))}</span><b>${nf(x.n)}${total ? ` <small class="mu">${Math.round(x.n / total * 100)}%</small>` : ''}</b><i style="--w:${x.n / max * 100}%"></i></div>`).join('')
       : '<p class="mu">Belum ada data.</p>';
-    return `<div><h2>${esc(judul)}</h2><div class="bars">${isi}</div>${list.length > 12 ? `<p class="mu">+${list.length - 12} lainnya</p>` : ''}</div>`;
+    return `<div><h2><span>${esc(judul)}${badge(n ? nf(n) + ' ' + satuan : '')}</span></h2><div class="bars">${isi}</div>${list.length > 12 ? `<p class="mu">+${list.length - 12} lainnya</p>` : ''}</div>`;
   };
   const kolom = (el, list, key, lbl) => {
     const max = Math.max(1, ...list.map((x) => x[key]));
@@ -153,8 +160,13 @@
       || '<tr><td colspan="7" class="mu">Tidak ada perangkat yang aktif saat ini.</td></tr>';
 
     const tot = r.periode;
-    $('#lokasi').innerHTML = bars('Provinsi', s.perProvinsi, tot) + bars('Kota', s.perKota, tot) + bars('Area dashboard', s.perArea, tot) + bars('Cabang dipilih', s.perCabang, tot) + bars('Penyedia internet', s.perISP, tot) + bars('Negara', s.perNegara, tot);
-    $('#bagi').innerHTML = bars('Sistem operasi', s.perPlatform, tot) + bars('Jenis aplikasi', s.perAplikasi, tot) + bars('Browser', s.perBrowser, tot) + bars('Jabatan login KPI', s.perJabatan, tot) + bars('Halaman dibuka', s.perHalaman, tot);
+    $('#lokasi').innerHTML = bars('Provinsi', s.perProvinsi, tot, 'provinsi') + bars('Kota', s.perKota, tot, 'kota') + bars('Area dashboard', s.perArea, tot, 'area')
+      + bars('Cabang dipilih', s.perCabang, tot, 'cabang') + bars('Penyedia internet', s.perISP, tot, 'ISP') + bars('Negara', s.perNegara, tot, 'negara');
+    $('#bagi').innerHTML = bars('Sistem operasi', s.perPlatform, tot, 'OS') + bars('Jenis aplikasi', s.perAplikasi, tot, 'jenis') + bars('Browser', s.perBrowser, tot, 'browser')
+      + bars('Jabatan login KPI', s.perJabatan, tot, 'jabatan') + bars('Halaman dibuka', s.perHalaman, tot, 'halaman');
+    // total di sebelah judul bagian
+    $('#totLokasi').textContent = `${nf(tot)} perangkat · ${nf(jumlah(s.perKota))} kota · ${nf(jumlah(s.perProvinsi))} provinsi`;
+    $('#totBagi').textContent = `${nf(tot)} perangkat · ${nf(r.sesi)} sesi`;
 
     kolom($('#perHari'), s.perHari, 'perangkat', (x) => x.tanggal);
     $('#perHariAx').innerHTML = s.perHari.length ? `<span>${esc(s.perHari[0].tanggal)}</span><span>${esc(s.perHari[s.perHari.length - 1].tanggal)}</span>` : '';
@@ -174,6 +186,7 @@
       <td class="n">${nf(d.sesi)}</td><td class="n">${durasi(d.detik)}</td><td class="n">${waktu(d.first_seen)}</td><td class="n">${lalu(d.last_seen)}</td>
       <td><button class="del" data-del="${esc(d.id)}">Hapus</button></td></tr>`).join('') || '<tr><td colspan="12" class="mu">Tidak ada perangkat.</td></tr>';
     $('#devInfo').textContent = `${list.length} perangkat` + (list.length >= 500 ? ' (dibatasi 500 terbaru)' : '');
+    $('#totDev').textContent = q ? `${nf(list.length)} hasil` : `${nf(list.length)} perangkat`;
   }
 
   // unduh CSV lewat fetch agar token tetap di header (tidak masuk URL / riwayat browser)

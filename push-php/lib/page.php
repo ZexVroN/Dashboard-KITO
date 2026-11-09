@@ -23,9 +23,9 @@ function kp_menu(string $aktif, ?string $app = null): string {
     $app = $app ?? $dir . '/index.php';
     $cfg = function_exists('kp_config') ? kp_config() : null;
     $item = $cfg ? [
-        'notifikasi' => ['🔔', 'Notifikasi', $app . '/admin'],
-        'perangkat'  => ['📱', 'Perangkat & Lokasi', $app . '/admin/perangkat'],
-        'masukan'    => ['💬', 'Masukan', $app . '/admin/masukan'],
+        'notifikasi' => ['<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9Z"/><path d="M10 21h4"/></svg>', 'Notifikasi', $app . '/admin'],
+        'perangkat'  => ['<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><rect x="6" y="2" width="12" height="20" rx="3"/><path d="M10 18h4"/></svg>', 'Perangkat & Lokasi', $app . '/admin/perangkat'],
+        'masukan'    => ['<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M21 11a9 9 0 0 1-9 9H3l2-5a9 9 0 1 1 16-4Z"/><path d="M8 10h8M8 14h5"/></svg>', 'Masukan', $app . '/admin/masukan'],
     ] : [];   // belum disetel: menu kosong, halaman setup tetap bisa dibuka langsung
     $dash = KP_DASHBOARD_URL;
     $h = '<nav class="kpm" aria-label="Menu backend"><div class="kpm-in"><a class="kpm-brand" href="' . kp_h($cfg ? $app . '/admin' : $dir . '/setup.php') . '">KITO <span>Backend</span></a><div class="kpm-list">';
@@ -54,7 +54,7 @@ function kp_menu_css(): string {
 .kpm-out{flex:none;background:transparent;border:1px solid rgba(255,255,255,.35);color:#fff;border-radius:9px;padding:7px 12px;font:600 13px system-ui,sans-serif;cursor:pointer}
 .kpm-out:hover{background:rgba(255,255,255,.12)}
 @media (max-width:560px){.kpm-brand span{display:none}.kpm-list a{padding:9px 10px;font-size:13px}}
-</style>';
+</style><style>' . file_get_contents(__DIR__ . '/backend.css') . '</style>';
 }
 
 function kp_page_start(string $title, string $aktif = ''): void {

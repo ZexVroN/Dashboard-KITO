@@ -45,9 +45,9 @@
 </style>
 </head>
 <body>
+<!--KP_MENU-->
 <header>
   <div><h1>KITO · Perangkat & Lokasi Akses</h1><p>Perangkat yang sedang membuka dashboard, riwayat akses, dan sebaran lokasi (perkiraan dari IP).</p></div>
-  <a id="kePush" href="#">← Admin notifikasi</a>
 </header>
 <main>
   <section class="cd" id="login">
@@ -63,6 +63,9 @@
         <span class="bar-tools">
           <select id="hari" aria-label="Periode"><option value="1">24 jam</option><option value="7" selected>7 hari</option><option value="30">30 hari</option><option value="90">90 hari</option><option value="180">180 hari</option></select>
           <button class="sec" id="segar">Muat ulang</button>
+          <button class="sec" data-unduh="perangkat" title="Daftar perangkat pada periode ini (CSV untuk Excel)">⬇ Perangkat</button>
+          <button class="sec" data-unduh="sesi" title="Riwayat setiap sesi akses (CSV untuk Excel)">⬇ Riwayat sesi</button>
+          <button class="sec" data-unduh="lokasi" title="Rekap per negara, provinsi, dan kota (CSV untuk Excel)">⬇ Rekap lokasi</button>
         </span>
       </h2>
       <div class="stats" id="stats"></div>
@@ -116,7 +119,6 @@
   const tempat = (r) => [r.area, r.kode ? r.kode + (r.cabang ? ' ' + r.cabang : '') : ''].filter(Boolean).map(esc).join('<br>') || '<span class="mu">–</span>';
 
   let token = ''; try { token = sessionStorage.getItem('kitoPushToken') || ''; } catch (e) {}
-  $('#kePush').href = BASE + '/admin';
   const api = async (method, path, body) => {
     const r = await fetch(BASE + path, { method, headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token, 'X-Admin-Token': token }, body: body ? JSON.stringify(body) : undefined });
     const j = await r.json().catch(() => ({}));
@@ -174,7 +176,21 @@
     $('#devInfo').textContent = `${list.length} perangkat` + (list.length >= 500 ? ' (dibatasi 500 terbaru)' : '');
   }
 
+  // unduh CSV lewat fetch agar token tetap di header (tidak masuk URL / riwayat browser)
+  async function unduh(btn) {
+    const teks = btn.textContent; btn.disabled = true; btn.textContent = 'Menyiapkan…';
+    try {
+      const r = await fetch(`${BASE}/api/presence/export?jenis=${btn.dataset.unduh}&days=${$('#hari').value}`, { headers: { Authorization: 'Bearer ' + token, 'X-Admin-Token': token } });
+      if (!r.ok) throw new Error((await r.json().catch(() => ({}))).error || r.status);
+      const nama = (/filename="([^"]+)"/.exec(r.headers.get('Content-Disposition') || '') || [])[1] || `kito-${btn.dataset.unduh}.csv`;
+      const a = Object.assign(document.createElement('a'), { href: URL.createObjectURL(await r.blob()), download: nama });
+      document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+    } catch (er) { alert('Gagal mengunduh: ' + er.message); }
+    btn.disabled = false; btn.textContent = teks;
+  }
+
   document.addEventListener('click', async (e) => {
+    const u = e.target.closest('[data-unduh]'); if (u) return unduh(u);
     const l = e.target.closest('[data-label]'), d = e.target.closest('[data-del]');
     try {
       if (l) { const v = prompt('Nama/label perangkat (mis. "PC Teller KCP X"):', l.dataset.now); if (v === null) return; await api('PUT', '/api/presence/devices/' + l.dataset.label, { label: v }); await muatDev(); }

@@ -8,7 +8,7 @@ require __DIR__ . '/lib/page.php';
 
 const KP_RESET_FLAG = KP_DATA . '/RESET-TOKEN';
 
-kp_page_start('KITO Push · Reset token admin');
+kp_page_start('KITO Push · Reset token admin', 'setup');
 $cfg = kp_config();
 if (!$cfg) {
     echo '<div class="cd"><p class="bad">Backend belum disetel.</p><p><a class="btn" href="setup.php">Buka setup</a></p></div>';

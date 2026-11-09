@@ -8,12 +8,14 @@
  *   /api/subscriptions/status · /api/subscriptions/test · /api/notifications (POST/GET, admin) · /api/notifications/batch
  *   /api/stats · /api/scheduled (GET) · /api/scheduled/<id> (DELETE) · /admin
  *   Pemantauan perangkat: /api/presence/ping (POST, publik) · /api/presence/summary · /api/presence/devices (GET, admin)
- *   /api/presence/devices/<id> (PUT label · DELETE, admin) · /admin/perangkat
+ *   /api/presence/devices/<id> (PUT label · DELETE, admin) · /api/presence/export?jenis=perangkat|sesi|lokasi&days=30 (CSV, admin)
+ *   /admin/perangkat
  * Tanpa rewrite .htaccess, rute juga bisa dipanggil sebagai index.php/api/...
  */
 declare(strict_types=1);
 require __DIR__ . '/lib/app.php';
 require __DIR__ . '/lib/presence.php';
+require __DIR__ . '/lib/masukan.php';
 
 function kp_json(int $status, $data): void {
     http_response_code($status);
@@ -54,25 +56,20 @@ if ($origin && (in_array('*', $allowed, true) || in_array($origin, $allowed, tru
 }
 if ($method === 'OPTIONS') { http_response_code(204); exit; }
 
-// halaman admin: pemantauan perangkat & lokasi akses
-if ($route === '/admin/perangkat') {
+// halaman admin (notifikasi & perangkat), keduanya dengan menu bar bersama dari lib/page.php
+if ($route === '/') { header('Location: index.php/admin'); exit; } // selalu berfungsi, dengan atau tanpa rewrite
+$halamanAdmin = ['/admin' => ['admin.html', 'notifikasi'], '/admin/perangkat' => ['perangkat.html', 'perangkat'], '/admin/masukan' => ['masukan.html', 'masukan']];
+if (isset($halamanAdmin[$route])) {
+    require_once __DIR__ . '/lib/page.php';
     header('Content-Type: text/html; charset=utf-8');
     header('Cache-Control: no-store'); header('X-Frame-Options: DENY'); header('X-Robots-Tag: noindex');
-    // alamat API absolut: /push-php (rewrite aktif) atau /push-php/index.php (tanpa rewrite)
+    // alamat absolut: /push-php (rewrite aktif) atau /push-php/index.php (tanpa rewrite)
     $sn = $_SERVER['SCRIPT_NAME'] ?? '/index.php';
     $apiBase = strpos($_SERVER['REQUEST_URI'] ?? '', '/index.php') !== false ? $sn : rtrim(str_replace('\\', '/', dirname($sn)), '/');
-    echo str_replace('__KP_API_BASE__', htmlspecialchars($apiBase, ENT_QUOTES), file_get_contents(__DIR__ . '/lib/perangkat.html')); exit;
-}
-
-// halaman admin
-if ($route === '/admin' || $route === '/' ) {
-    if ($route === '/') { header('Location: index.php/admin'); exit; } // selalu berfungsi, dengan atau tanpa rewrite
-    header('Content-Type: text/html; charset=utf-8');
-    header('Cache-Control: no-store'); header('X-Frame-Options: DENY'); header('X-Robots-Tag: noindex');
-    $html = file_get_contents(__DIR__ . '/lib/admin.html');
-    // alamat API relatif terhadap halaman ini (berfungsi dengan atau tanpa rewrite)
-    $html = str_replace('__KP_API_BASE__', '.', $html);
-    echo $html; exit;
+    [$berkas, $menu] = $halamanAdmin[$route];
+    $html = file_get_contents(__DIR__ . '/lib/' . $berkas);
+    echo str_replace(['__KP_API_BASE__', '<!--KP_MENU-->'], [htmlspecialchars($apiBase, ENT_QUOTES), kp_menu($menu, $apiBase)], $html);
+    exit;
 }
 
 // jadwal yang jatuh tempo ikut diproses pada permintaan biasa (cadangan bila cron belum dipasang)
@@ -224,6 +221,16 @@ try {
             try { kp_geo_resolve(15); } catch (Throwable $e) { error_log('[KITO Presence] geo: ' . $e->getMessage()); }
             kp_json(200, kp_presence_summary((int)($_GET['days'] ?? 7)));
         }
+        case 'GET /api/presence/export': {
+            kp_admin();
+            $jenis = in_array($_GET['jenis'] ?? '', ['perangkat', 'sesi', 'lokasi'], true) ? $_GET['jenis'] : 'perangkat';
+            [$nama, $rows] = kp_presence_export($jenis, (int)($_GET['days'] ?? 30));
+            header('Content-Type: text/csv; charset=utf-8');
+            header('Content-Disposition: attachment; filename="kito-' . $nama . '"');
+            header('Access-Control-Expose-Headers: Content-Disposition');
+            header('Cache-Control: no-store'); header('X-Content-Type-Options: nosniff');
+            echo kp_csv($rows); exit;
+        }
         case 'GET /api/presence/devices': {
             kp_admin();
             kp_json(200, ['perangkat' => kp_presence_devices((int)($_GET['days'] ?? 30), trim((string)($_GET['q'] ?? '')), (int)($_GET['limit'] ?? 500))]);
@@ -241,6 +248,27 @@ try {
         if (!$q->rowCount()) kp_fail(404, 'jadwal tidak ditemukan atau sudah terkirim');
         kp_json(200, ['ok' => true, 'dibatalkan' => (int)$m[1]]);
     }
+    /* ---------- masukan: rating & keluhan dari halaman Cabang ---------- */
+    if ($method === 'POST' && $route === '/api/feedback') {
+        if (!kp_rate('fb:' . kp_ip(), 10)) kp_fail(429, 'terlalu banyak kiriman, coba lagi sebentar lagi');
+        [$kode, $hasil] = kp_fb_simpan(kp_body());
+        if (is_string($hasil)) kp_fail($kode, $hasil);
+        kp_json($kode, $hasil);
+    }
+    if ($method === 'GET' && $route === '/api/feedback') { kp_admin(); kp_json(200, ['masukan' => kp_fb_list($_GET), 'kategori' => KP_FB_KATEGORI, 'status' => KP_FB_STATUS]); }
+    if ($method === 'GET' && $route === '/api/feedback/summary') { kp_admin(); kp_json(200, kp_fb_summary((int)($_GET['days'] ?? 90))); }
+    if ($method === 'GET' && $route === '/api/feedback/export') {
+        kp_admin(); [$nama, $rows] = kp_fb_export($_GET);
+        header('Content-Type: text/csv; charset=utf-8'); header('Content-Disposition: attachment; filename="kito-' . $nama . '"');
+        header('Access-Control-Expose-Headers: Content-Disposition'); header('Cache-Control: no-store');
+        echo kp_csv($rows); exit;
+    }
+    if ($method === 'PUT' && preg_match('#^/api/feedback/(\d+)$#', $route, $m)) {
+        kp_admin();
+        if (!kp_fb_update((int)$m[1], kp_body())) kp_fail(404, 'masukan tidak ditemukan atau status tidak valid');
+        kp_json(200, ['ok' => true]);
+    }
+
     if (preg_match('#^/api/presence/devices/([A-Za-z0-9_-]{8,64})$#', $route, $m) && ($method === 'PUT' || $method === 'DELETE')) {
         kp_admin();
         if ($method === 'DELETE') { if (!kp_presence_delete($m[1])) kp_fail(404, 'perangkat tidak ditemukan'); kp_json(200, ['ok' => true, 'dihapus' => $m[1]]); }

@@ -67,4 +67,18 @@ Dashboard memuat `assets/js/pantau.js`, yang mengirim heartbeat ringan ke `POST 
 - **Lokasi** diperkirakan dari IP (tingkat kota, bukan GPS; tidak ada izin lokasi yang diminta ke pengguna). IP dikirim ke layanan `ipwho.is` lalu disimpan di cache selama 30 hari. Pengisian lokasi berjalan saat halaman admin dibuka dan di `cron.php`. Untuk mematikannya, tambahkan `'geo' => 'off'` di `data/config.php`.
 - **ID perangkat** berupa kode acak di `localStorage` browser. Jika pengguna menghapus data situs atau memakai mode penyamaran, perangkat itu tercatat sebagai perangkat baru.
 - Riwayat sesi disimpan 180 hari, lalu dihapus otomatis.
+- **Unduh data**: tombol ⬇ Perangkat, ⬇ Riwayat sesi, dan ⬇ Rekap lokasi di halaman admin. Hasilnya CSV untuk periode yang dipilih, bisa langsung dibuka di Excel (pemisah titik koma, waktu WIB). Lewat API: `GET /api/presence/export?jenis=perangkat|sesi|lokasi&days=30` dengan header `Authorization: Bearer <token admin>`.
 - API admin: `GET /api/presence/summary?days=7`, `GET /api/presence/devices?days=30&q=…`, `PUT /api/presence/devices/<id>` `{label}`, `DELETE /api/presence/devices/<id>`.
+
+## Masukan pengguna (rating & keluhan)
+
+Di tab **Cabang** dashboard ada tombol **💬 Masukan** (kanan bawah) yang membuka popup dua tab:
+
+- **⭐ Rating aplikasi**: 1–5 bintang, aspek yang dinilai (kecepatan, tampilan, akurasi data, dll.), komentar opsional. Satu perangkat hanya punya satu rating per hari; kirim ulang di hari yang sama akan memperbarui rating itu.
+- **📝 Keluhan**: jenis keluhan, uraian (wajib), nama dan kontak (opsional).
+
+Cabang, area, tanggal data yang dilihat, jabatan login KPI, dan jenis perangkat ikut terkirim. Popup rating juga muncul sendiri, paling cepat setelah pengguna membuka dashboard di 3 hari berbeda dan 90 detik di tab Cabang. Setelah itu paling sering sekali tiap 30 hari, dan tidak muncul lagi selama 60 hari setelah pengguna memberi rating. Kalau perangkat offline, kiriman disimpan dan terkirim otomatis saat kembali online.
+
+Halaman admin: menu **💬 Masukan** (`…/admin/masukan`). Isinya rata-rata rating, persentase puas/kecewa, sebaran bintang, aspek, jenis keluhan, per area/cabang, dan daftar masukan. Status keluhan bisa diubah (baru, diproses, selesai, ditolak), catatan tindak lanjut bisa ditambahkan, dan daftar bisa diunduh sebagai CSV.
+
+API: `POST /api/feedback` (publik, maks. 10 per menit per IP) · `GET /api/feedback?days=&jenis=&status=&q=` · `GET /api/feedback/summary?days=` · `PUT /api/feedback/<id>` `{status, catatan}` · `GET /api/feedback/export` (admin).

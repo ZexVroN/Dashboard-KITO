@@ -5,7 +5,7 @@ require __DIR__ . '/lib/app.php';
 require __DIR__ . '/lib/page.php';
 
 $base = kp_base_url();
-kp_page_start('KITO Push · Setup');
+kp_page_start('KITO Push · Setup', 'setup');
 
 if (kp_config() && empty($_GET['selesai'])) {
     echo '<div class="cd"><h2>Sudah disetel</h2><p class="ok">✔ Backend notifikasi sudah aktif.</p>

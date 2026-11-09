@@ -10,7 +10,55 @@ function kp_base_url(): string {
     return ($https ? 'https' : 'http') . '://' . ($_SERVER['HTTP_HOST'] ?? 'localhost') . $dir;
 }
 
-function kp_page_start(string $title): void {
+/**
+ * Menu bar bersama untuk semua halaman backend (admin notifikasi, perangkat, status, setup).
+ * $aktif: notifikasi | perangkat | status | setup
+ * $app:   alamat rute aplikasi (index.php). Default "<folder>/index.php" yang selalu berfungsi, dengan atau tanpa rewrite.
+ */
+function kp_menu(string $aktif, ?string $app = null): string {
+    $dir = rtrim(str_replace('\\', '/', dirname($_SERVER['SCRIPT_NAME'] ?? '/')), '/');
+    $app = $app ?? $dir . '/index.php';
+    $cfg = function_exists('kp_config') ? kp_config() : null;
+    $item = [
+        'notifikasi' => ['🔔', 'Notifikasi', $app . '/admin'],
+        'perangkat'  => ['📱', 'Perangkat & Lokasi', $app . '/admin/perangkat'],
+        'masukan'    => ['💬', 'Masukan', $app . '/admin/masukan'],
+        'status'     => ['🩺', 'Status', $dir . '/status.php'],
+        'setup'      => ['⚙️', 'Setup', $dir . '/setup.php'],
+    ];
+    if (!$cfg) $item = ['setup' => $item['setup'], 'status' => $item['status']];   // belum disetel: hanya halaman pemasangan
+    $dash = '';
+    foreach ($cfg['allowed_origins'] ?? [] as $o) if ($o !== '*') { $dash = $o; break; }
+    $h = '<nav class="kpm" aria-label="Menu backend"><div class="kpm-in"><a class="kpm-brand" href="' . kp_h($cfg ? $app . '/admin' : $dir . '/setup.php') . '">KITO <span>Backend</span></a><div class="kpm-list">';
+    foreach ($item as $k => [$ic, $label, $url]) {
+        $on = $k === $aktif;
+        $h .= '<a href="' . kp_h($url) . '"' . ($on ? ' class="on" aria-current="page"' : '') . '><span aria-hidden="true">' . $ic . '</span>' . kp_h($label) . '</a>';
+    }
+    if ($dash) $h .= '<a href="' . kp_h($dash) . '" target="_blank" rel="noopener"><span aria-hidden="true">📊</span>Dashboard ↗</a>';
+    $h .= '</div>';
+    // token admin tersimpan di sessionStorage tab ini; Keluar menghapusnya
+    if ($cfg) $h .= '<button type="button" class="kpm-out" onclick="try{sessionStorage.removeItem(\'kitoPushToken\')}catch(e){}location.href=' . kp_h(json_encode($app . '/admin')) . '">Keluar</button>';
+    return $h . '</div></nav>' . kp_menu_css();
+}
+
+function kp_menu_css(): string {
+    return '<style>
+.kpm{position:sticky;top:0;z-index:50;background:#001645;color:#fff;box-shadow:0 2px 10px rgba(0,0,0,.18)}
+.kpm-in{max-width:1180px;margin:0 auto;padding:0 12px;display:flex;align-items:center;gap:10px;min-height:52px}
+.kpm-brand{color:#fff;text-decoration:none;font-weight:800;font-size:15px;white-space:nowrap;letter-spacing:.3px}
+.kpm-brand span{font-weight:500;opacity:.7}
+.kpm-list{display:flex;gap:4px;flex:1;min-width:0;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.kpm-list::-webkit-scrollbar{display:none}
+.kpm-list a{display:inline-flex;align-items:center;gap:6px;color:#dbe4ff;text-decoration:none;font:600 13.5px/1 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;padding:10px 12px;border-radius:9px;white-space:nowrap}
+.kpm-list a:hover{background:rgba(255,255,255,.1);color:#fff}
+.kpm-list a.on{background:#fff;color:#002060}
+.kpm-out{flex:none;background:transparent;border:1px solid rgba(255,255,255,.35);color:#fff;border-radius:9px;padding:7px 12px;font:600 13px system-ui,sans-serif;cursor:pointer}
+.kpm-out:hover{background:rgba(255,255,255,.12)}
+@media (max-width:560px){.kpm-brand span{display:none}.kpm-list a{padding:9px 10px;font-size:13px}}
+</style>';
+}
+
+function kp_page_start(string $title, string $aktif = ''): void {
     header('Content-Type: text/html; charset=utf-8'); header('Cache-Control: no-store'); header('X-Robots-Tag: noindex'); header('X-Frame-Options: DENY');
     echo '<!doctype html><html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>' . kp_h($title) . '</title><style>
 :root{--bg:#f3f5fa;--cd:#fff;--tx:#13203d;--mu:#66728c;--ln:#e1e6f0;--c1:#002060;--ok:#12a150;--bd:#d92d20}
@@ -26,7 +74,7 @@ ul.ck{list-style:none;padding:0;margin:0}ul.ck li{padding:6px 0;border-bottom:1p
 .ok{color:var(--ok);font-weight:700}.bad{color:var(--bd);font-weight:700}
 pre,code{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12.5px}pre{background:#0e1527;color:#e8edf8;padding:12px;border-radius:10px;overflow:auto;white-space:pre-wrap;word-break:break-all}
 code{background:var(--bg);padding:1px 5px;border-radius:5px}.tok{font-size:15px;font-weight:700;letter-spacing:.3px}
-ol li{margin:6px 0}</style></head><body><header><h1>' . kp_h($title) . '</h1><p>KITO Push · backend notifikasi (versi PHP)</p></header><main>';
+ol li{margin:6px 0}</style></head><body>' . kp_menu($aktif) . '<header><h1>' . kp_h($title) . '</h1><p>KITO Push · backend notifikasi (versi PHP)</p></header><main>';
 }
 function kp_page_end(): void { echo '</main></body></html>'; }
 

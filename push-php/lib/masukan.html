@@ -1,0 +1,184 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="robots" content="noindex" />
+<title>Masukan Pengguna</title>
+<style>
+  :root { --bg:#f3f5fa; --cd:#fff; --tx:#13203d; --mu:#66728c; --ln:#e1e6f0; --c1:#002060; --br:#2f5bd3; --ok:#12a150; --bd:#d92d20; --wr:#b7791f; --st:#f5b301; }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --bg:#0e1527; --cd:#16213b; --tx:#e8edf8; --mu:#9aa6c2; --ln:#26324f; --c1:#7aa2ff; --br:#7aa2ff; } }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--tx); font:14px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; }
+  header { background:#002060; color:#fff; padding:18px 16px; }
+  header h1 { margin:0; font-size:18px; } header p { margin:4px 0 0; opacity:.8; font-size:12.5px; }
+  main { max-width:1180px; margin:0 auto; padding:16px; display:grid; gap:14px; }
+  .cd { background:var(--cd); border:1px solid var(--ln); border-radius:14px; padding:16px; min-width:0; }
+  h2 { margin:0 0 12px; font-size:13px; letter-spacing:.5px; text-transform:uppercase; color:var(--mu); display:flex; justify-content:space-between; gap:8px; align-items:center; flex-wrap:wrap; }
+  input, select, textarea { padding:8px 10px; border:1px solid var(--ln); border-radius:10px; background:var(--bg); color:var(--tx); font:inherit; }
+  button { border:0; border-radius:10px; padding:9px 14px; font:600 13.5px inherit; background:var(--c1); color:#fff; cursor:pointer; }
+  button.sec { background:transparent; color:var(--tx); border:1px solid var(--ln); padding:5px 10px; font-size:12.5px; }
+  button:disabled { opacity:.5; }
+  .tools { display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+  .stats { display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:10px; }
+  .stat { background:var(--bg); border-radius:10px; padding:10px 12px; } .stat small { color:var(--mu); display:block; font-size:11px; } .stat b { font-size:22px; font-variant-numeric:tabular-nums; }
+  .stat.star b { color:var(--st); } .stat.baru b { color:var(--bd); }
+  .grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(300px,1fr)); gap:14px; }
+  .bars { display:grid; gap:6px; }
+  .br { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:2px 10px; font-size:13px; }
+  .br span { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; } .br b { font-variant-numeric:tabular-nums; }
+  .br i { grid-column:1 / -1; height:6px; border-radius:3px; background:var(--ln); overflow:hidden; } .br i::after { content:""; display:block; height:100%; width:var(--w); background:var(--c); border-radius:3px; }
+  .bars { --c:var(--br); } .bars.st { --c:var(--st); }
+  table { width:100%; border-collapse:collapse; font-size:13px; } th, td { text-align:left; padding:8px 6px; border-bottom:1px solid var(--ln); vertical-align:top; }
+  th { color:var(--mu); font-size:11px; text-transform:uppercase; white-space:nowrap; } td.n { white-space:nowrap; font-variant-numeric:tabular-nums; }
+  td.psn { min-width:240px; max-width:460px; white-space:pre-wrap; word-break:break-word; }
+  .tw { overflow-x:auto; }
+  .mu { color:var(--mu); font-size:12px; } .hidden { display:none !important; }
+  .bintang { color:var(--st); letter-spacing:1px; white-space:nowrap; }
+  .pill { font-size:11px; font-weight:700; padding:2px 8px; border-radius:999px; border:1px solid var(--ln); white-space:nowrap; }
+  .pill.rating { color:var(--st); } .pill.keluhan { color:var(--bd); }
+  select.status { padding:4px 6px; font-size:12px; font-weight:700; }
+  select.status.baru { color:var(--bd); } select.status.diproses { color:var(--wr); } select.status.selesai { color:var(--ok); } select.status.ditolak { color:var(--mu); }
+  .msg { font-weight:600; } .err { color:var(--bd); }
+  #login { max-width:460px; } #login input { width:100%; margin:8px 0; }
+</style>
+</head>
+<body>
+<!--KP_MENU-->
+<header><h1>KITO · Masukan Pengguna</h1><p>Rating aplikasi dan keluhan yang dikirim dari halaman Cabang dashboard.</p></header>
+<main>
+  <section class="cd" id="login">
+    <h2>Masuk</h2>
+    <label for="tok">Token admin</label>
+    <input id="tok" type="password" autocomplete="current-password" placeholder="tempel token admin push-php" />
+    <button id="btnLogin">Masuk</button> <span id="loginMsg" class="msg"></span>
+  </section>
+
+  <div id="isi" class="hidden" style="display:grid;gap:14px">
+    <section class="cd">
+      <h2><span>Ringkasan</span>
+        <span class="tools">
+          <select id="hari" aria-label="Periode"><option value="7">7 hari</option><option value="30">30 hari</option><option value="90" selected>90 hari</option><option value="365">1 tahun</option><option value="3650">Semua</option></select>
+          <button class="sec" id="segar">Muat ulang</button>
+          <button class="sec" id="unduh" title="Unduh daftar sesuai filter (CSV untuk Excel)">⬇ Unduh CSV</button>
+        </span>
+      </h2>
+      <div class="stats" id="stats"></div>
+    </section>
+
+    <section class="cd"><div class="grid" id="bagi"></div></section>
+
+    <section class="cd">
+      <h2><span>Daftar masukan</span>
+        <span class="tools">
+          <select id="fJenis" aria-label="Jenis"><option value="">Semua jenis</option><option value="keluhan">Keluhan</option><option value="rating">Rating</option></select>
+          <select id="fStatus" aria-label="Status"><option value="">Semua status</option><option value="baru">Baru</option><option value="diproses">Diproses</option><option value="selesai">Selesai</option><option value="ditolak">Ditolak</option></select>
+          <input id="cari" type="search" placeholder="cari isi, cabang, area, nama…" />
+        </span>
+      </h2>
+      <div class="tw"><table><thead><tr><th>#</th><th>Waktu</th><th>Jenis</th><th>Isi</th><th>Pengirim</th><th>Cabang / Area</th><th>Perangkat</th><th>Status</th><th>Catatan admin</th></tr></thead><tbody id="list"></tbody></table></div>
+      <p class="mu" id="listInfo"></p>
+    </section>
+  </div>
+</main>
+<script>
+(() => {
+  'use strict';
+  const BASE = '__KP_API_BASE__';
+  const $ = (s) => document.querySelector(s);
+  const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const waktu = (s) => s ? new Date(s.replace(' ', 'T') + 'Z').toLocaleString('id-ID', { day: 'numeric', month: 'short', year: '2-digit', hour: '2-digit', minute: '2-digit' }) : '';
+  const nf = (n, d = 0) => n == null ? '–' : Number(n).toLocaleString('id-ID', { minimumFractionDigits: d, maximumFractionDigits: d });
+  const bintang = (n) => '★'.repeat(n) + '<span style="opacity:.25">' + '★'.repeat(5 - n) + '</span>';
+  const NAMA = { android: 'Android', ios: 'iPhone/iPad', windows: 'Windows', macos: 'macOS', linux: 'Linux', web: 'Browser', pwa: 'PWA', apk: 'APK' };
+
+  let token = ''; try { token = sessionStorage.getItem('kitoPushToken') || ''; } catch (e) {}
+  const hdr = () => ({ 'Content-Type': 'application/json', Authorization: 'Bearer ' + token, 'X-Admin-Token': token });
+  const api = async (method, path, body) => {
+    const r = await fetch(BASE + path, { method, headers: hdr(), body: body ? JSON.stringify(body) : undefined });
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(j.error || r.status);
+    return j;
+  };
+  const filter = () => new URLSearchParams({ days: $('#hari').value, jenis: $('#fJenis').value, status: $('#fStatus').value, q: $('#cari').value.trim() }).toString();
+
+  const bars = (judul, list, opt = {}) => {
+    const max = Math.max(1, ...list.map((x) => x.n));
+    const isi = list.length ? list.slice(0, 12).map((x) => `<div class="br"><span>${opt.lbl ? opt.lbl(x) : esc(x.nama)}</span><b>${nf(x.n)}${x.rating != null && opt.rt !== false ? ` <small class="mu">★ ${nf(x.rating, 1)}</small>` : ''}</b><i style="--w:${x.n / max * 100}%"></i></div>`).join('')
+      : '<p class="mu">Belum ada data.</p>';
+    return `<div><h2>${esc(judul)}</h2><div class="bars ${opt.st ? 'st' : ''}">${isi}</div></div>`;
+  };
+
+  async function muatRingkas() {
+    const s = await api('GET', '/api/feedback/summary?days=' + $('#hari').value);
+    const r = s.rating, k = s.keluhan;
+    $('#stats').innerHTML = [
+      ['Rata-rata rating', r.rata == null ? '–' : '★ ' + nf(r.rata, 2), 'star'], ['Jumlah rating', nf(r.n)], ['Puas (4–5★)', r.puasPersen == null ? '–' : r.puasPersen + '%'],
+      ['Kecewa (1–2★)', r.kecewaPersen == null ? '–' : r.kecewaPersen + '%'], ['Keluhan', nf(k.n)], ['Keluhan baru', nf(k.baru), 'baru'], ['Diproses', nf(k.diproses)], ['Selesai', nf(k.selesai)],
+    ].map(([a, b, c]) => `<div class="stat ${c || ''}"><small>${a}</small><b>${b}</b></div>`).join('');
+    const sebaran = [5, 4, 3, 2, 1].map((b) => ({ nama: b, n: (s.sebaranBintang.find((x) => x.bintang === b) || {}).n || 0 }));
+    $('#bagi').innerHTML = bars('Sebaran bintang', sebaran, { st: true, lbl: (x) => `<span class="bintang">${bintang(x.nama)}</span>` })
+      + bars('Aspek yang dinilai (rata-rata ★)', s.aspek, { st: true }) + bars('Jenis keluhan', s.perKategori)
+      + bars('Per area', s.perArea) + bars('Per cabang', s.perCabang);
+  }
+
+  async function muatList() {
+    const { masukan, status } = await api('GET', '/api/feedback?' + filter());
+    $('#list').innerHTML = masukan.map((m) => `<tr>
+      <td class="n">${m.id}</td><td class="n">${waktu(m.created_at)}</td>
+      <td><span class="pill ${m.jenis}">${m.jenis === 'rating' ? 'Rating' : 'Keluhan'}</span></td>
+      <td class="psn">${m.jenis === 'rating' ? `<span class="bintang">${bintang(m.rating)}</span>${m.aspek ? `<br><span class="mu">${esc(m.aspek)}</span>` : ''}` : `<b>${esc(m.kategori)}</b>`}${m.pesan ? '<br>' + esc(m.pesan) : ''}</td>
+      <td>${esc(m.nama || '–')}${m.kontak ? `<br><span class="mu">${esc(m.kontak)}</span>` : ''}${m.jabatan ? `<br><span class="mu">${esc(m.jabatan)}</span>` : ''}</td>
+      <td>${m.kode ? esc(m.kode + ' ' + (m.cabang || '')) : '–'}${m.area ? `<br><span class="mu">${esc(m.area)}</span>` : ''}${m.tanggal_data ? `<br><span class="mu">data ${esc(m.tanggal_data)}</span>` : ''}</td>
+      <td class="n">${esc(NAMA[m.platform] || m.platform || '')}<br><span class="mu">${esc(NAMA[m.app] || m.app || '')}</span></td>
+      <td>${m.jenis === 'keluhan' ? `<select class="status ${m.status}" data-id="${m.id}" aria-label="Status">${status.map((x) => `<option ${x === m.status ? 'selected' : ''}>${x}</option>`).join('')}</select>` : '<span class="mu">–</span>'}</td>
+      <td>${esc(m.catatan || '')} <button class="sec" data-cat="${m.id}" data-now="${esc(m.catatan || '')}">✎</button></td></tr>`).join('')
+      || '<tr><td colspan="9" class="mu">Belum ada masukan untuk filter ini.</td></tr>';
+    $('#listInfo').textContent = masukan.length + ' masukan' + (masukan.length >= 500 ? ' (500 terbaru; unduh CSV untuk semua)' : '');
+  }
+  const muat = () => Promise.all([muatRingkas(), muatList()]);
+  const gagal = (er) => alert('Gagal: ' + er.message);
+
+  document.addEventListener('change', async (e) => {
+    const s = e.target.closest('select.status');
+    if (!s) return;
+    try { await api('PUT', '/api/feedback/' + s.dataset.id, { status: s.value }); s.className = 'status ' + s.value; muatRingkas().catch(() => {}); } catch (er) { gagal(er); }
+  });
+  document.addEventListener('click', async (e) => {
+    const c = e.target.closest('[data-cat]');
+    if (!c) return;
+    const v = prompt('Catatan tindak lanjut:', c.dataset.now); if (v === null) return;
+    try { await api('PUT', '/api/feedback/' + c.dataset.cat, { catatan: v }); muatList(); } catch (er) { gagal(er); }
+  });
+  ['#fJenis', '#fStatus'].forEach((s) => $(s).addEventListener('change', () => muatList().catch(gagal)));
+  $('#hari').addEventListener('change', () => muat().catch(gagal));
+  $('#segar').onclick = () => muat().catch(gagal);
+  let tc = null; $('#cari').addEventListener('input', () => { clearTimeout(tc); tc = setTimeout(() => muatList().catch(() => {}), 350); });
+
+  $('#unduh').onclick = async () => {
+    const b = $('#unduh'), t = b.textContent; b.disabled = true; b.textContent = 'Menyiapkan…';
+    try {
+      const r = await fetch(BASE + '/api/feedback/export?' + filter(), { headers: hdr() });
+      if (!r.ok) throw new Error((await r.json().catch(() => ({}))).error || r.status);
+      const nama = (/filename="([^"]+)"/.exec(r.headers.get('Content-Disposition') || '') || [])[1] || 'kito-masukan.csv';
+      const a = Object.assign(document.createElement('a'), { href: URL.createObjectURL(await r.blob()), download: nama });
+      document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+    } catch (er) { gagal(er); }
+    b.disabled = false; b.textContent = t;
+  };
+
+  async function login() {
+    try {
+      await muat();
+      $('#login').classList.add('hidden'); $('#isi').classList.remove('hidden');
+      try { sessionStorage.setItem('kitoPushToken', token); } catch (e) {}
+      setInterval(() => { if (document.visibilityState === 'visible') muatRingkas().catch(() => {}); }, 60000);
+    } catch (e) { $('#loginMsg').className = 'msg err'; $('#loginMsg').textContent = 'Gagal: ' + e.message; }
+  }
+  $('#btnLogin').onclick = () => { token = $('#tok').value.trim(); login(); };
+  $('#tok').addEventListener('keydown', (e) => { if (e.key === 'Enter') $('#btnLogin').click(); });
+  if (token) login();
+})();
+</script>
+</body>
+</html>

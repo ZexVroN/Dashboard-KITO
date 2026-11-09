@@ -227,3 +227,57 @@ function kp_presence_delete(string $id): bool {
     $q = $db->prepare('DELETE FROM devices WHERE id = ?'); $q->execute([$id]);
     return $q->rowCount() > 0;
 }
+
+/* ---------- ekspor data (CSV untuk Excel) ---------- */
+function kp_presence_export(string $jenis, int $hari): array {
+    $db = kp_presence_db();
+    $hari = max(1, min(KP_SIMPAN_HARI, $hari));
+    $sejak = gmdate('Y-m-d H:i:s', time() - $hari * 86400);
+    $wib = function ($s) { return $s ? gmdate('Y-m-d H:i:s', strtotime($s . ' UTC') + 7 * 3600) : ''; };
+    $nama = $jenis . '-' . $hari . 'hari-' . gmdate('Ymd-Hi', time() + 7 * 3600) . '.csv';
+    if ($jenis === 'sesi') {
+        $q = $db->prepare("SELECT v.id, v.device_id, d.label, d.platform, d.browser, d.app, v.jabatan, v.area, v.kode, d.cabang, v.page, v.pages, v.ip,
+                g.city, g.region, g.country, g.isp, v.started_at, v.last_seen, CAST(strftime('%s', v.last_seen) - strftime('%s', v.started_at) AS INTEGER) detik, v.ended
+            FROM visits v JOIN devices d ON d.id = v.device_id LEFT JOIN ip_geo g ON g.ip = v.ip WHERE v.last_seen >= ? ORDER BY v.started_at DESC");
+        $q->execute([$sejak]);
+        $rows = [['ID sesi', 'ID perangkat', 'Label', 'OS', 'Browser', 'Aplikasi', 'Jabatan', 'Area', 'Kode cabang', 'Cabang', 'Halaman terakhir', 'Jumlah pindah halaman',
+                  'IP', 'Kota', 'Provinsi', 'Negara', 'ISP', 'Mulai (WIB)', 'Terakhir (WIB)', 'Durasi (menit)', 'Status']];
+        foreach ($q->fetchAll() as $r) $rows[] = [$r['id'], $r['device_id'], $r['label'], $r['platform'], $r['browser'], $r['app'], $r['jabatan'], $r['area'], $r['kode'], $r['cabang'],
+            $r['page'], (int)$r['pages'], $r['ip'], $r['city'], $r['region'], $r['country'], $r['isp'], $wib($r['started_at']), $wib($r['last_seen']),
+            round($r['detik'] / 60, 1), $r['ended'] ? 'selesai' : 'terbuka'];
+        return [$nama, $rows];
+    }
+    if ($jenis === 'lokasi') {
+        $q = $db->prepare("SELECT COALESCE(g.country, 'Tidak diketahui') negara, COALESCE(g.region, 'Tidak diketahui') provinsi, COALESCE(g.city, 'Tidak diketahui') kota,
+                COUNT(DISTINCT v.device_id) perangkat, COUNT(*) sesi, SUM(strftime('%s', v.last_seen) - strftime('%s', v.started_at)) detik,
+                GROUP_CONCAT(DISTINCT v.area) area, MIN(v.started_at) pertama, MAX(v.last_seen) terakhir
+            FROM visits v LEFT JOIN ip_geo g ON g.ip = v.ip WHERE v.last_seen >= ? GROUP BY 1, 2, 3 ORDER BY perangkat DESC, sesi DESC");
+        $q->execute([$sejak]);
+        $rows = [['Negara', 'Provinsi', 'Kota', 'Perangkat unik', 'Sesi', 'Total waktu (menit)', 'Area dashboard', 'Akses pertama (WIB)', 'Akses terakhir (WIB)']];
+        foreach ($q->fetchAll() as $r) $rows[] = [$r['negara'], $r['provinsi'], $r['kota'], (int)$r['perangkat'], (int)$r['sesi'], round($r['detik'] / 60, 1),
+            str_replace(',', ', ', (string)$r['area']), $wib($r['pertama']), $wib($r['terakhir'])];
+        return [$nama, $rows];
+    }
+    // perangkat
+    $rows = [['ID perangkat', 'Label', 'Status', 'OS', 'Browser', 'Aplikasi', 'Jabatan', 'Area', 'Kode cabang', 'Cabang', 'Halaman terakhir', 'IP terakhir', 'Jumlah IP',
+              'Kota', 'Provinsi', 'Negara', 'ISP', 'Layar', 'Bahasa', 'Zona waktu', 'Jumlah sesi', 'Total waktu periode (menit)', 'Pertama (WIB)', 'Terakhir (WIB)', 'User agent']];
+    foreach (kp_presence_devices($hari, '', 2000) as $r) $rows[] = [$r['id'], $r['label'], $r['aktif'] ? 'aktif' : '', $r['platform'], $r['browser'], $r['app'], $r['jabatan'],
+        $r['area'], $r['kode'], $r['cabang'], $r['page'], $r['ip'], $r['jumlah_ip'], $r['city'], $r['region'], $r['country'], $r['isp'], $r['screen'], $r['lang'], $r['tz'],
+        $r['sesi'], round($r['detik'] / 60, 1), $wib($r['first_seen']), $wib($r['last_seen']), $r['user_agent']];
+    return [$nama, $rows];
+}
+
+/** CSV untuk Excel Indonesia: UTF-8 dengan BOM, pemisah titik koma, desimal koma.
+    Teks yang diawali = + - @ diberi petik agar tidak dibaca Excel sebagai rumus. */
+function kp_csv(array $rows): string {
+    $out = "\xEF\xBB\xBF";
+    foreach ($rows as $row) {
+        $out .= implode(';', array_map(function ($v) {
+            if (is_float($v)) $v = str_replace('.', ',', (string)$v);
+            $v = (string)($v ?? '');
+            if ($v !== '' && strpos('=+-@', $v[0]) !== false && !is_numeric(str_replace(',', '.', $v))) $v = "'" . $v;
+            return preg_match('/[;"\r\n]/', $v) ? '"' . str_replace('"', '""', $v) . '"' : $v;
+        }, $row)) . "\r\n";
+    }
+    return $out;
+}

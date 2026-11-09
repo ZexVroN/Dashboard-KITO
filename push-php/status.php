@@ -4,7 +4,7 @@ declare(strict_types=1);
 require __DIR__ . '/lib/app.php';
 require __DIR__ . '/lib/page.php';
 
-kp_page_start('KITO Push · Status');
+kp_page_start('KITO Push · Status', 'status');
 $cfg = kp_config();
 
 echo '<div class="cd"><h2>Hosting</h2>'; kp_checklist(kp_env_checks()); echo '</div>';

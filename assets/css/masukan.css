@@ -123,3 +123,18 @@ body.kmk-open { overflow: hidden; }
 /* pengguna yang mematikan animasi di perangkatnya: tanpa kedip, tetap menonjol lewat warna */
 @media (prefers-reduced-motion: reduce) { .kmk-notif, .kmk-n-tx small { animation: none; transition: none; } .kmk-notif:hover { transform: none; } }
 @media print { .kmk-notif { display: none !important; } }
+
+/* tombol Masukan: tekan-tahan untuk menyembunyikan (umpan balik saat ditahan + pesan Batalkan) */
+.kmk-fab { -webkit-touch-callout: none; user-select: none; -webkit-user-select: none; touch-action: manipulation; }
+.kmk-fab.menahan { transform: scale(.92); opacity: .8; transition: transform .6s ease, opacity .6s ease; }
+.kmk-toast {
+  position: fixed; left: 50%; bottom: calc(84px + env(safe-area-inset-bottom)); transform: translateX(-50%); z-index: 9997;
+  display: flex; align-items: center; gap: 12px; width: max-content; max-width: calc(100vw - 32px); padding: 10px 12px 10px 14px;
+  border-radius: 12px; background: #13203d; color: #fff; font-size: 13px; box-shadow: 0 8px 24px rgba(0, 0, 0, .3);
+  animation: kmk-up .2s ease-out;
+}
+.kmk-toast[hidden] { display: none; }
+.kmk-toast button { flex: none; border: 0; background: transparent; color: #8fb4ff; font: 700 13px inherit; cursor: pointer; padding: 4px 6px; border-radius: 6px; }
+.kmk-toast button:focus-visible { outline: 2px solid #8fb4ff; }
+@media (prefers-reduced-motion: reduce) { .kmk-fab.menahan { transition: none; } .kmk-toast { animation: none; } }
+@media print { .kmk-toast { display: none !important; } }

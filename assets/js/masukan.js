@@ -71,9 +71,43 @@
   fab.type = 'button'; fab.className = 'kmk-fab'; fab.hidden = true;
   fab.setAttribute('aria-haspopup', 'dialog');
   fab.innerHTML = '<span aria-hidden="true">💬</span>Masukan';
-  fab.addEventListener('click', () => buka(tabTerakhir));
+  fab.title = 'Ketuk: beri masukan · Tekan tahan: sembunyikan tombol';
   document.body.appendChild(fab);
-  const segarFab = () => { fab.hidden = !diCabang(); };
+
+  /* tekan-tahan ±0,6 detik = sembunyikan tombol hingga halaman dimuat ulang (ada "Batalkan").
+     Form tetap bisa dibuka lewat kartu Keluhan Cabang di atas halaman. */
+  let fabSembunyi = false, tahanTimer = null, baruDitahan = false;
+  const segarFab = () => { fab.hidden = !diCabang() || fabSembunyi; };
+  const batalTahan = () => { clearTimeout(tahanTimer); tahanTimer = null; fab.classList.remove('menahan'); };
+  fab.addEventListener('pointerdown', (e) => {
+    if (e.pointerType === 'mouse' && e.button !== 0) return;
+    baruDitahan = false; fab.classList.add('menahan');
+    tahanTimer = setTimeout(() => {
+      tahanTimer = null; baruDitahan = true; fab.classList.remove('menahan');
+      try { navigator.vibrate?.(30); } catch (_) {}
+      sembunyikanFab();
+    }, 600);
+  });
+  ['pointerup', 'pointerleave', 'pointercancel'].forEach((ev) => fab.addEventListener(ev, batalTahan));
+  fab.addEventListener('contextmenu', (e) => e.preventDefault());   // tekan lama di HP: jangan munculkan menu browser
+  fab.addEventListener('click', (e) => {
+    if (baruDitahan) { baruDitahan = false; e.preventDefault(); return; }   // klik sisa tekan-tahan
+    buka(tabTerakhir);
+  });
+
+  const toast = document.createElement('div');
+  toast.className = 'kmk-toast'; toast.hidden = true; toast.setAttribute('role', 'status');
+  toast.innerHTML = '<span>Tombol Masukan disembunyikan sampai halaman dimuat ulang.</span><button type="button">Batalkan</button>';
+  document.body.appendChild(toast);
+  let toastTimer = null;
+  function sembunyikanFab() {
+    fabSembunyi = true; segarFab();
+    toast.hidden = false; clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => { toast.hidden = true; }, 5000);
+  }
+  toast.querySelector('button').addEventListener('click', () => {
+    fabSembunyi = false; segarFab(); toast.hidden = true; clearTimeout(toastTimer); fab.focus({ preventScroll: true });
+  });
 
   /* ---------- kartu notifikasi "Keluhan Cabang" di halaman Cabang ----------
      Gaya mengikuti kartu notifikasi Highlight Issue (penguatan.js: ikon, label, judul besar, panah, tombol ×),

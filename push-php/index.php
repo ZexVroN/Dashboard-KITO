@@ -7,10 +7,13 @@
  *   /api/health · /api/vapid-public-key · /api/subscriptions (POST/DELETE) · /api/subscriptions/topics (PUT)
  *   /api/subscriptions/status · /api/subscriptions/test · /api/notifications (POST/GET, admin) · /api/notifications/batch
  *   /api/stats · /api/scheduled (GET) · /api/scheduled/<id> (DELETE) · /admin
+ *   Pemantauan perangkat: /api/presence/ping (POST, publik) · /api/presence/summary · /api/presence/devices (GET, admin)
+ *   /api/presence/devices/<id> (PUT label · DELETE, admin) · /admin/perangkat
  * Tanpa rewrite .htaccess, rute juga bisa dipanggil sebagai index.php/api/...
  */
 declare(strict_types=1);
 require __DIR__ . '/lib/app.php';
+require __DIR__ . '/lib/presence.php';
 
 function kp_json(int $status, $data): void {
     http_response_code($status);
@@ -51,6 +54,16 @@ if ($origin && (in_array('*', $allowed, true) || in_array($origin, $allowed, tru
 }
 if ($method === 'OPTIONS') { http_response_code(204); exit; }
 
+// halaman admin: pemantauan perangkat & lokasi akses
+if ($route === '/admin/perangkat') {
+    header('Content-Type: text/html; charset=utf-8');
+    header('Cache-Control: no-store'); header('X-Frame-Options: DENY'); header('X-Robots-Tag: noindex');
+    // alamat API absolut: /push-php (rewrite aktif) atau /push-php/index.php (tanpa rewrite)
+    $sn = $_SERVER['SCRIPT_NAME'] ?? '/index.php';
+    $apiBase = strpos($_SERVER['REQUEST_URI'] ?? '', '/index.php') !== false ? $sn : rtrim(str_replace('\\', '/', dirname($sn)), '/');
+    echo str_replace('__KP_API_BASE__', htmlspecialchars($apiBase, ENT_QUOTES), file_get_contents(__DIR__ . '/lib/perangkat.html')); exit;
+}
+
 // halaman admin
 if ($route === '/admin' || $route === '/' ) {
     if ($route === '/') { header('Location: index.php/admin'); exit; } // selalu berfungsi, dengan atau tanpa rewrite
@@ -63,7 +76,7 @@ if ($route === '/admin' || $route === '/' ) {
 }
 
 // jadwal yang jatuh tempo ikut diproses pada permintaan biasa (cadangan bila cron belum dipasang)
-if (strpos($route, '/api/') === 0 && random_int(1, 4) === 1) { try { kp_run_due(); } catch (Throwable $e) { error_log('[KITO Push] jadwal: ' . $e->getMessage()); } }
+if (strpos($route, '/api/') === 0 && $route !== '/api/presence/ping' && random_int(1, 4) === 1) { try { kp_run_due(); } catch (Throwable $e) { error_log('[KITO Push] jadwal: ' . $e->getMessage()); } }
 
 function kp_body(): array {
     $raw = file_get_contents('php://input');
@@ -198,6 +211,23 @@ try {
             kp_json(200, ['riwayat' => array_map(function ($r) { $r['target'] = json_decode($r['target'], true); foreach (['id', 'sent', 'failed', 'removed'] as $k) $r[$k] = (int)$r[$k]; return $r; }, $q->fetchAll())]);
         }
         case 'GET /api/stats': kp_admin(); kp_json(200, kp_stats());
+
+        /* ---------- pemantauan perangkat ---------- */
+        case 'POST /api/presence/ping': {
+            // satu kantor cabang bisa berbagi satu IP publik: batas per IP dibuat longgar
+            if (!kp_rate('ping:' . kp_ip(), 240)) kp_fail(429, 'terlalu banyak permintaan');
+            $r = kp_presence_ping(kp_body());
+            kp_json($r['ok'] ? 200 : 400, $r);
+        }
+        case 'GET /api/presence/summary': {
+            kp_admin();
+            try { kp_geo_resolve(15); } catch (Throwable $e) { error_log('[KITO Presence] geo: ' . $e->getMessage()); }
+            kp_json(200, kp_presence_summary((int)($_GET['days'] ?? 7)));
+        }
+        case 'GET /api/presence/devices': {
+            kp_admin();
+            kp_json(200, ['perangkat' => kp_presence_devices((int)($_GET['days'] ?? 30), trim((string)($_GET['q'] ?? '')), (int)($_GET['limit'] ?? 500))]);
+        }
         case 'GET /api/scheduled': {
             kp_admin(); $lim = max(1, min(500, (int)($_GET['limit'] ?? 50)));
             $q = kp_db()->prepare("SELECT * FROM scheduled ORDER BY (status = 'menunggu') DESC, send_at DESC LIMIT ?"); $q->bindValue(1, $lim, PDO::PARAM_INT); $q->execute();
@@ -210,6 +240,13 @@ try {
         kp_admin(); $q = kp_db()->prepare("UPDATE scheduled SET status = 'dibatalkan' WHERE id = ? AND status = 'menunggu'"); $q->execute([(int)$m[1]]);
         if (!$q->rowCount()) kp_fail(404, 'jadwal tidak ditemukan atau sudah terkirim');
         kp_json(200, ['ok' => true, 'dibatalkan' => (int)$m[1]]);
+    }
+    if (preg_match('#^/api/presence/devices/([A-Za-z0-9_-]{8,64})$#', $route, $m) && ($method === 'PUT' || $method === 'DELETE')) {
+        kp_admin();
+        if ($method === 'DELETE') { if (!kp_presence_delete($m[1])) kp_fail(404, 'perangkat tidak ditemukan'); kp_json(200, ['ok' => true, 'dihapus' => $m[1]]); }
+        $b = kp_body();
+        if (!kp_presence_label($m[1], kp_str($b['label'] ?? null, 80))) kp_fail(404, 'perangkat tidak ditemukan');
+        kp_json(200, ['ok' => true]);
     }
     kp_fail(404, 'tidak ditemukan');
 } catch (Throwable $e) {

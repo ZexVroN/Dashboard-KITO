@@ -56,3 +56,15 @@ Selesai. Halaman admin ada di `https://domain-anda/push/admin` (atau `…/push/i
 Buka `status.php`. Halaman ini menunjukkan versi PHP, ekstensi, izin folder, konfigurasi (tanpa rahasia), apakah `/api/...` bekerja, serta tes koneksi ke push service.
 - Kalau hanya `index.php/api/...` yang ✔, rewrite `.htaccess` tidak aktif. Isi `push-config.js` dengan `api: 'https://domain-anda/push/index.php'`.
 - Error PHP tercatat di `error_log` dalam folder `push/` atau di log error hosting.
+
+## Pemantauan perangkat & lokasi akses
+
+Dashboard memuat `assets/js/pantau.js`, yang mengirim heartbeat ringan ke `POST /api/presence/ping` tiap 60 detik selama tab terlihat (dan tanda selesai saat tab ditutup).
+
+- **Halaman admin**: `https://domain-anda/push-php/admin/perangkat` (atau `…/index.php/admin/perangkat`), memakai token admin yang sama.
+  Isinya: perangkat yang aktif sekarang, perangkat hari ini/periode, pembagian per provinsi, kota, ISP, area & cabang dashboard, OS, jenis aplikasi (browser/PWA/APK), jabatan login KPI, halaman, grafik per hari dan per jam (WIB), serta daftar semua perangkat (bisa diberi label atau dihapus).
+- **Aktif** = ada heartbeat dalam 150 detik terakhir. Satu perangkat dengan beberapa tab dihitung satu perangkat.
+- **Lokasi** diperkirakan dari IP (tingkat kota, bukan GPS; tidak ada izin lokasi yang diminta ke pengguna). IP dikirim ke layanan `ipwho.is` lalu disimpan di cache selama 30 hari. Pengisian lokasi berjalan saat halaman admin dibuka dan di `cron.php`. Untuk mematikannya, tambahkan `'geo' => 'off'` di `data/config.php`.
+- **ID perangkat** berupa kode acak di `localStorage` browser. Jika pengguna menghapus data situs atau memakai mode penyamaran, perangkat itu tercatat sebagai perangkat baru.
+- Riwayat sesi disimpan 180 hari, lalu dihapus otomatis.
+- API admin: `GET /api/presence/summary?days=7`, `GET /api/presence/devices?days=30&q=…`, `PUT /api/presence/devices/<id>` `{label}`, `DELETE /api/presence/devices/<id>`.

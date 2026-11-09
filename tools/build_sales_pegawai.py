@@ -29,6 +29,11 @@ memakai total ini; tabel per pegawai tetap memakai nilai pegawai (tanggal tanpa 
 
     python tools/build_sales_pegawai.py <xlsx> [--tampil 3] [--ganti-label 2026-10-28=2026-10-30]
     --ganti-label  memperbaiki label tanggal di riwayat (mis. kolom berjudul "28 Okt" yang ternyata data 30 Okt)
+
+Penyesuaian manual (tools/sales_penyesuaian.json, atau --penyesuaian <file>): pegawai di daftar "takeout" dibuang,
+pegawai di daftar "pindah" dipindah ke kode cabang "ke". Diterapkan sebelum riwayat dicocokkan dan sebelum total
+per cabang dihitung, jadi target & pencapaian cabang ikut menyesuaikan. Entri yang tidak ditemukan di laporan
+dicetak sebagai PERINGATAN (mis. Excel sudah memperbarui datanya, entri boleh dihapus).
 """
 
 import json
@@ -49,6 +54,8 @@ ap.add_argument("--riwayat", help="data lama untuk tanggal sebelumnya (bawaan: f
 ap.add_argument("--tampil", type=int, default=3, help="jumlah tanggal update yang ditampilkan (bawaan 3)")
 ap.add_argument("--ganti-label", action="append", default=[], metavar="LAMA=BARU",
                 help="ganti label tanggal di riwayat, mis. 2026-10-28=2026-10-30")
+ap.add_argument("--penyesuaian", default=os.path.join(os.path.dirname(os.path.abspath(__file__)), "sales_penyesuaian.json"),
+                help="daftar takeout / pindah cabang pegawai (bawaan: tools/sales_penyesuaian.json)")
 A = ap.parse_args()
 SRC, OUT = A.xlsx, A.out
 BULAN = {"jan": 1, "feb": 2, "mar": 3, "apr": 4, "mei": 5, "jun": 6, "jul": 7, "agu": 8, "agt": 8,
@@ -129,17 +136,53 @@ if path_riwayat:
         riwayat[(r[4], r[0].upper())] = {"e": dict(zip(tgl_lama, r[5])), "i": dict(zip(tgl_lama, r[9]))}
     print(f"Riwayat: {path_riwayat} · tanggal {tgl_lama}" + (f" (label diganti {ganti})" if ganti else ""))
 
+# ---------- penyesuaian manual (takeout / pindah cabang) ----------
+def _cocok(aturan, nama, kd):
+    return aturan["nama"].strip().upper() == nama.upper() and (not aturan.get("dari") or str(aturan["dari"]) == kd)
+
+ATUR = {"takeout": [], "pindah": []}
+if A.penyesuaian and os.path.exists(A.penyesuaian):
+    with open(A.penyesuaian, encoding="utf-8") as f:
+        ATUR.update(json.load(f))
+    print(f"Penyesuaian: {A.penyesuaian} · takeout {len(ATUR['takeout'])} · pindah {len(ATUR['pindah'])}")
+dipakai = set()
+
 # ---------- laporan baru ----------
 pegawai = []
 for r in rows[5:]:
     if not r[c_nama]:
         continue
     p = {"id": [str(r[c_nama]).strip(), samar(r[c_nip]), str(r[c_jab] or "").strip(), kode(r[c_area]), kode(r[c_kode])]}
+    nm, kd = p["id"][0], p["id"][4]
+    t = next((i for i, a in enumerate(ATUR["takeout"]) if _cocok(a, nm, kd)), None)
+    if t is not None:
+        dipakai.add(("takeout", t))
+        print(f"  takeout: {nm} ({kd})")
+        continue
+    pi = next((i for i, a in enumerate(ATUR["pindah"]) if _cocok(a, nm, kd)), None)
+    if pi is not None:
+        dipakai.add(("pindah", pi))
+        p["id"][4] = str(ATUR["pindah"][pi]["ke"])
+        print(f"  pindah : {nm} {kd} -> {p['id'][4]}")
     for key in ("e", "i"):
         b = BL[key]
         p[key] = {"seri": dict(zip(b["tgl"], (num(r[i]) for i in b["akuisisi"]))),
                   "sisa": [num(r[b["target"]]), num(r[b["bal"]]), num(r[b["tbal"]])]}
     pegawai.append(p)
+for jenis in ("takeout", "pindah"):
+    for i, a in enumerate(ATUR[jenis]):
+        if (jenis, i) not in dipakai:
+            print(f"  PERINGATAN {jenis}: '{a['nama']}'" + (f" (cabang {a['dari']})" if a.get("dari") else "")
+                  + " tidak ditemukan di laporan (sudah pindah/keluar di Excel? hapus dari daftar)")
+# daftar induk (hanya acuan, tidak menyaring): bandingkan dengan laporan setelah takeout/pindah
+if ATUR.get("pegawai"):
+    induk = {(str(a["kode"]), a["nama"].strip().upper()) for a in ATUR["pegawai"]}
+    induk |= {(str(a["ke"]), a["nama"].strip().upper()) for a in ATUR["pindah"]}
+    lap = {(p["id"][4], p["id"][0].upper()) for p in pegawai}
+    for k, n in sorted(lap - induk):
+        print(f"  INFO pegawai baru / pindah cabang (tidak ada di daftar induk): {n} ({k})")
+    for k, n in sorted(induk - lap):
+        print(f"  INFO pegawai daftar induk tidak ada di laporan: {n} ({k})")
 
 # ---------- total per cabang (sheet "Monitoring Cabang (All)") ----------
 cab_seri = {}                     # kode -> {"e": {tgl: n}, "i": {tgl: n}}

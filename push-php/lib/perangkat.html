@@ -1,0 +1,203 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="robots" content="noindex" />
+<title>Perangkat & Lokasi</title>
+<style>
+  :root { --bg:#f3f5fa; --cd:#fff; --tx:#13203d; --mu:#66728c; --ln:#e1e6f0; --c1:#002060; --br:#2f5bd3; --ok:#12a150; --bd:#d92d20; }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --bg:#0e1527; --cd:#16213b; --tx:#e8edf8; --mu:#9aa6c2; --ln:#26324f; --c1:#7aa2ff; --br:#7aa2ff; } }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--tx); font:14px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; }
+  header { background:#002060; color:#fff; padding:18px 16px; display:flex; gap:12px; align-items:center; justify-content:space-between; flex-wrap:wrap; }
+  header h1 { margin:0; font-size:18px; } header p { margin:4px 0 0; opacity:.8; font-size:12.5px; }
+  header a { color:#fff; font-size:13px; }
+  main { max-width:1180px; margin:0 auto; padding:16px; display:grid; gap:14px; }
+  .cd { background:var(--cd); border:1px solid var(--ln); border-radius:14px; padding:16px; min-width:0; }
+  h2 { margin:0 0 12px; font-size:13px; letter-spacing:.5px; text-transform:uppercase; color:var(--mu); display:flex; justify-content:space-between; gap:8px; align-items:center; }
+  input, select { padding:8px 10px; border:1px solid var(--ln); border-radius:10px; background:var(--bg); color:var(--tx); font:inherit; }
+  button { border:0; border-radius:10px; padding:9px 14px; font:600 13.5px inherit; background:var(--c1); color:#fff; cursor:pointer; }
+  button.sec { background:transparent; color:var(--tx); border:1px solid var(--ln); padding:5px 10px; font-size:12.5px; }
+  button.del { background:transparent; color:var(--bd); border:1px solid var(--ln); padding:5px 10px; font-size:12.5px; }
+  .bar-tools { display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+  .stats { display:grid; grid-template-columns:repeat(auto-fill,minmax(140px,1fr)); gap:10px; }
+  .stat { background:var(--bg); border-radius:10px; padding:10px 12px; } .stat small { color:var(--mu); display:block; font-size:11px; } .stat b { font-size:22px; font-variant-numeric:tabular-nums; }
+  .stat.live b { color:var(--ok); }
+  .dot { display:inline-block; width:8px; height:8px; border-radius:50%; background:var(--ok); margin-right:6px; box-shadow:0 0 0 3px color-mix(in srgb, var(--ok) 25%, transparent); }
+  .grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(300px,1fr)); gap:14px; }
+  .bars { display:grid; gap:6px; }
+  .br { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:2px 10px; font-size:13px; }
+  .br span { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; } .br b { font-variant-numeric:tabular-nums; }
+  .br i { grid-column:1 / -1; height:6px; border-radius:3px; background:var(--ln); overflow:hidden; } .br i::after { content:""; display:block; height:100%; width:var(--w); background:var(--br); border-radius:3px; }
+  .cols { display:flex; align-items:flex-end; gap:3px; height:140px; padding-top:8px; }
+  .cols div { flex:1; min-width:4px; background:var(--br); border-radius:3px 3px 0 0; position:relative; }
+  .cols div:hover { opacity:.75; }
+  .axis { display:flex; justify-content:space-between; font-size:11px; color:var(--mu); margin-top:4px; }
+  table { width:100%; border-collapse:collapse; font-size:13px; } th, td { text-align:left; padding:7px 6px; border-bottom:1px solid var(--ln); vertical-align:top; }
+  th { color:var(--mu); font-size:11px; text-transform:uppercase; white-space:nowrap; } td.n { font-variant-numeric:tabular-nums; white-space:nowrap; }
+  .tw { overflow-x:auto; }
+  .mu { color:var(--mu); font-size:12px; } .hidden { display:none !important; }
+  .pill { font-size:11px; font-weight:700; padding:1px 7px; border-radius:999px; background:var(--bg); border:1px solid var(--ln); white-space:nowrap; }
+  .pill.on { color:var(--ok); border-color:var(--ok); }
+  .msg { font-weight:600; } .err { color:var(--bd); }
+  #login { max-width:460px; } #login input { width:100%; margin:8px 0; }
+</style>
+</head>
+<body>
+<header>
+  <div><h1>KITO · Perangkat & Lokasi Akses</h1><p>Perangkat yang sedang membuka dashboard, riwayat akses, dan sebaran lokasi (perkiraan dari IP).</p></div>
+  <a id="kePush" href="#">← Admin notifikasi</a>
+</header>
+<main>
+  <section class="cd" id="login">
+    <h2>Masuk</h2>
+    <label for="tok">Token admin</label>
+    <input id="tok" type="password" autocomplete="current-password" placeholder="tempel token admin push-php" />
+    <button id="btnLogin">Masuk</button> <span id="loginMsg" class="msg"></span>
+  </section>
+
+  <div id="isi" class="hidden" style="display:grid;gap:14px">
+    <section class="cd">
+      <h2><span>Ringkasan</span>
+        <span class="bar-tools">
+          <select id="hari" aria-label="Periode"><option value="1">24 jam</option><option value="7" selected>7 hari</option><option value="30">30 hari</option><option value="90">90 hari</option><option value="180">180 hari</option></select>
+          <button class="sec" id="segar">Muat ulang</button>
+        </span>
+      </h2>
+      <div class="stats" id="stats"></div>
+      <p class="mu" id="info"></p>
+    </section>
+
+    <section class="cd">
+      <h2><span><i class="dot"></i>Sedang aktif sekarang</span><span class="mu" id="aktifInfo"></span></h2>
+      <div class="tw"><table><thead><tr><th>Perangkat</th><th>Jabatan</th><th>Area / Cabang</th><th>Halaman</th><th>Lokasi (IP)</th><th>Lama</th><th>Terakhir</th></tr></thead><tbody id="aktif"></tbody></table></div>
+    </section>
+
+    <section class="cd">
+      <h2>Pembagian lokasi akses</h2>
+      <div class="grid" id="lokasi"></div>
+    </section>
+
+    <section class="cd">
+      <h2>Pembagian perangkat & pengguna</h2>
+      <div class="grid" id="bagi"></div>
+    </section>
+
+    <div class="grid">
+      <section class="cd"><h2>Perangkat unik per hari (WIB)</h2><div class="cols" id="perHari"></div><div class="axis" id="perHariAx"></div></section>
+      <section class="cd"><h2>Sesi per jam (WIB)</h2><div class="cols" id="perJam"></div><div class="axis"><span>00</span><span>06</span><span>12</span><span>18</span><span>23</span></div></section>
+    </div>
+
+    <section class="cd">
+      <h2><span>Semua perangkat</span><span class="bar-tools"><input id="cari" type="search" placeholder="cari jabatan, cabang, kota, IP…" /></span></h2>
+      <div class="tw"><table><thead><tr><th></th><th>Perangkat</th><th>Nama/label</th><th>Jabatan</th><th>Area / Cabang</th><th>Lokasi terakhir</th><th>IP</th><th>Sesi</th><th>Total waktu</th><th>Pertama</th><th>Terakhir</th><th></th></tr></thead><tbody id="dev"></tbody></table></div>
+      <p class="mu" id="devInfo"></p>
+    </section>
+  </div>
+</main>
+<script>
+(() => {
+  'use strict';
+  const BASE = '__KP_API_BASE__';
+  const $ = (s) => document.querySelector(s);
+  const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const tgl = (s) => s ? new Date(s.replace(' ', 'T') + 'Z') : null;
+  const waktu = (s) => s ? tgl(s).toLocaleString('id-ID', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : '';
+  const lalu = (s) => { const d = Math.max(0, (Date.now() - tgl(s)) / 1000); return d < 60 ? Math.round(d) + ' dtk lalu' : d < 3600 ? Math.round(d / 60) + ' mnt lalu' : waktu(s); };
+  const durasi = (d) => { d = Math.round(d || 0); if (d < 60) return d + ' dtk'; if (d < 3600) return Math.round(d / 60) + ' mnt'; return Math.floor(d / 3600) + ' j ' + Math.round(d % 3600 / 60) + ' m'; };
+  const nf = (n) => Number(n || 0).toLocaleString('id-ID');
+  const NAMA = { android: 'Android', ios: 'iPhone/iPad', windows: 'Windows', macos: 'macOS', linux: 'Linux', lainnya: 'Lainnya',
+    chrome: 'Chrome', edge: 'Edge', firefox: 'Firefox', safari: 'Safari', samsung: 'Samsung Internet', opera: 'Opera',
+    web: 'Browser', pwa: 'PWA (dipasang)', apk: 'Aplikasi APK' };
+  const nm = (s) => NAMA[s] || s;
+  const perangkat = (r) => `${esc(nm(r.platform))} · ${esc(nm(r.browser))} <span class="pill">${esc(nm(r.app))}</span>`;
+  const lokasi = (r) => [r.city, r.region].filter(Boolean).join(', ') || (r.country ? r.country : '<span class="mu">belum diketahui</span>');
+  const tempat = (r) => [r.area, r.kode ? r.kode + (r.cabang ? ' ' + r.cabang : '') : ''].filter(Boolean).map(esc).join('<br>') || '<span class="mu">–</span>';
+
+  let token = ''; try { token = sessionStorage.getItem('kitoPushToken') || ''; } catch (e) {}
+  $('#kePush').href = BASE + '/admin';
+  const api = async (method, path, body) => {
+    const r = await fetch(BASE + path, { method, headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token, 'X-Admin-Token': token }, body: body ? JSON.stringify(body) : undefined });
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(j.error || r.status);
+    return j;
+  };
+
+  const bars = (judul, list, total) => {
+    const max = Math.max(1, ...list.map((x) => x.n));
+    const isi = list.length ? list.slice(0, 12).map((x) => `<div class="br" title="${esc(nm(x.nama))}: ${x.n}"><span>${esc(nm(x.nama))}</span><b>${nf(x.n)}${total ? ` <small class="mu">${Math.round(x.n / total * 100)}%</small>` : ''}</b><i style="--w:${x.n / max * 100}%"></i></div>`).join('')
+      : '<p class="mu">Belum ada data.</p>';
+    return `<div><h2>${esc(judul)}</h2><div class="bars">${isi}</div>${list.length > 12 ? `<p class="mu">+${list.length - 12} lainnya</p>` : ''}</div>`;
+  };
+  const kolom = (el, list, key, lbl) => {
+    const max = Math.max(1, ...list.map((x) => x[key]));
+    el.innerHTML = list.map((x) => `<div style="height:${Math.max(2, x[key] / max * 100)}%" title="${esc(lbl(x))}: ${nf(x[key])}"></div>`).join('') || '<p class="mu">Belum ada data.</p>';
+  };
+
+  async function muat() {
+    const hari = $('#hari').value;
+    const s = await api('GET', '/api/presence/summary?days=' + hari);
+    const r = s.ringkas, per = $('#hari').selectedOptions[0].textContent;
+    $('#stats').innerHTML = [
+      ['Aktif sekarang', r.aktifSekarang, 'live'], ['Tab terbuka', r.tabAktif], ['Perangkat hari ini', r.hariIni],
+      ['Perangkat ' + per, r.periode], ['Perangkat baru ' + per, r.baru], ['Sesi ' + per, r.sesi], ['Rata-rata lama sesi', durasi(r.rataDurasiDetik)], ['Total perangkat tercatat', r.totalPerangkat],
+    ].map(([k, v, c]) => `<div class="stat ${c || ''}"><small>${esc(k)}</small><b>${typeof v === 'number' ? nf(v) : esc(v)}</b></div>`).join('');
+    $('#info').textContent = `Aktif = ada heartbeat ≤ ${Math.round(s.aktifDetik / 60 * 10) / 10} menit terakhir. Diperbarui ${new Date(s.waktu).toLocaleTimeString('id-ID')}, otomatis tiap 30 detik.` + (s.geo ? '' : ' Geolokasi IP dimatikan (config geo = off).');
+
+    $('#aktifInfo').textContent = s.aktif.length ? `${s.ringkas.aktifSekarang} perangkat · ${s.aktif.length} tab` : '';
+    $('#aktif').innerHTML = s.aktif.map((a) => `<tr><td>${perangkat(a)}${a.label ? `<br><b>${esc(a.label)}</b>` : ''}</td><td>${esc(a.jabatan || '–')}</td><td>${tempat(a)}</td><td>${esc(a.page || '–')}</td>
+      <td>${lokasi(a)}${a.isp ? `<br><span class="mu">${esc(a.isp)}</span>` : ''}</td><td class="n">${durasi(a.detik)}</td><td class="n">${lalu(a.last_seen)}</td></tr>`).join('')
+      || '<tr><td colspan="7" class="mu">Tidak ada perangkat yang aktif saat ini.</td></tr>';
+
+    const tot = r.periode;
+    $('#lokasi').innerHTML = bars('Provinsi', s.perProvinsi, tot) + bars('Kota', s.perKota, tot) + bars('Area dashboard', s.perArea, tot) + bars('Cabang dipilih', s.perCabang, tot) + bars('Penyedia internet', s.perISP, tot) + bars('Negara', s.perNegara, tot);
+    $('#bagi').innerHTML = bars('Sistem operasi', s.perPlatform, tot) + bars('Jenis aplikasi', s.perAplikasi, tot) + bars('Browser', s.perBrowser, tot) + bars('Jabatan login KPI', s.perJabatan, tot) + bars('Halaman dibuka', s.perHalaman, tot);
+
+    kolom($('#perHari'), s.perHari, 'perangkat', (x) => x.tanggal);
+    $('#perHariAx').innerHTML = s.perHari.length ? `<span>${esc(s.perHari[0].tanggal)}</span><span>${esc(s.perHari[s.perHari.length - 1].tanggal)}</span>` : '';
+    const jam = Array.from({ length: 24 }, (_, h) => s.perJam.find((x) => x.jam === h) || { jam: h, sesi: 0 });
+    kolom($('#perJam'), jam, 'sesi', (x) => String(x.jam).padStart(2, '0') + ':00');
+    await muatDev();
+  }
+
+  async function muatDev() {
+    const q = $('#cari').value.trim();
+    const { perangkat: list } = await api('GET', `/api/presence/devices?days=${$('#hari').value}&q=${encodeURIComponent(q)}`);
+    $('#dev').innerHTML = list.map((d) => `<tr><td>${d.aktif ? '<span class="pill on">aktif</span>' : ''}</td>
+      <td title="${esc(d.user_agent)}">${perangkat(d)}<br><span class="mu">${esc(d.screen || '')} · ${esc(d.id.slice(0, 8))}</span></td>
+      <td>${esc(d.label || '')} <button class="sec" data-label="${esc(d.id)}" data-now="${esc(d.label || '')}">✎</button></td>
+      <td>${esc(d.jabatan || '–')}</td><td>${tempat(d)}</td><td>${lokasi(d)}</td>
+      <td class="n">${esc(d.ip || '')}${d.jumlah_ip > 1 ? `<br><span class="mu">${d.jumlah_ip} IP berbeda</span>` : ''}</td>
+      <td class="n">${nf(d.sesi)}</td><td class="n">${durasi(d.detik)}</td><td class="n">${waktu(d.first_seen)}</td><td class="n">${lalu(d.last_seen)}</td>
+      <td><button class="del" data-del="${esc(d.id)}">Hapus</button></td></tr>`).join('') || '<tr><td colspan="12" class="mu">Tidak ada perangkat.</td></tr>';
+    $('#devInfo').textContent = `${list.length} perangkat` + (list.length >= 500 ? ' (dibatasi 500 terbaru)' : '');
+  }
+
+  document.addEventListener('click', async (e) => {
+    const l = e.target.closest('[data-label]'), d = e.target.closest('[data-del]');
+    try {
+      if (l) { const v = prompt('Nama/label perangkat (mis. "PC Teller KCP X"):', l.dataset.now); if (v === null) return; await api('PUT', '/api/presence/devices/' + l.dataset.label, { label: v }); await muatDev(); }
+      if (d && confirm('Hapus perangkat ini beserta riwayat sesinya?')) { await api('DELETE', '/api/presence/devices/' + d.dataset.del); await muat(); }
+    } catch (er) { alert('Gagal: ' + er.message); }
+  });
+  let tCari = null;
+  $('#cari').addEventListener('input', () => { clearTimeout(tCari); tCari = setTimeout(() => muatDev().catch(() => {}), 350); });
+  $('#hari').onchange = () => muat().catch((er) => alert('Gagal: ' + er.message));
+  $('#segar').onclick = () => muat().catch((er) => alert('Gagal: ' + er.message));
+
+  async function login() {
+    try {
+      await muat();
+      $('#login').classList.add('hidden'); $('#isi').classList.remove('hidden');
+      try { sessionStorage.setItem('kitoPushToken', token); } catch (e) {}
+      setInterval(() => { if (document.visibilityState === 'visible') muat().catch(() => {}); }, 30000);
+    } catch (e) { $('#loginMsg').className = 'msg err'; $('#loginMsg').textContent = 'Gagal: ' + e.message; }
+  }
+  $('#btnLogin').onclick = () => { token = $('#tok').value.trim(); login(); };
+  $('#tok').addEventListener('keydown', (e) => { if (e.key === 'Enter') $('#btnLogin').click(); });
+  if (token) login();
+})();
+</script>
+</body>
+</html>

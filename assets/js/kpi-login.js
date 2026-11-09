@@ -94,11 +94,12 @@
       }
       try { sessionStorage.setItem(KUNCI, h); } catch (e2) {}
       simpanAkses(kode);
+      try { sessionStorage.setItem('kito-kpi-jabatan', kode); } catch (e2) {}   // dibaca pantau.js (pemantauan perangkat)
       render();
     });
   }
 
-  const keluar = () => { try { sessionStorage.removeItem(KUNCI); sessionStorage.removeItem(KUNCI_AKSES); } catch (e) {} render(); };
+  const keluar = () => { try { sessionStorage.removeItem(KUNCI); sessionStorage.removeItem(KUNCI_AKSES); sessionStorage.removeItem('kito-kpi-jabatan'); } catch (e) {} render(); };
   // ikon Keluar di header paling atas (.bar-atas), di sebelah tombol tema
   function pasangKeluar() {
     const bar = document.querySelector('header .bar-atas');

@@ -9,7 +9,7 @@ DirectoryIndex index.php
   # /api/... dan /admin dilayani index.php
   RewriteCond %{REQUEST_FILENAME} !-f
   RewriteCond %{REQUEST_FILENAME} !-d
-  RewriteRule ^(api/.*|admin/?)$ index.php [QSA,L]
+  RewriteRule ^(api/.*|admin(/.*)?)$ index.php [QSA,L]
 </IfModule>
 
 # berkas sensitif tidak boleh diunduh

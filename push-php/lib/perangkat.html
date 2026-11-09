@@ -22,6 +22,13 @@
   .tot { display:inline-block; margin-left:8px; padding:2px 9px; border-radius:999px; background:color-mix(in srgb, var(--br) 14%, transparent); color:var(--br);
     font-size:11.5px; font-weight:700; letter-spacing:0; text-transform:none; font-variant-numeric:tabular-nums; vertical-align:1px; }
   .tot:empty { display:none; }
+  .rentang { display:flex; flex-wrap:wrap; gap:6px; align-items:center; }
+  .rentang input[type=date] { padding:6px 8px; }
+  .rentang .sd { color:var(--mu); font-size:12px; }
+  .per-lbl { font-size:12px; font-weight:600; color:var(--tx); text-transform:none; letter-spacing:0; }
+  .cols div { cursor:pointer; }
+  tr.klik { cursor:pointer; } tr.klik:hover td { background:color-mix(in srgb, var(--br) 8%, transparent); }
+  tr.nol td { color:var(--mu); }
   .live { display:inline-flex; align-items:center; gap:6px; font-size:11.5px; font-weight:700; letter-spacing:0; text-transform:none; color:var(--ok); }
   .live i { width:8px; height:8px; border-radius:50%; background:currentColor; animation:denyut 1.6s ease-in-out infinite; }
   .live.putus { color:var(--bd); } .live.jeda { color:var(--mu); } .live.putus i, .live.jeda i { animation:none; }
@@ -71,15 +78,27 @@
 
   <div id="isi" class="hidden" style="display:grid;gap:14px">
     <section class="cd">
-      <h2><span>Ringkasan</span>
+      <h2><span>Ringkasan <span class="per-lbl" id="perLbl"></span></span>
         <span class="bar-tools">
-          <select id="hari" aria-label="Periode"><option value="1">24 jam</option><option value="7" selected>7 hari</option><option value="30">30 hari</option><option value="90">90 hari</option><option value="180">180 hari</option></select>
+          <span class="rentang">
+            <select id="preset" aria-label="Pilihan periode">
+              <option value="hari-ini">Hari ini</option><option value="kemarin">Kemarin</option><option value="7" selected>7 hari terakhir</option>
+              <option value="30">30 hari terakhir</option><option value="bulan-ini">Bulan ini</option><option value="bulan-lalu">Bulan lalu</option>
+              <option value="90">90 hari terakhir</option><option value="180">180 hari terakhir</option><option value="custom">Pilih tanggal…</option>
+            </select>
+            <input type="date" id="dari" aria-label="Dari tanggal" /><span class="sd">s.d.</span><input type="date" id="sampai" aria-label="Sampai tanggal" />
+          </span>
           <button class="sec" id="segar">Muat ulang</button>
-          <button class="sec" data-unduh="perangkat" title="Daftar perangkat pada periode ini (CSV untuk Excel)">⬇ Perangkat</button>
-          <button class="sec" data-unduh="sesi" title="Riwayat setiap sesi akses (CSV untuk Excel)">⬇ Riwayat sesi</button>
-          <button class="sec" data-unduh="lokasi" title="Rekap per negara, provinsi, dan kota (CSV untuk Excel)">⬇ Rekap lokasi</button>
         </span>
       </h2>
+      <div class="bar-tools" style="margin:-4px 0 12px">
+        <span class="mu">Unduh periode ini (CSV Excel):</span>
+        <button class="sec" data-unduh="harian" title="Satu baris per tanggal: perangkat, perangkat baru, sesi, waktu, OS, kota & area terbanyak">⬇ Rekap harian</button>
+        <button class="sec" data-unduh="lokasi-harian" title="Per tanggal × provinsi × kota: perangkat unik, sesi, waktu">⬇ Lokasi harian</button>
+        <button class="sec" data-unduh="lokasi" title="Rekap per negara, provinsi, dan kota untuk seluruh periode">⬇ Rekap lokasi</button>
+        <button class="sec" data-unduh="perangkat" title="Daftar perangkat yang mengakses pada periode ini">⬇ Perangkat</button>
+        <button class="sec" data-unduh="sesi" title="Riwayat setiap sesi akses pada periode ini">⬇ Riwayat sesi</button>
+      </div>
       <div class="stats" id="stats"></div>
       <p class="mu" id="info"></p>
     </section>
@@ -100,9 +119,14 @@
     </section>
 
     <div class="grid">
-      <section class="cd"><h2>Perangkat unik per hari (WIB)</h2><div class="cols" id="perHari"></div><div class="axis" id="perHariAx"></div></section>
+      <section class="cd"><h2>Perangkat unik per hari (WIB)</h2><div class="cols" id="perHari"></div><div class="axis" id="perHariAx"></div><p class="mu">Ketuk batang untuk melihat tanggal itu saja.</p></section>
       <section class="cd"><h2>Sesi per jam (WIB)</h2><div class="cols" id="perJam"></div><div class="axis"><span>00</span><span>06</span><span>12</span><span>18</span><span>23</span></div></section>
     </div>
+
+    <section class="cd">
+      <h2><span>Rekap harian<b class="tot" id="totHarian"></b></span><span class="mu" style="text-transform:none;letter-spacing:0;font-weight:400">ketuk baris untuk melihat tanggal itu</span></h2>
+      <div class="tw" style="max-height:360px;overflow:auto"><table><thead><tr><th>Tanggal</th><th>Hari</th><th>Perangkat unik</th><th>Perangkat baru</th><th>Sesi</th><th>Total waktu</th><th>Rata-rata sesi</th></tr></thead><tbody id="harian"></tbody></table></div>
+    </section>
 
     <section class="cd">
       <h2><span>Semua perangkat<b class="tot" id="totDev"></b></span><span class="bar-tools"><input id="cari" type="search" placeholder="cari jabatan, cabang, kota, IP…" /></span></h2>
@@ -131,6 +155,37 @@
   const lokasi = (r) => [r.city, r.region].filter(Boolean).join(', ') || (r.country ? r.country : '<span class="mu">belum diketahui</span>');
   const tempat = (r) => [r.area, r.kode ? r.kode + (r.cabang ? ' ' + r.cabang : '') : ''].filter(Boolean).map(esc).join('<br>') || '<span class="mu">–</span>';
 
+  /* ---------- periode: tanggal WIB dari..sampai (inklusif) ---------- */
+  const HARI_NM = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+  const wibHariIni = () => new Date(Date.now() + 7 * 3600e3).toISOString().slice(0, 10);
+  const geser = (iso, n) => new Date(Date.parse(iso + 'T12:00:00Z') + n * 864e5).toISOString().slice(0, 10);
+  const tglPendek = (iso) => new Date(iso + 'T12:00:00Z').toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' });
+  const namaHari = (iso) => HARI_NM[new Date(iso + 'T12:00:00Z').getUTCDay()];
+  function isiPreset(v) {
+    const h = wibHariIni();
+    if (v === 'hari-ini') return [h, h];
+    if (v === 'kemarin') { const k = geser(h, -1); return [k, k]; }
+    if (v === 'bulan-ini') return [h.slice(0, 8) + '01', h];
+    if (v === 'bulan-lalu') { const akhir = geser(h.slice(0, 8) + '01', -1); return [akhir.slice(0, 8) + '01', akhir]; }
+    const n = +v; return n ? [geser(h, -(n - 1)), h] : null;
+  }
+  const rentangQS = () => `dari=${$('#dari').value}&sampai=${$('#sampai').value}`;
+  const labelPeriode = () => { const a = $('#dari').value, b = $('#sampai').value; return a === b ? `${namaHari(a)}, ${tglPendek(a)}` : `${tglPendek(a)} – ${tglPendek(b)}`; };
+  function setRentang(a, b, preset) {
+    if (b < a) [a, b] = [b, a];
+    $('#dari').value = a; $('#sampai').value = b;
+    $('#preset').value = preset || 'custom';
+    try { sessionStorage.setItem('kitoPerangkatRentang', JSON.stringify([a, b, preset || 'custom'])); } catch (e) {}
+  }
+  (() => {   // nilai awal: pilihan terakhir di tab ini, atau 7 hari terakhir
+    const h = wibHariIni();
+    ['#dari', '#sampai'].forEach((s) => { $(s).max = h; $(s).min = geser(h, -179); });
+    let simpan = null; try { simpan = JSON.parse(sessionStorage.getItem('kitoPerangkatRentang')); } catch (e) {}
+    if (simpan && simpan[2] !== 'custom' && isiPreset(simpan[2])) setRentang(...isiPreset(simpan[2]), simpan[2]);
+    else if (simpan) setRentang(simpan[0], simpan[1], 'custom');
+    else setRentang(...isiPreset('7'), '7');
+  })();
+
   let token = ''; try { token = sessionStorage.getItem('kitoPushToken') || ''; } catch (e) {}
   const api = async (method, path, body) => {
     const r = await fetch(BASE + path, { method, headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token, 'X-Admin-Token': token }, body: body ? JSON.stringify(body) : undefined });
@@ -156,9 +211,9 @@
 
   async function muat() { await muatRingkas(); await muatDev(); terakhirPenuh = Date.now(); }
   async function muatRingkas() {
-    const hari = $('#hari').value;
-    const s = await api('GET', '/api/presence/summary?days=' + hari);
-    const r = s.ringkas, per = $('#hari').selectedOptions[0].textContent;
+    const s = await api('GET', '/api/presence/summary?' + rentangQS());
+    const r = s.ringkas, per = 'periode';
+    $('#perLbl').textContent = '· ' + labelPeriode();
     $('#stats').innerHTML = [
       ['Aktif sekarang', r.aktifSekarang, 'live', 'stAktif'], ['Tab terbuka', r.tabAktif, '', 'stTab'], ['Perangkat hari ini', r.hariIni, '', 'stHari'],
       ['Perangkat ' + per, r.periode], ['Perangkat baru ' + per, r.baru], ['Sesi ' + per, r.sesi], ['Rata-rata lama sesi', durasi(r.rataDurasiDetik)], ['Total perangkat tercatat', r.totalPerangkat],
@@ -175,8 +230,14 @@
     $('#totLokasi').textContent = `${nf(tot)} perangkat · ${nf(jumlah(s.perKota))} kota · ${nf(jumlah(s.perProvinsi))} provinsi`;
     $('#totBagi').textContent = `${nf(tot)} perangkat · ${nf(r.sesi)} sesi`;
 
-    kolom($('#perHari'), s.perHari, 'perangkat', (x) => x.tanggal);
-    $('#perHariAx').innerHTML = s.perHari.length ? `<span>${esc(s.perHari[0].tanggal)}</span><span>${esc(s.perHari[s.perHari.length - 1].tanggal)}</span>` : '';
+    kolom($('#perHari'), s.perHari, 'perangkat', (x) => `${namaHari(x.tanggal)}, ${tglPendek(x.tanggal)}`);
+    $('#perHari').querySelectorAll('div').forEach((el, i) => { el.dataset.tgl = s.perHari[i]?.tanggal || ''; });
+    $('#perHariAx').innerHTML = s.perHari.length ? `<span>${esc(tglPendek(s.perHari[0].tanggal))}</span><span>${esc(tglPendek(s.perHari[s.perHari.length - 1].tanggal))}</span>` : '';
+    const ada = s.perHari.filter((x) => x.sesi > 0).length;
+    $('#totHarian').textContent = `${nf(s.perHari.length)} hari · ${nf(ada)} hari ada akses`;
+    $('#harian').innerHTML = s.perHari.slice().reverse().map((x) => `<tr class="klik ${x.sesi ? '' : 'nol'}" data-tgl="${esc(x.tanggal)}"><td class="n">${esc(tglPendek(x.tanggal))}</td><td>${namaHari(x.tanggal)}</td>
+      <td class="n">${nf(x.perangkat)}</td><td class="n">${nf(x.baru)}</td><td class="n">${nf(x.sesi)}</td><td class="n">${durasi(x.detik)}</td><td class="n">${x.sesi ? durasi(x.detik / x.sesi) : '–'}</td></tr>`).join('')
+      || '<tr><td colspan="7" class="mu">Belum ada data.</td></tr>';
     const jam = Array.from({ length: 24 }, (_, h) => s.perJam.find((x) => x.jam === h) || { jam: h, sesi: 0 });
     kolom($('#perJam'), jam, 'sesi', (x) => String(x.jam).padStart(2, '0') + ':00');
   }
@@ -240,7 +301,7 @@
 
   async function muatDev() {
     const q = $('#cari').value.trim();
-    const { perangkat: list } = await api('GET', `/api/presence/devices?days=${$('#hari').value}&q=${encodeURIComponent(q)}`);
+    const { perangkat: list } = await api('GET', `/api/presence/devices?${rentangQS()}&q=${encodeURIComponent(q)}`);
     $('#dev').innerHTML = list.map((d) => `<tr><td>${d.aktif ? '<span class="pill on">aktif</span>' : ''}</td>
       <td title="${esc(d.user_agent)}">${perangkat(d)}<br><span class="mu">${esc(d.screen || '')} · ${esc(d.id.slice(0, 8))}</span></td>
       <td>${esc(d.label || '')} <button class="sec" data-label="${esc(d.id)}" data-now="${esc(d.label || '')}">✎</button></td>
@@ -256,7 +317,7 @@
   async function unduh(btn) {
     const teks = btn.textContent; btn.disabled = true; btn.textContent = 'Menyiapkan…';
     try {
-      const r = await fetch(`${BASE}/api/presence/export?jenis=${btn.dataset.unduh}&days=${$('#hari').value}`, { headers: { Authorization: 'Bearer ' + token, 'X-Admin-Token': token } });
+      const r = await fetch(`${BASE}/api/presence/export?jenis=${btn.dataset.unduh}&${rentangQS()}`, { headers: { Authorization: 'Bearer ' + token, 'X-Admin-Token': token } });
       if (!r.ok) throw new Error((await r.json().catch(() => ({}))).error || r.status);
       const nama = (/filename="([^"]+)"/.exec(r.headers.get('Content-Disposition') || '') || [])[1] || `kito-${btn.dataset.unduh}.csv`;
       const a = Object.assign(document.createElement('a'), { href: URL.createObjectURL(await r.blob()), download: nama });
@@ -275,7 +336,22 @@
   });
   let tCari = null;
   $('#cari').addEventListener('input', () => { clearTimeout(tCari); tCari = setTimeout(() => muatDev().catch(() => {}), 350); });
-  $('#hari').onchange = () => muat().catch((er) => alert('Gagal: ' + er.message));
+  const muatUlang = () => muat().catch((er) => alert('Gagal: ' + er.message));
+  $('#preset').addEventListener('change', () => {
+    const v = $('#preset').value, r = isiPreset(v);
+    if (r) { setRentang(r[0], r[1], v); muatUlang(); } else { $('#dari').focus(); }
+  });
+  ['#dari', '#sampai'].forEach((sel) => $(sel).addEventListener('change', () => {
+    if (!$('#dari').value || !$('#sampai').value) return;
+    setRentang($('#dari').value, $('#sampai').value, 'custom'); muatUlang();
+  }));
+  // ketuk batang grafik atau baris rekap harian = lihat tanggal itu saja
+  document.addEventListener('click', (e) => {
+    const t = e.target.closest('#perHari [data-tgl], #harian tr[data-tgl]');
+    if (!t || !t.dataset.tgl) return;
+    setRentang(t.dataset.tgl, t.dataset.tgl, 'custom'); muatUlang();
+    $('#isi').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
   $('#segar').onclick = () => muat().catch((er) => alert('Gagal: ' + er.message));
 
   async function login() {

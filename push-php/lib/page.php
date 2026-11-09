@@ -28,7 +28,7 @@ function kp_menu(string $aktif, ?string $app = null): string {
         'masukan'    => ['<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M21 11a9 9 0 0 1-9 9H3l2-5a9 9 0 1 1 16-4Z"/><path d="M8 10h8M8 14h5"/></svg>', 'Masukan', $app . '/admin/masukan'],
     ] : [];   // belum disetel: menu kosong, halaman setup tetap bisa dibuka langsung
     $dash = KP_DASHBOARD_URL;
-    $h = '<nav class="kpm" aria-label="Menu backend"><div class="kpm-in"><a class="kpm-brand" href="' . kp_h($cfg ? $app . '/admin' : $dir . '/setup.php') . '">KITO <span>Backend</span></a><div class="kpm-list">';
+    $h = '<nav class="kpm" aria-label="Menu backend"><div class="kpm-in"><a class="kpm-brand" href="' . kp_h($cfg ? $app . '/admin' : $dir . '/setup.php') . '"><img class="kpm-logo" src="' . kp_h($dir . '/lib/kito-logo.png') . '" alt="KITO" width="108" height="72"><span>Backend</span></a><div class="kpm-list">';
     foreach ($item as $k => [$ic, $label, $url]) {
         $on = $k === $aktif;
         $h .= '<a href="' . kp_h($url) . '"' . ($on ? ' class="on" aria-current="page"' : '') . '><span aria-hidden="true">' . $ic . '</span>' . kp_h($label) . '</a>';

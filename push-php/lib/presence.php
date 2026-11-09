@@ -156,73 +156,120 @@ function kp_presence_live(): array {
         'tabAktif' => count($aktif), 'hariIni' => kp_presence_hari_ini(), 'aktif' => $aktif];
 }
 
-function kp_presence_summary(int $hari): array {
+/* ---------- rentang tanggal (WIB) untuk ringkasan, daftar, dan ekspor ----------
+   ?dari=YYYY-MM-DD&sampai=YYYY-MM-DD (WIB, inklusif). Tanpa itu: ?days=N = N hari terakhir termasuk hari ini.
+   Satu sesi dihitung masuk periode bila waktunya beririsan dengan periode (mulai < akhir periode dan terakhir >= awal periode). */
+function kp_rentang(array $g): array {
+    $hariIni = gmdate('Y-m-d', time() + 7 * 3600);
+    $batasAwal = gmdate('Y-m-d', time() + 7 * 3600 - (KP_SIMPAN_HARI - 1) * 86400);
+    $ok = function ($s) { return is_string($s) && preg_match('/^\d{4}-\d{2}-\d{2}$/', $s) && checkdate((int)substr($s, 5, 2), (int)substr($s, 8, 2), (int)substr($s, 0, 4)); };
+    if ($ok($g['dari'] ?? null) && $ok($g['sampai'] ?? null)) { $dari = $g['dari']; $sampai = $g['sampai']; }
+    else {
+        $n = max(1, min(KP_SIMPAN_HARI, (int)($g['days'] ?? 7)));
+        $sampai = $hariIni; $dari = gmdate('Y-m-d', time() + 7 * 3600 - ($n - 1) * 86400);
+    }
+    if ($dari > $sampai) [$dari, $sampai] = [$sampai, $dari];
+    if ($sampai > $hariIni) $sampai = $hariIni;
+    if ($dari < $batasAwal) $dari = $batasAwal;
+    if ($dari > $sampai) $dari = $sampai;
+    $mulai = strtotime($dari . ' 00:00:00 +0700'); $akhir = strtotime($sampai . ' 00:00:00 +0700') + 86400;
+    return ['dari' => $dari, 'sampai' => $sampai, 'hari' => (int)round(($akhir - $mulai) / 86400),
+            'mulai' => gmdate('Y-m-d H:i:s', $mulai), 'akhir' => gmdate('Y-m-d H:i:s', $akhir)];
+}
+
+/** daftar tanggal WIB dari..sampai (inklusif) */
+function kp_daftar_tanggal(string $dari, string $sampai): array {
+    $out = []; $t = strtotime($dari . ' 12:00:00 UTC'); $z = strtotime($sampai . ' 12:00:00 UTC');
+    for (; $t <= $z && count($out) < 400; $t += 86400) $out[] = gmdate('Y-m-d', $t);
+    return $out;
+}
+
+const KP_IRISAN = 'v.last_seen >= ? AND v.started_at < ?';   // sesi beririsan dengan periode; parameter [mulai, akhir]
+
+function kp_presence_summary(array $g): array {
     $db = kp_presence_db();
-    $hari = max(1, min(KP_SIMPAN_HARI, $hari));
-    $sejak = gmdate('Y-m-d H:i:s', time() - $hari * 86400);
-    $hariIniWib = gmdate('Y-m-d', time() + 7 * 3600);
+    $R = kp_rentang($g); $pv = [$R['mulai'], $R['akhir']];
 
     $aktif = kp_presence_aktif();
     // satu perangkat bisa membuka beberapa tab: hitung perangkat unik
     $aktifUnik = count(array_unique(array_column($aktif, 'device_id')));
 
-    $angka = function (string $sql, array $p = []) use ($db) { $q = $db->prepare($sql); $q->execute($p); return (int)$q->fetchColumn(); };
-    $kelompok = function (string $kolom, string $dari = 'devices d', string $saring = 'd.last_seen >= ?') use ($db, $sejak) {
-        $q = $db->prepare("SELECT COALESCE($kolom, 'Tidak diketahui') nama, COUNT(DISTINCT d.id) n FROM $dari WHERE $saring GROUP BY 1 ORDER BY 2 DESC LIMIT 100");
-        $q->execute([$sejak]); return kp_rows($q);
+    $angka = function (string $sql, array $p) use ($db) { $q = $db->prepare($sql); $q->execute($p); return (int)$q->fetchColumn(); };
+    $kelompok = function (string $kolom, bool $geo = false) use ($db, $pv) {
+        $dari = 'visits v JOIN devices d ON d.id = v.device_id' . ($geo ? ' LEFT JOIN ip_geo g ON g.ip = v.ip' : '');
+        $q = $db->prepare("SELECT COALESCE($kolom, 'Tidak diketahui') nama, COUNT(DISTINCT d.id) n FROM $dari WHERE " . KP_IRISAN . " GROUP BY 1 ORDER BY 2 DESC LIMIT 100");
+        $q->execute($pv); return kp_rows($q);
     };
-    $geo = 'visits v JOIN devices d ON d.id = v.device_id LEFT JOIN ip_geo g ON g.ip = v.ip';
 
-    $perHari = $db->prepare("SELECT date(started_at, '" . KP_WIB . "') tanggal, COUNT(DISTINCT device_id) perangkat, COUNT(*) sesi FROM visits WHERE started_at >= ? GROUP BY 1 ORDER BY 1");
-    $perHari->execute([$sejak]);
-    $perJam = $db->prepare("SELECT CAST(strftime('%H', started_at, '" . KP_WIB . "') AS INTEGER) jam, COUNT(*) sesi, COUNT(DISTINCT device_id) perangkat FROM visits WHERE started_at >= ? GROUP BY 1 ORDER BY 1");
-    $perJam->execute([$sejak]);
     $titik = $db->prepare("SELECT g.city kota, g.region provinsi, g.lat, g.lon, COUNT(DISTINCT v.device_id) n FROM visits v JOIN ip_geo g ON g.ip = v.ip
-        WHERE v.last_seen >= ? AND g.lat IS NOT NULL GROUP BY g.city, g.region ORDER BY n DESC LIMIT 300");
-    $titik->execute([$sejak]);
-    $durasi = $db->prepare("SELECT AVG(strftime('%s', last_seen) - strftime('%s', started_at)) FROM visits WHERE started_at >= ?"); $durasi->execute([$sejak]);
+        WHERE " . KP_IRISAN . " AND g.lat IS NOT NULL GROUP BY g.city, g.region ORDER BY n DESC LIMIT 300");
+    $titik->execute($pv);
+    $perJam = $db->prepare("SELECT CAST(strftime('%H', started_at, '" . KP_WIB . "') AS INTEGER) jam, COUNT(*) sesi, COUNT(DISTINCT device_id) perangkat
+        FROM visits WHERE started_at >= ? AND started_at < ? GROUP BY 1 ORDER BY 1");
+    $perJam->execute($pv);
+    $durasi = $db->prepare("SELECT AVG(strftime('%s', last_seen) - strftime('%s', started_at)) FROM visits WHERE started_at >= ? AND started_at < ?"); $durasi->execute($pv);
 
     return [
-        'waktu' => gmdate('c'), 'hari' => $hari, 'aktifDetik' => KP_AKTIF_SEC, 'geo' => (kp_config()['geo'] ?? 'ipwho') !== 'off',
+        'waktu' => gmdate('c'), 'rentang' => $R, 'hari' => $R['hari'], 'aktifDetik' => KP_AKTIF_SEC, 'geo' => (kp_config()['geo'] ?? 'ipwho') !== 'off',
         'ringkas' => [
             'aktifSekarang' => $aktifUnik,
             'tabAktif' => count($aktif),
-            'hariIni' => $angka("SELECT COUNT(DISTINCT device_id) FROM visits WHERE date(last_seen, '" . KP_WIB . "') = ?", [$hariIniWib]),
-            'periode' => $angka('SELECT COUNT(*) FROM devices WHERE last_seen >= ?', [$sejak]),
-            'baru' => $angka('SELECT COUNT(*) FROM devices WHERE first_seen >= ?', [$sejak]),
-            'sesi' => $angka('SELECT COUNT(*) FROM visits WHERE started_at >= ?', [$sejak]),
-            'totalPerangkat' => $angka('SELECT COUNT(*) FROM devices'),
+            'hariIni' => kp_presence_hari_ini(),
+            'periode' => $angka('SELECT COUNT(DISTINCT v.device_id) FROM visits v WHERE ' . KP_IRISAN, $pv),
+            'baru' => $angka('SELECT COUNT(*) FROM devices WHERE first_seen >= ? AND first_seen < ?', $pv),
+            'sesi' => $angka('SELECT COUNT(*) FROM visits WHERE started_at >= ? AND started_at < ?', $pv),
+            'totalPerangkat' => $angka('SELECT COUNT(*) FROM devices', []),
             'rataDurasiDetik' => (int)round((float)$durasi->fetchColumn()),
         ],
         'aktif' => $aktif,
         'perPlatform' => $kelompok('d.platform'),
         'perBrowser' => $kelompok('d.browser'),
         'perAplikasi' => $kelompok('d.app'),
-        'perJabatan' => $kelompok('d.jabatan'),
-        'perArea' => $kelompok('d.area'),
-        'perCabang' => $kelompok("d.kode || ' · ' || COALESCE(d.cabang, '')"),
-        'perHalaman' => $kelompok('v.page', 'visits v JOIN devices d ON d.id = v.device_id', 'v.last_seen >= ?'),
+        'perJabatan' => $kelompok('COALESCE(v.jabatan, d.jabatan)'),
+        'perArea' => $kelompok('COALESCE(v.area, d.area)'),
+        'perCabang' => $kelompok("COALESCE(v.kode, d.kode) || ' · ' || COALESCE(d.cabang, '')"),
+        'perHalaman' => $kelompok('v.page'),
         // lokasi akses (perkiraan dari IP): satu perangkat bisa muncul di beberapa kota bila berpindah jaringan
-        'perNegara' => $kelompok('g.country', $geo, 'v.last_seen >= ?'),
-        'perProvinsi' => $kelompok('g.region', $geo, 'v.last_seen >= ?'),
-        'perKota' => $kelompok("g.city || ', ' || COALESCE(g.region, '')", $geo, 'v.last_seen >= ?'),
-        'perISP' => $kelompok('g.isp', $geo, 'v.last_seen >= ?'),
+        'perNegara' => $kelompok('g.country', true),
+        'perProvinsi' => $kelompok('g.region', true),
+        'perKota' => $kelompok("g.city || ', ' || COALESCE(g.region, '')", true),
+        'perISP' => $kelompok('g.isp', true),
         'titik' => $titik->fetchAll(),
-        'perHari' => kp_rows($perHari),
+        'perHari' => kp_presence_harian($R),
         'perJam' => kp_rows($perJam),
     ];
 }
 
-function kp_presence_devices(int $hari, string $cari, int $limit): array {
+/** rekap per tanggal WIB (semua tanggal dalam periode, termasuk yang kosong) */
+function kp_presence_harian(array $R): array {
+    $db = kp_presence_db(); $pv = [$R['mulai'], $R['akhir']];
+    $q = $db->prepare("SELECT date(started_at, '" . KP_WIB . "') tanggal, COUNT(DISTINCT device_id) perangkat, COUNT(*) sesi,
+            SUM(strftime('%s', last_seen) - strftime('%s', started_at)) detik
+        FROM visits WHERE started_at >= ? AND started_at < ? GROUP BY 1");
+    $q->execute($pv); $per = [];
+    foreach ($q->fetchAll() as $r) $per[$r['tanggal']] = $r;
+    $b = $db->prepare("SELECT date(first_seen, '" . KP_WIB . "') tanggal, COUNT(*) n FROM devices WHERE first_seen >= ? AND first_seen < ? GROUP BY 1");
+    $b->execute($pv); $baru = $b->fetchAll(PDO::FETCH_KEY_PAIR);
+    $out = [];
+    foreach (kp_daftar_tanggal($R['dari'], $R['sampai']) as $t) {
+        $r = $per[$t] ?? null;
+        $out[] = ['tanggal' => $t, 'perangkat' => (int)($r['perangkat'] ?? 0), 'sesi' => (int)($r['sesi'] ?? 0), 'detik' => (int)($r['detik'] ?? 0), 'baru' => (int)($baru[$t] ?? 0)];
+    }
+    return $out;
+}
+
+function kp_presence_devices(array $g, string $cari, int $limit): array {
     $db = kp_presence_db();
-    $sejak = gmdate('Y-m-d H:i:s', time() - max(1, min(KP_SIMPAN_HARI, $hari)) * 86400);
+    $R = kp_rentang($g); $pv = [$R['mulai'], $R['akhir']];
+    $ir = 'v.device_id = d.id AND ' . KP_IRISAN;
     $sql = "SELECT d.id, d.platform, d.browser, d.app, d.label, d.jabatan, d.area, d.kode, d.cabang, d.page, d.ip, d.screen, d.lang, d.tz, d.user_agent,
-            d.first_seen, d.last_seen, d.visits sesi, g.city, g.region, g.country, g.isp,
-            (SELECT COUNT(DISTINCT ip) FROM visits WHERE device_id = d.id) jumlah_ip,
-            (SELECT SUM(strftime('%s', last_seen) - strftime('%s', started_at)) FROM visits WHERE device_id = d.id AND started_at >= ?) detik,
+            d.first_seen, d.last_seen, g.city, g.region, g.country, g.isp,
+            (SELECT COUNT(DISTINCT v.ip) FROM visits v WHERE $ir) jumlah_ip,
+            (SELECT COUNT(*) FROM visits v WHERE $ir) sesi,
+            (SELECT SUM(strftime('%s', v.last_seen) - strftime('%s', v.started_at)) FROM visits v WHERE $ir) detik,
             EXISTS (SELECT 1 FROM visits WHERE device_id = d.id AND ended = 0 AND last_seen >= ?) aktif
-        FROM devices d LEFT JOIN ip_geo g ON g.ip = d.ip WHERE d.last_seen >= ?";
-    $p = [$sejak, gmdate('Y-m-d H:i:s', time() - KP_AKTIF_SEC), $sejak];
+        FROM devices d LEFT JOIN ip_geo g ON g.ip = d.ip WHERE EXISTS (SELECT 1 FROM visits v WHERE $ir)";
+    $p = array_merge($pv, $pv, $pv, [gmdate('Y-m-d H:i:s', time() - KP_AKTIF_SEC)], $pv);
     if ($cari !== '') {
         $sql .= " AND (d.id LIKE ? OR d.label LIKE ? OR d.jabatan LIKE ? OR d.area LIKE ? OR d.kode LIKE ? OR d.cabang LIKE ? OR d.ip LIKE ? OR g.city LIKE ? OR g.region LIKE ? OR d.platform LIKE ?)";
         $like = '%' . str_replace(['%', '_'], ['\%', '\_'], $cari) . '%';
@@ -246,21 +293,22 @@ function kp_presence_delete(string $id): bool {
     return $q->rowCount() > 0;
 }
 
-/* ---------- ekspor data (CSV untuk Excel) ---------- */
-function kp_presence_export(string $jenis, int $hari): array {
+/* ---------- ekspor data (CSV untuk Excel) ----------
+   jenis: perangkat | sesi | lokasi | harian (rekap per tanggal) | lokasi-harian (tanggal × provinsi × kota) */
+function kp_presence_export(string $jenis, array $g): array {
     $db = kp_presence_db();
-    $hari = max(1, min(KP_SIMPAN_HARI, $hari));
-    $sejak = gmdate('Y-m-d H:i:s', time() - $hari * 86400);
+    $R = kp_rentang($g); $pv = [$R['mulai'], $R['akhir']];
     $wib = function ($s) { return $s ? gmdate('Y-m-d H:i:s', strtotime($s . ' UTC') + 7 * 3600) : ''; };
-    $nama = $jenis . '-' . $hari . 'hari-' . gmdate('Ymd-Hi', time() + 7 * 3600) . '.csv';
+    $nama = $jenis . '-' . $R['dari'] . ($R['sampai'] !== $R['dari'] ? '_sd_' . $R['sampai'] : '') . '.csv';
+    $HARI = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
     if ($jenis === 'sesi') {
         $q = $db->prepare("SELECT v.id, v.device_id, d.label, d.platform, d.browser, d.app, v.jabatan, v.area, v.kode, d.cabang, v.page, v.pages, v.ip,
                 g.city, g.region, g.country, g.isp, v.started_at, v.last_seen, CAST(strftime('%s', v.last_seen) - strftime('%s', v.started_at) AS INTEGER) detik, v.ended
-            FROM visits v JOIN devices d ON d.id = v.device_id LEFT JOIN ip_geo g ON g.ip = v.ip WHERE v.last_seen >= ? ORDER BY v.started_at DESC");
-        $q->execute([$sejak]);
-        $rows = [['ID sesi', 'ID perangkat', 'Label', 'OS', 'Browser', 'Aplikasi', 'Jabatan', 'Area', 'Kode cabang', 'Cabang', 'Halaman terakhir', 'Jumlah pindah halaman',
+            FROM visits v JOIN devices d ON d.id = v.device_id LEFT JOIN ip_geo g ON g.ip = v.ip WHERE " . KP_IRISAN . " ORDER BY v.started_at DESC");
+        $q->execute($pv);
+        $rows = [['Tanggal (WIB)', 'ID sesi', 'ID perangkat', 'Label', 'OS', 'Browser', 'Aplikasi', 'Jabatan', 'Area', 'Kode cabang', 'Cabang', 'Halaman terakhir', 'Jumlah pindah halaman',
                   'IP', 'Kota', 'Provinsi', 'Negara', 'ISP', 'Mulai (WIB)', 'Terakhir (WIB)', 'Durasi (menit)', 'Status']];
-        foreach ($q->fetchAll() as $r) $rows[] = [$r['id'], $r['device_id'], $r['label'], $r['platform'], $r['browser'], $r['app'], $r['jabatan'], $r['area'], $r['kode'], $r['cabang'],
+        foreach ($q->fetchAll() as $r) $rows[] = [substr($wib($r['started_at']), 0, 10), $r['id'], $r['device_id'], $r['label'], $r['platform'], $r['browser'], $r['app'], $r['jabatan'], $r['area'], $r['kode'], $r['cabang'],
             $r['page'], (int)$r['pages'], $r['ip'], $r['city'], $r['region'], $r['country'], $r['isp'], $wib($r['started_at']), $wib($r['last_seen']),
             round($r['detik'] / 60, 1), $r['ended'] ? 'selesai' : 'terbuka'];
         return [$nama, $rows];
@@ -269,17 +317,52 @@ function kp_presence_export(string $jenis, int $hari): array {
         $q = $db->prepare("SELECT COALESCE(g.country, 'Tidak diketahui') negara, COALESCE(g.region, 'Tidak diketahui') provinsi, COALESCE(g.city, 'Tidak diketahui') kota,
                 COUNT(DISTINCT v.device_id) perangkat, COUNT(*) sesi, SUM(strftime('%s', v.last_seen) - strftime('%s', v.started_at)) detik,
                 GROUP_CONCAT(DISTINCT v.area) area, MIN(v.started_at) pertama, MAX(v.last_seen) terakhir
-            FROM visits v LEFT JOIN ip_geo g ON g.ip = v.ip WHERE v.last_seen >= ? GROUP BY 1, 2, 3 ORDER BY perangkat DESC, sesi DESC");
-        $q->execute([$sejak]);
-        $rows = [['Negara', 'Provinsi', 'Kota', 'Perangkat unik', 'Sesi', 'Total waktu (menit)', 'Area dashboard', 'Akses pertama (WIB)', 'Akses terakhir (WIB)']];
-        foreach ($q->fetchAll() as $r) $rows[] = [$r['negara'], $r['provinsi'], $r['kota'], (int)$r['perangkat'], (int)$r['sesi'], round($r['detik'] / 60, 1),
+            FROM visits v LEFT JOIN ip_geo g ON g.ip = v.ip WHERE " . KP_IRISAN . " GROUP BY 1, 2, 3 ORDER BY perangkat DESC, sesi DESC");
+        $q->execute($pv);
+        $rows = [['Periode', 'Negara', 'Provinsi', 'Kota', 'Perangkat unik', 'Sesi', 'Total waktu (menit)', 'Area dashboard', 'Akses pertama (WIB)', 'Akses terakhir (WIB)']];
+        $per = $R['dari'] . ($R['sampai'] !== $R['dari'] ? ' s.d. ' . $R['sampai'] : '');
+        foreach ($q->fetchAll() as $r) $rows[] = [$per, $r['negara'], $r['provinsi'], $r['kota'], (int)$r['perangkat'], (int)$r['sesi'], round($r['detik'] / 60, 1),
             str_replace(',', ', ', (string)$r['area']), $wib($r['pertama']), $wib($r['terakhir'])];
         return [$nama, $rows];
     }
+    if ($jenis === 'lokasi-harian') {
+        $q = $db->prepare("SELECT date(v.started_at, '" . KP_WIB . "') tanggal, COALESCE(g.region, 'Tidak diketahui') provinsi, COALESCE(g.city, 'Tidak diketahui') kota,
+                COUNT(DISTINCT v.device_id) perangkat, COUNT(*) sesi, SUM(strftime('%s', v.last_seen) - strftime('%s', v.started_at)) detik, GROUP_CONCAT(DISTINCT v.area) area
+            FROM visits v LEFT JOIN ip_geo g ON g.ip = v.ip WHERE v.started_at >= ? AND v.started_at < ? GROUP BY 1, 2, 3 ORDER BY 1, perangkat DESC");
+        $q->execute($pv);
+        $rows = [['Tanggal (WIB)', 'Hari', 'Provinsi', 'Kota', 'Perangkat unik', 'Sesi', 'Total waktu (menit)', 'Area dashboard']];
+        foreach ($q->fetchAll() as $r) $rows[] = [$r['tanggal'], $HARI[(int)gmdate('w', strtotime($r['tanggal'] . ' 12:00 UTC'))], $r['provinsi'], $r['kota'],
+            (int)$r['perangkat'], (int)$r['sesi'], round($r['detik'] / 60, 1), str_replace(',', ', ', (string)$r['area'])];
+        return [$nama, $rows];
+    }
+    if ($jenis === 'harian') {
+        // pelengkap per tanggal: jumlah kota/area dan yang terbanyak
+        $lok = $db->prepare("SELECT date(v.started_at, '" . KP_WIB . "') tanggal, COALESCE(g.city, '') kota, COALESCE(v.area, '') area, v.device_id, d.platform
+            FROM visits v JOIN devices d ON d.id = v.device_id LEFT JOIN ip_geo g ON g.ip = v.ip WHERE v.started_at >= ? AND v.started_at < ?");
+        $lok->execute($pv); $ext = [];
+        foreach ($lok->fetchAll() as $r) {
+            $e = &$ext[$r['tanggal']];
+            if ($r['kota'] !== '') $e['kota'][$r['kota']][$r['device_id']] = 1;
+            if ($r['area'] !== '') $e['area'][$r['area']][$r['device_id']] = 1;
+            $e['os'][$r['platform'] ?: 'lainnya'][$r['device_id']] = 1;
+            unset($e);
+        }
+        $teratas = function ($m) { if (!$m) return ['', 0]; $c = array_map('count', $m); arsort($c); $k = array_key_first($c); return [$k . ' (' . $c[$k] . ')', count($c)]; };
+        $rows = [['Tanggal (WIB)', 'Hari', 'Perangkat unik', 'Perangkat baru', 'Sesi', 'Total waktu (menit)', 'Rata-rata sesi (menit)',
+                  'Android', 'iPhone/iPad', 'Windows', 'Lainnya', 'Jumlah kota', 'Kota terbanyak', 'Jumlah area', 'Area terbanyak']];
+        foreach (kp_presence_harian($R) as $h) {
+            $e = $ext[$h['tanggal']] ?? []; [$kotaTop, $nKota] = $teratas($e['kota'] ?? []); [$areaTop, $nArea] = $teratas($e['area'] ?? []);
+            $os = array_map('count', $e['os'] ?? []);
+            $rows[] = [$h['tanggal'], $HARI[(int)gmdate('w', strtotime($h['tanggal'] . ' 12:00 UTC'))], $h['perangkat'], $h['baru'], $h['sesi'], round($h['detik'] / 60, 1),
+                $h['sesi'] ? round($h['detik'] / $h['sesi'] / 60, 1) : 0.0, $os['android'] ?? 0, $os['ios'] ?? 0, $os['windows'] ?? 0,
+                array_sum($os) - ($os['android'] ?? 0) - ($os['ios'] ?? 0) - ($os['windows'] ?? 0), $nKota, $kotaTop, $nArea, $areaTop];
+        }
+        return [$nama, $rows];
+    }
     // perangkat
-    $rows = [['ID perangkat', 'Label', 'Status', 'OS', 'Browser', 'Aplikasi', 'Jabatan', 'Area', 'Kode cabang', 'Cabang', 'Halaman terakhir', 'IP terakhir', 'Jumlah IP',
-              'Kota', 'Provinsi', 'Negara', 'ISP', 'Layar', 'Bahasa', 'Zona waktu', 'Jumlah sesi', 'Total waktu periode (menit)', 'Pertama (WIB)', 'Terakhir (WIB)', 'User agent']];
-    foreach (kp_presence_devices($hari, '', 2000) as $r) $rows[] = [$r['id'], $r['label'], $r['aktif'] ? 'aktif' : '', $r['platform'], $r['browser'], $r['app'], $r['jabatan'],
+    $rows = [['ID perangkat', 'Label', 'Status', 'OS', 'Browser', 'Aplikasi', 'Jabatan', 'Area', 'Kode cabang', 'Cabang', 'Halaman terakhir', 'IP terakhir', 'Jumlah IP (periode)',
+              'Kota', 'Provinsi', 'Negara', 'ISP', 'Layar', 'Bahasa', 'Zona waktu', 'Jumlah sesi (periode)', 'Total waktu periode (menit)', 'Pertama (WIB)', 'Terakhir (WIB)', 'User agent']];
+    foreach (kp_presence_devices($g, '', 2000) as $r) $rows[] = [$r['id'], $r['label'], $r['aktif'] ? 'aktif' : '', $r['platform'], $r['browser'], $r['app'], $r['jabatan'],
         $r['area'], $r['kode'], $r['cabang'], $r['page'], $r['ip'], $r['jumlah_ip'], $r['city'], $r['region'], $r['country'], $r['isp'], $r['screen'], $r['lang'], $r['tz'],
         $r['sesi'], round($r['detik'] / 60, 1), $wib($r['first_seen']), $wib($r['last_seen']), $r['user_agent']];
     return [$nama, $rows];

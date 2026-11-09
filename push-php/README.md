@@ -67,8 +67,9 @@ Dashboard memuat `assets/js/pantau.js`, yang mengirim heartbeat ringan ke `POST 
 - **Lokasi** diperkirakan dari IP (tingkat kota, bukan GPS; tidak ada izin lokasi yang diminta ke pengguna). IP dikirim ke layanan `ipwho.is` lalu disimpan di cache selama 30 hari. Pengisian lokasi berjalan saat halaman admin dibuka dan di `cron.php`. Untuk mematikannya, tambahkan `'geo' => 'off'` di `data/config.php`.
 - **ID perangkat** berupa kode acak di `localStorage` browser. Jika pengguna menghapus data situs atau memakai mode penyamaran, perangkat itu tercatat sebagai perangkat baru.
 - Riwayat sesi disimpan 180 hari, lalu dihapus otomatis.
-- **Unduh data**: tombol ⬇ Perangkat, ⬇ Riwayat sesi, dan ⬇ Rekap lokasi di halaman admin. Hasilnya CSV untuk periode yang dipilih, bisa langsung dibuka di Excel (pemisah titik koma, waktu WIB). Lewat API: `GET /api/presence/export?jenis=perangkat|sesi|lokasi&days=30` dengan header `Authorization: Bearer <token admin>`.
-- API admin: `GET /api/presence/summary?days=7`, `GET /api/presence/devices?days=30&q=…`, `PUT /api/presence/devices/<id>` `{label}`, `DELETE /api/presence/devices/<id>`.
+- **Periode per tanggal**: pilih Hari ini, Kemarin, 7/30/90/180 hari, Bulan ini, Bulan lalu, atau tanggal **Dari–Sampai** (WIB). Ketuk batang grafik harian atau baris *Rekap harian* untuk melihat satu tanggal saja. Semua ringkasan, daftar, dan unduhan mengikuti periode ini.
+- **Unduh data (CSV Excel)**: ⬇ Rekap harian (satu baris per tanggal), ⬇ Lokasi harian (tanggal × provinsi × kota), ⬇ Rekap lokasi, ⬇ Perangkat, ⬇ Riwayat sesi. Lewat API: `GET /api/presence/export?jenis=harian|lokasi-harian|lokasi|perangkat|sesi&dari=2026-11-01&sampai=2026-11-09` dengan header `Authorization: Bearer <token admin>`.
+- API admin: `GET /api/presence/live` (perangkat aktif, ringan), `GET /api/presence/summary?dari=&sampai=`, `GET /api/presence/devices?dari=&sampai=&q=…` (tanpa `dari/sampai` bisa pakai `?days=N`), `PUT /api/presence/devices/<id>` `{label}`, `DELETE /api/presence/devices/<id>`.
 
 ## Masukan pengguna (rating & keluhan)
 

@@ -220,12 +220,12 @@ try {
         case 'GET /api/presence/summary': {
             kp_admin();
             try { kp_geo_resolve(15); } catch (Throwable $e) { error_log('[KITO Presence] geo: ' . $e->getMessage()); }
-            kp_json(200, kp_presence_summary((int)($_GET['days'] ?? 7)));
+            kp_json(200, kp_presence_summary($_GET));   // ?dari=&sampai= (WIB) atau ?days=
         }
         case 'GET /api/presence/export': {
             kp_admin();
-            $jenis = in_array($_GET['jenis'] ?? '', ['perangkat', 'sesi', 'lokasi'], true) ? $_GET['jenis'] : 'perangkat';
-            [$nama, $rows] = kp_presence_export($jenis, (int)($_GET['days'] ?? 30));
+            $jenis = in_array($_GET['jenis'] ?? '', ['perangkat', 'sesi', 'lokasi', 'harian', 'lokasi-harian'], true) ? $_GET['jenis'] : 'perangkat';
+            [$nama, $rows] = kp_presence_export($jenis, $_GET);
             header('Content-Type: text/csv; charset=utf-8');
             header('Content-Disposition: attachment; filename="kito-' . $nama . '"');
             header('Access-Control-Expose-Headers: Content-Disposition');
@@ -234,7 +234,7 @@ try {
         }
         case 'GET /api/presence/devices': {
             kp_admin();
-            kp_json(200, ['perangkat' => kp_presence_devices((int)($_GET['days'] ?? 30), trim((string)($_GET['q'] ?? '')), (int)($_GET['limit'] ?? 500))]);
+            kp_json(200, ['perangkat' => kp_presence_devices($_GET, trim((string)($_GET['q'] ?? '')), (int)($_GET['limit'] ?? 500))]);
         }
         case 'GET /api/scheduled': {
             kp_admin(); $lim = max(1, min(500, (int)($_GET['limit'] ?? 50)));

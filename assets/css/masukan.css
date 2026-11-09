@@ -33,8 +33,8 @@ body.kmk-open { overflow: hidden; }
 .kmk-ctx { margin: 2px 0 0; font-size: 12.5px; color: var(--mu, #667085); }
 .kmk-x { border: 0; background: transparent; color: var(--mu, #667085); font-size: 28px; line-height: 1; cursor: pointer; padding: 0 4px; }
 
-.kmk-tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; margin: 14px 0; padding: 4px; border-radius: 12px; background: var(--bg, #f2f4f8); }
-.kmk-tabs button { border: 0; border-radius: 9px; padding: 9px; background: transparent; color: var(--mu, #667085); font: 700 13.5px inherit; cursor: pointer; }
+.kmk-tabs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; margin: 14px 0; padding: 4px; border-radius: 12px; background: var(--bg, #f2f4f8); }
+.kmk-tabs button { border: 0; border-radius: 9px; padding: 8px 4px; background: transparent; color: var(--mu, #667085); font: 700 12.5px/1.25 inherit; cursor: pointer; }
 .kmk-tabs button[aria-selected="true"] { background: var(--cd, #fff); color: var(--tx, #14213d); box-shadow: 0 1px 4px rgba(0, 0, 0, .1); }
 
 .kmk-q { font-weight: 700; font-size: 14px; margin: 4px 0 8px; text-align: center; }
@@ -53,7 +53,18 @@ body.kmk-open { overflow: hidden; }
 .kmk-chips input { position: absolute; opacity: 0; pointer-events: none; }
 .kmk-chips label:has(input:checked) { border-color: var(--c1, #2563eb); background: color-mix(in srgb, var(--c1, #2563eb) 12%, transparent); color: var(--c1, #2563eb); font-weight: 700; }
 .kmk-chips label:has(input:focus-visible) { outline: 2px solid var(--c1, #2563eb); outline-offset: 1px; }
-.kmk textarea, .kmk select, .kmk input[type="text"] {
+/* keluhan cabang */
+.kmk-cab { display: grid; gap: 2px; padding: 10px 12px; border-radius: 12px; border: 1px dashed var(--ln, #e4ece8); background: var(--bg, #f2f4f8); }
+.kmk-cab b { font-size: 14px; } .kmk-cab span { font-size: 12.5px; color: var(--mu, #667085); }
+.kmk-cab small { font-size: 11px; color: var(--mu, #667085); }
+.kmk-urg { display: grid; grid-template-columns: repeat(4, 1fr); }
+.kmk-urg label { justify-content: center; }
+.kmk-urg label.u-rendah:has(input:checked) { --u: var(--ok, #12a150); }
+.kmk-urg label.u-sedang:has(input:checked) { --u: var(--md, #c28a00); }
+.kmk-urg label.u-tinggi:has(input:checked) { --u: var(--wr, #e8710c); }
+.kmk-urg label.u-kritis:has(input:checked) { --u: var(--bd, #d92d20); }
+.kmk-urg label:has(input:checked) { border-color: var(--u); color: var(--u); background: color-mix(in srgb, var(--u) 12%, transparent); }
+.kmk textarea, .kmk select, .kmk input[type="text"], .kmk input[type="datetime-local"] {
   width: 100%; box-sizing: border-box; padding: 10px 12px; border: 1px solid var(--ln, #e4ece8); border-radius: 11px;
   background: var(--bg, #f2f4f8); color: var(--tx, #14213d); font: inherit; font-size: 14px;
 }

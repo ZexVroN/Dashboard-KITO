@@ -1,6 +1,8 @@
-/* Masukan pengguna di halaman Cabang: tombol "💬 Masukan" + popup dua tab.
+/* Masukan pengguna di halaman Cabang: tombol "💬 Masukan" + popup tiga tab.
    - ⭐ Rating aplikasi: 1–5 bintang, aspek yang dinilai, komentar (opsional).
-   - 📝 Keluhan Inbranch: kategori + uraian, nama/kontak opsional.
+   - 📝 Keluhan: kategori + uraian, nama/kontak opsional.
+   - 🏢 Keluhan Cabang: laporan masalah operasional cabang (mesin antrian, printer tiket, jaringan, antrian menumpuk, dll.)
+     dengan urgensi, waktu kejadian, dan pelapor + kontak wajib agar bisa ditindaklanjuti.
    Cabang, area, tanggal data, dan jabatan login yang sedang dilihat ikut terkirim agar keluhan mudah ditindaklanjuti.
    Popup rating juga muncul sendiri sesekali (paling cepat setelah 3 hari pemakaian, lalu tiap 30 hari bila belum menilai).
    Bila offline, kiriman diantre di perangkat dan dikirim otomatis saat online.
@@ -11,9 +13,11 @@
   if (!API || typeof render !== 'function') return;
   const URL_FB = API + '/api/feedback';
 
-  // kategori keluhan data Inbranch cabang (harus sama dengan KP_FB_KATEGORI di push-php/lib/masukan.php)
-  const KATEGORI = ['Waktu tunggu (P95/P100) tidak sesuai', 'Waktu layanan Teller/CS tidak sesuai', 'Jumlah antrian / transaksi tidak sesuai',
-    'Data reservasi (O2O) tidak sesuai', 'Data cabang kosong / tidak muncul', 'Data belum diperbarui', 'Nama / kode / area cabang salah', 'Lainnya'];
+  const KATEGORI = ['Data tidak sesuai', 'Data terlambat diperbarui', 'Aplikasi lambat / error', 'Tampilan sulit dibaca', 'Notifikasi', 'Login / akses', 'Lainnya'];
+  // keluhan cabang (harus sama dengan KP_FB_KATEGORI_CABANG di push-php/lib/masukan.php)
+  const KATEGORI_CABANG = ['Mesin antrian / Inbranch error', 'Printer / tiket antrian bermasalah', 'Layar display antrian mati', 'Jaringan / koneksi cabang terputus',
+    'Antrian nasabah menumpuk', 'Petugas Teller/CS kurang', 'Komplain nasabah', 'Fasilitas cabang (listrik, AC, gedung)', 'Lainnya'];
+  const URGENSI = [['rendah', 'Rendah'], ['sedang', 'Sedang'], ['tinggi', 'Tinggi'], ['kritis', 'Kritis']];
   const ASPEK = ['Kecepatan', 'Tampilan', 'Akurasi data', 'Kemudahan', 'Kelengkapan', 'Notifikasi'];
   const LABEL_BINTANG = ['', 'Sangat buruk 😞', 'Kurang 🙁', 'Cukup 😐', 'Baik 🙂', 'Sangat baik 🤩'];
   const K_STATE = 'kito-masukan', K_ANTRE = 'kito-masukan-antre';
@@ -66,7 +70,7 @@
   fab.type = 'button'; fab.className = 'kmk-fab'; fab.hidden = true;
   fab.setAttribute('aria-haspopup', 'dialog');
   fab.innerHTML = '<span aria-hidden="true">💬</span>Masukan';
-  fab.addEventListener('click', () => buka('rating'));
+  fab.addEventListener('click', () => buka(tabTerakhir));
   document.body.appendChild(fab);
   const segarFab = () => { fab.hidden = !diCabang(); };
   const renderAsli = render;
@@ -84,12 +88,15 @@
     </section>`;
   document.body.appendChild(wrap);
   const body = wrap.querySelector('.kmk-body');
-  let tab = 'rating', otomatis = false, fokusSebelum = null;
-  const draf = { rating: 0, aspek: [], pesanR: '', kategori: '', pesanK: '', nama: '', kontak: '' };
+  let tab = 'rating', tabTerakhir = 'rating', otomatis = false, fokusSebelum = null;
+  const draf = { rating: 0, aspek: [], pesanR: '', kategori: '', pesanK: '', nama: '', kontak: '', katC: '', urgensi: 'sedang', waktu: '', pesanC: '' };
+  // nilai input datetime-local untuk waktu sekarang (zona waktu perangkat)
+  const sekarangLokal = () => { const d = new Date(); d.setMinutes(d.getMinutes() - d.getTimezoneOffset()); return d.toISOString().slice(0, 16); };
 
   const tabs = () => `<div class="kmk-tabs" role="tablist">
       <button type="button" role="tab" data-kmk-tab="rating" aria-selected="${tab === 'rating'}">⭐ Rating aplikasi</button>
-      <button type="button" role="tab" data-kmk-tab="keluhan" aria-selected="${tab === 'keluhan'}">📝 Keluhan Inbranch</button></div>`;
+      <button type="button" role="tab" data-kmk-tab="keluhan" aria-selected="${tab === 'keluhan'}">📝 Keluhan</button>
+      <button type="button" role="tab" data-kmk-tab="cabang" aria-selected="${tab === 'cabang'}">🏢 Keluhan Cabang</button></div>`;
 
   const formRating = () => `${tabs()}
     <form id="kmk-f" novalidate>
@@ -116,24 +123,55 @@
       <div class="kmk-hit"><span id="kmk-n">${draf.pesanK.length}</span>/2000</div>
       <div class="kmk-row">
         <div><label class="kmk-l" for="kmk-nm">Nama <small>(opsional)</small></label><input type="text" id="kmk-nm" maxlength="80" autocomplete="name" value="${esc(draf.nama)}"></div>
-        <div><label class="kmk-l" for="kmk-kt">No. HP / email <small>(opsional)</small></label><input type="text" id="kmk-kt" maxlength="80" autocomplete="email" value="${esc(draf.kontak)}"></div>
+        <div><label class="kmk-l" for="kmk-kt">NIP <small>(opsional)</small></label><input type="text" id="kmk-kt" maxlength="80" inputmode="numeric" pattern="[0-9]+" autocomplete="off" value="${esc(draf.kontak)}"></div>
       </div>
-      <p class="kmk-note">Cabang, area, dan tanggal data yang sedang Anda lihat ikut terkirim agar keluhan mudah dicek. Isi kontak bila ingin dihubungi balik.</p>
+      <p class="kmk-note">Cabang, area, dan tanggal data yang sedang Anda lihat ikut terkirim agar keluhan mudah dicek. Isi NIP sebagai identitas pelapor.</p>
       <p class="kmk-err" id="kmk-err" role="alert"></p>
-      <div class="kmk-act"><button type="submit" class="kmk-btn">Kirim keluhan Inbranch</button></div>
+      <div class="kmk-act"><button type="submit" class="kmk-btn">Kirim keluhan</button></div>
     </form>`;
 
+  const formCabang = () => {
+    const k = konteks();
+    if (!draf.waktu) draf.waktu = sekarangLokal();
+    return `${tabs()}
+    <form id="kmk-f" novalidate>
+      <div class="kmk-cab">${k.kode ? `<b>🏢 ${esc(k.kode)} · ${esc(k.cabang || '')}</b><span>${esc(k.area || '')}</span>`
+        : '<b>Belum ada cabang yang dipilih</b>'}<small>Laporan untuk cabang ini. Ganti cabang lewat pilihan cabang di bagian atas dashboard.</small></div>
+      <label class="kmk-l" for="kmk-kc">Jenis masalah cabang</label>
+      <select id="kmk-kc" required><option value="" disabled ${draf.katC ? '' : 'selected'}>— Pilih jenis masalah —</option>
+        ${KATEGORI_CABANG.map((x) => `<option ${x === draf.katC ? 'selected' : ''}>${esc(x)}</option>`).join('')}</select>
+      <span class="kmk-l">Tingkat urgensi</span>
+      <div class="kmk-chips kmk-urg" role="radiogroup" aria-label="Tingkat urgensi">${URGENSI.map(([v, t]) => `<label class="u-${v}"><input type="radio" name="u" value="${v}" ${v === draf.urgensi ? 'checked' : ''}>${t}</label>`).join('')}</div>
+      <label class="kmk-l" for="kmk-wk">Waktu kejadian</label>
+      <input type="datetime-local" id="kmk-wk" value="${esc(draf.waktu)}" max="${sekarangLokal()}">
+      <label class="kmk-l" for="kmk-pc">Uraian masalah</label>
+      <textarea id="kmk-pc" maxlength="2000" required placeholder="Contoh: Mesin antrian mati sejak 09.15, tiket tidak keluar. Nasabah diarahkan antri manual, ±25 nasabah terdampak.">${esc(draf.pesanC)}</textarea>
+      <div class="kmk-hit"><span id="kmk-nc">${draf.pesanC.length}</span>/2000</div>
+      <div class="kmk-row">
+        <div><label class="kmk-l" for="kmk-nm">Nama pelapor</label><input type="text" id="kmk-nm" maxlength="80" autocomplete="name" required value="${esc(draf.nama)}"></div>
+        <div><label class="kmk-l" for="kmk-kt">NIP</label><input type="text" id="kmk-kt" maxlength="80" inputmode="numeric" pattern="[0-9]+" autocomplete="off" required value="${esc(draf.kontak)}"></div>
+      </div>
+      <p class="kmk-note">Urgensi <b>Kritis</b>: layanan cabang terhenti. <b>Tinggi</b>: layanan terganggu dan nasabah terdampak.</p>
+      <p class="kmk-err" id="kmk-err" role="alert"></p>
+      <div class="kmk-act"><button type="submit" class="kmk-btn">Kirim keluhan cabang</button></div>
+    </form>`;
+  };
+
+  const TEKS_OK = {
+    rating: ['Terima kasih atas penilaian Anda!', 'Masukan Anda membantu kami membuat KITO lebih baik.'],
+    keluhan: ['Keluhan Anda sudah kami terima', 'Tim Operation Region II akan menindaklanjuti secepatnya.'],
+    cabang: ['Laporan masalah cabang sudah diterima', 'Tim Operation Region II akan menghubungi pelapor untuk tindak lanjut.'],
+  };
   const selesai = (jenis, diantre) => `<div class="kmk-ok">
       <b aria-hidden="true">${jenis === 'rating' ? (draf.rating >= 4 ? '🎉' : '🙏') : '✅'}</b>
-      <h3>${jenis === 'rating' ? 'Terima kasih atas penilaian Anda!' : 'Keluhan Inbranch Anda sudah kami terima'}</h3>
-      <p>${diantre ? 'Perangkat sedang offline. Masukan disimpan dan akan terkirim otomatis saat kembali online.'
-        : jenis === 'rating' ? 'Masukan Anda membantu kami membuat KITO lebih baik.' : 'Tim Operation Region II akan menindaklanjuti secepatnya.'}</p>
+      <h3>${TEKS_OK[jenis][0]}</h3>
+      <p>${diantre ? 'Perangkat sedang offline. Masukan disimpan dan akan terkirim otomatis saat kembali online.' : TEKS_OK[jenis][1]}</p>
       <button type="button" class="kmk-btn" data-kmk-tutup>Tutup</button></div>`;
 
   function tampilkan() {
     const k = konteks();
     wrap.querySelector('#kmk-ctx').textContent = [k.kode && `${k.kode} ${k.cabang || ''}`.trim(), k.area].filter(Boolean).join(' · ');
-    body.innerHTML = tab === 'rating' ? formRating() : formKeluhan();
+    body.innerHTML = tab === 'rating' ? formRating() : tab === 'keluhan' ? formKeluhan() : formCabang();
   }
   function buka(t, auto = false) {
     tab = t; otomatis = auto; fokusSebelum = document.activeElement;
@@ -151,7 +189,7 @@
   wrap.addEventListener('click', (e) => {
     if (e.target.closest('[data-kmk-tutup]') || e.target.closest('[data-kmk-nanti]')) return tutup();
     const t = e.target.closest('[data-kmk-tab]');
-    if (t) { tab = t.dataset.kmkTab; tampilkan(); body.querySelector(`[data-kmk-tab="${tab}"]`)?.focus(); }
+    if (t) { tab = t.dataset.kmkTab; if (!otomatis) tabTerakhir = tab; tampilkan(); body.querySelector(`[data-kmk-tab="${tab}"]`)?.focus(); }
   });
   wrap.addEventListener('mouseover', (e) => { const l = e.target.closest('.kmk-stars label'); if (l) warnaiBintang(+l.dataset.n); });
   wrap.addEventListener('mouseout', (e) => { if (e.target.closest('.kmk-stars')) warnaiBintang(draf.rating); });
@@ -163,9 +201,17 @@
     else if (el.id === 'kmk-pk') { draf.pesanK = el.value; body.querySelector('#kmk-n').textContent = el.value.length; }
     else if (el.id === 'kmk-kat') draf.kategori = el.value;
     else if (el.id === 'kmk-nm') draf.nama = el.value;
-    else if (el.id === 'kmk-kt') draf.kontak = el.value;
+    else if (el.id === 'kmk-kt') { el.value = el.value.replace(/[^0-9]/g, ''); draf.kontak = el.value; }
+    else if (el.id === 'kmk-kc') draf.katC = el.value;
+    else if (el.name === 'u') draf.urgensi = el.value;
+    else if (el.id === 'kmk-wk') draf.waktu = el.value;
+    else if (el.id === 'kmk-pc') { draf.pesanC = el.value; body.querySelector('#kmk-nc').textContent = el.value.length; }
   });
-  wrap.addEventListener('change', (e) => { if (e.target.id === 'kmk-kat') draf.kategori = e.target.value; });
+  wrap.addEventListener('change', (e) => {
+    if (e.target.id === 'kmk-kat') draf.kategori = e.target.value;
+    if (e.target.id === 'kmk-kc') draf.katC = e.target.value;
+    if (e.target.id === 'kmk-wk') draf.waktu = e.target.value;
+  });
   document.addEventListener('keydown', (e) => {
     if (wrap.hidden) return;
     if (e.key === 'Escape') { e.preventDefault(); tutup(); }
@@ -181,28 +227,42 @@
     e.preventDefault();
     const err = body.querySelector('#kmk-err'), btn = body.querySelector('button[type=submit]');
     err.textContent = '';
+    if (tab !== 'rating' && draf.kontak && !/^[0-9]+$/.test(draf.kontak)) { err.textContent = 'NIP hanya boleh berisi angka.'; body.querySelector('#kmk-kt').focus(); return; }
     let isi;
     if (tab === 'rating') {
       if (!draf.rating) { err.textContent = 'Pilih jumlah bintang dulu.'; body.querySelector('.kmk-stars input')?.focus(); return; }
       isi = { jenis: 'rating', rating: draf.rating, aspek: draf.aspek, pesan: draf.pesanR.trim() || undefined };
-    } else {
+    } else if (tab === 'keluhan') {
       if (!draf.kategori) { err.textContent = 'Pilih jenis keluhan.'; body.querySelector('#kmk-kat').focus(); return; }
       if (draf.pesanK.trim().length < 5) { err.textContent = 'Tuliskan uraian keluhan (minimal 5 karakter).'; body.querySelector('#kmk-pk').focus(); return; }
       isi = { jenis: 'keluhan', kategori: draf.kategori, pesan: draf.pesanK.trim(), nama: draf.nama.trim() || undefined, kontak: draf.kontak.trim() || undefined };
+    } else {
+      const salah = (pesan, sel) => { err.textContent = pesan; body.querySelector(sel)?.focus(); };
+      if (!konteks().kode) return salah('Pilih cabang dulu lewat pilihan cabang di bagian atas dashboard.', '#kmk-kc');
+      if (!draf.katC) return salah('Pilih jenis masalah cabang.', '#kmk-kc');
+      const wk = draf.waktu ? new Date(draf.waktu) : null;
+      if (wk && wk.getTime() > Date.now() + 5 * 60000) return salah('Waktu kejadian tidak boleh di masa depan.', '#kmk-wk');
+      if (draf.pesanC.trim().length < 10) return salah('Uraikan masalah cabang (minimal 10 karakter).', '#kmk-pc');
+      if (!draf.nama.trim()) return salah('Isi nama pelapor.', '#kmk-nm');
+      if (!draf.kontak.trim()) return salah('Isi NIP pelapor.', '#kmk-kt');
+      isi = { jenis: 'cabang', kategori: draf.katC, urgensi: draf.urgensi, waktu_kejadian: wk && !isNaN(wk) ? wk.toISOString() : undefined,
+        pesan: draf.pesanC.trim(), nama: draf.nama.trim(), kontak: draf.kontak.trim() };
+      if (draf.urgensi === 'kritis' && !confirm('Laporkan sebagai KRITIS (layanan cabang terhenti)?')) return;
     }
     btn.disabled = true; btn.textContent = 'Mengirim…';
     try {
       const r = await kirim({ ...isi, ...konteks(), app });
       const s = baca(K_STATE, {});
       if (tab === 'rating') { s.rating = Date.now(); s.nilai = draf.rating; draf.pesanR = ''; draf.aspek = []; }
-      else { draf.pesanK = ''; draf.kategori = ''; }
+      else if (tab === 'keluhan') { draf.pesanK = ''; draf.kategori = ''; }
+      else { draf.pesanC = ''; draf.katC = ''; draf.urgensi = 'sedang'; draf.waktu = ''; }
       s.tanya = Date.now(); tulis(K_STATE, s);
       otomatis = false;
       body.innerHTML = selesai(tab, r.diantre);
       body.querySelector('[data-kmk-tutup]')?.focus();
     } catch (er) {
       err.textContent = 'Gagal mengirim: ' + er.message;
-      btn.disabled = false; btn.textContent = tab === 'rating' ? 'Kirim rating' : 'Kirim keluhan Inbranch';
+      btn.disabled = false; btn.textContent = { rating: 'Kirim rating', keluhan: 'Kirim keluhan', cabang: 'Kirim keluhan cabang' }[tab];
     }
   });
 

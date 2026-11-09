@@ -76,6 +76,7 @@ Di tab **Cabang** dashboard ada tombol **💬 Masukan** (kanan bawah) yang membu
 
 - **⭐ Rating aplikasi**: 1–5 bintang, aspek yang dinilai (kecepatan, tampilan, akurasi data, dll.), komentar opsional. Satu perangkat hanya punya satu rating per hari; kirim ulang di hari yang sama akan memperbarui rating itu.
 - **📝 Keluhan**: jenis keluhan, uraian (wajib), nama dan kontak (opsional).
+- **🏢 Keluhan Cabang**: laporan masalah operasional di cabang yang sedang dipilih (mesin antrian/Inbranch error, printer tiket, layar display, jaringan, antrian menumpuk, petugas kurang, komplain nasabah, fasilitas). Isinya tingkat urgensi (rendah, sedang, tinggi, kritis), waktu kejadian, dan uraian. Nama pelapor dan kontak wajib diisi supaya bisa dihubungi balik.
 
 Cabang, area, tanggal data yang dilihat, jabatan login KPI, dan jenis perangkat ikut terkirim. Popup rating juga muncul sendiri, paling cepat setelah pengguna membuka dashboard di 3 hari berbeda dan 90 detik di tab Cabang. Setelah itu paling sering sekali tiap 30 hari, dan tidak muncul lagi selama 60 hari setelah pengguna memberi rating. Kalau perangkat offline, kiriman disimpan dan terkirim otomatis saat kembali online.
 

@@ -36,7 +36,10 @@
   .mu { color:var(--mu); font-size:12px; } .hidden { display:none !important; }
   .bintang { color:var(--st); letter-spacing:1px; white-space:nowrap; }
   .pill { font-size:11px; font-weight:700; padding:2px 8px; border-radius:999px; border:1px solid var(--ln); white-space:nowrap; }
-  .pill.rating { color:var(--st); } .pill.keluhan { color:var(--bd); }
+  .pill.rating { color:var(--st); } .pill.keluhan { color:var(--bd); } .pill.cabang { color:var(--br); }
+  .urg { display:inline-block; margin-top:4px; font-size:11px; font-weight:800; padding:1px 7px; border-radius:6px; color:#fff; text-transform:uppercase; letter-spacing:.3px; }
+  .urg.rendah { background:var(--ok); } .urg.sedang { background:var(--wr); } .urg.tinggi { background:#e8710c; } .urg.kritis { background:var(--bd); }
+  .stat.mendesak b { color:var(--bd); }
   select.status { padding:4px 6px; font-size:12px; font-weight:700; }
   select.status.baru { color:var(--bd); } select.status.diproses { color:var(--wr); } select.status.selesai { color:var(--ok); } select.status.ditolak { color:var(--mu); }
   .msg { font-weight:600; } .err { color:var(--bd); }
@@ -45,7 +48,7 @@
 </head>
 <body>
 <!--KP_MENU-->
-<header><h1>KITO · Masukan Pengguna</h1><p>Rating aplikasi dan keluhan yang dikirim dari halaman Cabang dashboard.</p></header>
+<header><h1>KITO · Masukan Pengguna</h1><p>Rating aplikasi, keluhan, dan laporan masalah cabang yang dikirim dari halaman Cabang dashboard.</p></header>
 <main>
   <section class="cd" id="login">
     <h2>Masuk</h2>
@@ -71,7 +74,8 @@
     <section class="cd">
       <h2><span>Daftar masukan</span>
         <span class="tools">
-          <select id="fJenis" aria-label="Jenis"><option value="">Semua jenis</option><option value="keluhan">Keluhan Inbranch</option><option value="rating">Rating</option></select>
+          <select id="fJenis" aria-label="Jenis"><option value="">Semua jenis</option><option value="cabang">Keluhan cabang</option><option value="keluhan">Keluhan</option><option value="rating">Rating</option></select>
+          <select id="fUrgensi" aria-label="Urgensi"><option value="">Semua urgensi</option><option value="kritis">Kritis</option><option value="tinggi">Tinggi</option><option value="sedang">Sedang</option><option value="rendah">Rendah</option></select>
           <select id="fStatus" aria-label="Status"><option value="">Semua status</option><option value="baru">Baru</option><option value="diproses">Diproses</option><option value="selesai">Selesai</option><option value="ditolak">Ditolak</option></select>
           <input id="cari" type="search" placeholder="cari isi, cabang, area, nama…" />
         </span>
@@ -100,7 +104,7 @@
     if (!r.ok) throw new Error(j.error || r.status);
     return j;
   };
-  const filter = () => new URLSearchParams({ days: $('#hari').value, jenis: $('#fJenis').value, status: $('#fStatus').value, q: $('#cari').value.trim() }).toString();
+  const filter = () => new URLSearchParams({ days: $('#hari').value, jenis: $('#fJenis').value, urgensi: $('#fUrgensi').value, status: $('#fStatus').value, q: $('#cari').value.trim() }).toString();
 
   const bars = (judul, list, opt = {}) => {
     const max = Math.max(1, ...list.map((x) => x.n));
@@ -111,14 +115,17 @@
 
   async function muatRingkas() {
     const s = await api('GET', '/api/feedback/summary?days=' + $('#hari').value);
-    const r = s.rating, k = s.keluhan;
+    const r = s.rating, k = s.keluhan, c = s.cabang;
     $('#stats').innerHTML = [
       ['Rata-rata rating', r.rata == null ? '–' : '★ ' + nf(r.rata, 2), 'star'], ['Jumlah rating', nf(r.n)], ['Puas (4–5★)', r.puasPersen == null ? '–' : r.puasPersen + '%'],
-      ['Kecewa (1–2★)', r.kecewaPersen == null ? '–' : r.kecewaPersen + '%'], ['Keluhan Inbranch', nf(k.n)], ['Keluhan Inbranch baru', nf(k.baru), 'baru'], ['Diproses', nf(k.diproses)], ['Selesai', nf(k.selesai)],
+      ['Kecewa (1–2★)', r.kecewaPersen == null ? '–' : r.kecewaPersen + '%'], ['Keluhan', nf(k.n)], ['Keluhan baru', nf(k.baru), 'baru'], ['Keluhan diproses', nf(k.diproses)], ['Keluhan selesai', nf(k.selesai)],
+      ['Keluhan cabang', nf(c.n)], ['Cabang: belum ditangani', nf(c.baru), 'baru'], ['Cabang: mendesak terbuka', nf(c.mendesak), 'mendesak'], ['Cabang: selesai', nf(c.selesai)],
     ].map(([a, b, c]) => `<div class="stat ${c || ''}"><small>${a}</small><b>${b}</b></div>`).join('');
     const sebaran = [5, 4, 3, 2, 1].map((b) => ({ nama: b, n: (s.sebaranBintang.find((x) => x.bintang === b) || {}).n || 0 }));
     $('#bagi').innerHTML = bars('Sebaran bintang', sebaran, { st: true, lbl: (x) => `<span class="bintang">${bintang(x.nama)}</span>` })
-      + bars('Aspek yang dinilai (rata-rata ★)', s.aspek, { st: true }) + bars('Jenis keluhan Inbranch', s.perKategori)
+      + bars('Aspek yang dinilai (rata-rata ★)', s.aspek, { st: true }) + bars('Jenis keluhan', s.perKategori)
+      + bars('Jenis masalah cabang', s.perKategoriCabang) + bars('Urgensi keluhan cabang', s.perUrgensi, { lbl: (x) => `<span class="urg ${esc(x.nama)}">${esc(x.nama || '–')}</span>` })
+      + bars('Cabang paling banyak melapor', s.perCabangKeluhan)
       + bars('Per area', s.perArea) + bars('Per cabang', s.perCabang);
   }
 
@@ -126,12 +133,12 @@
     const { masukan, status } = await api('GET', '/api/feedback?' + filter());
     $('#list').innerHTML = masukan.map((m) => `<tr>
       <td class="n">${m.id}</td><td class="n">${waktu(m.created_at)}</td>
-      <td><span class="pill ${m.jenis}">${m.jenis === 'rating' ? 'Rating' : 'Keluhan Inbranch'}</span></td>
-      <td class="psn">${m.jenis === 'rating' ? `<span class="bintang">${bintang(m.rating)}</span>${m.aspek ? `<br><span class="mu">${esc(m.aspek)}</span>` : ''}` : `<b>${esc(m.kategori)}</b>`}${m.pesan ? '<br>' + esc(m.pesan) : ''}</td>
+      <td><span class="pill ${m.jenis}">${{ rating: 'Rating', keluhan: 'Keluhan', cabang: 'Keluhan cabang' }[m.jenis] || esc(m.jenis)}</span>${m.urgensi ? `<br><span class="urg ${esc(m.urgensi)}">${esc(m.urgensi)}</span>` : ''}</td>
+      <td class="psn">${m.jenis === 'rating' ? `<span class="bintang">${bintang(m.rating)}</span>${m.aspek ? `<br><span class="mu">${esc(m.aspek)}</span>` : ''}` : `<b>${esc(m.kategori)}</b>`}${m.waktu_kejadian ? `<br><span class="mu">Kejadian: ${waktu(m.waktu_kejadian)}</span>` : ''}${m.pesan ? '<br>' + esc(m.pesan) : ''}</td>
       <td>${esc(m.nama || '–')}${m.kontak ? `<br><span class="mu">${esc(m.kontak)}</span>` : ''}${m.jabatan ? `<br><span class="mu">${esc(m.jabatan)}</span>` : ''}</td>
       <td>${m.kode ? esc(m.kode + ' ' + (m.cabang || '')) : '–'}${m.area ? `<br><span class="mu">${esc(m.area)}</span>` : ''}${m.tanggal_data ? `<br><span class="mu">data ${esc(m.tanggal_data)}</span>` : ''}</td>
       <td class="n">${esc(NAMA[m.platform] || m.platform || '')}<br><span class="mu">${esc(NAMA[m.app] || m.app || '')}</span></td>
-      <td>${m.jenis === 'keluhan' ? `<select class="status ${m.status}" data-id="${m.id}" aria-label="Status">${status.map((x) => `<option ${x === m.status ? 'selected' : ''}>${x}</option>`).join('')}</select>` : '<span class="mu">–</span>'}</td>
+      <td>${m.jenis !== 'rating' ? `<select class="status ${m.status}" data-id="${m.id}" aria-label="Status">${status.map((x) => `<option ${x === m.status ? 'selected' : ''}>${x}</option>`).join('')}</select>` : '<span class="mu">–</span>'}</td>
       <td>${esc(m.catatan || '')} <button class="sec" data-cat="${m.id}" data-now="${esc(m.catatan || '')}">✎</button></td></tr>`).join('')
       || '<tr><td colspan="9" class="mu">Belum ada masukan untuk filter ini.</td></tr>';
     $('#listInfo').textContent = masukan.length + ' masukan' + (masukan.length >= 500 ? ' (500 terbaru; unduh CSV untuk semua)' : '');
@@ -150,7 +157,7 @@
     const v = prompt('Catatan tindak lanjut:', c.dataset.now); if (v === null) return;
     try { await api('PUT', '/api/feedback/' + c.dataset.cat, { catatan: v }); muatList(); } catch (er) { gagal(er); }
   });
-  ['#fJenis', '#fStatus'].forEach((s) => $(s).addEventListener('change', () => muatList().catch(gagal)));
+  ['#fJenis', '#fUrgensi', '#fStatus'].forEach((s) => $(s).addEventListener('change', () => muatList().catch(gagal)));
   $('#hari').addEventListener('change', () => muat().catch(gagal));
   $('#segar').onclick = () => muat().catch(gagal);
   let tc = null; $('#cari').addEventListener('input', () => { clearTimeout(tc); tc = setTimeout(() => muatList().catch(() => {}), 350); });

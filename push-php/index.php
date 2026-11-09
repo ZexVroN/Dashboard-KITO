@@ -216,6 +216,7 @@ try {
             $r = kp_presence_ping(kp_body());
             kp_json($r['ok'] ? 200 : 400, $r);
         }
+        case 'GET /api/presence/live': { kp_admin(); kp_json(200, kp_presence_live()); }
         case 'GET /api/presence/summary': {
             kp_admin();
             try { kp_geo_resolve(15); } catch (Throwable $e) { error_log('[KITO Presence] geo: ' . $e->getMessage()); }

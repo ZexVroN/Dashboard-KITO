@@ -132,19 +132,37 @@ function kp_rows(PDOStatement $q): array {
     return array_map(function ($r) { foreach ($r as $k => $v) if (is_string($v) && preg_match('/^-?\d+$/', $v) && in_array($k, ['n', 'sesi', 'perangkat', 'detik', 'jam'], true)) $r[$k] = (int)$v; return $r; }, $q->fetchAll());
 }
 
+/** Sesi yang sedang aktif (heartbeat <= KP_AKTIF_SEC detik lalu), dipakai ringkasan dan mode live. */
+function kp_presence_aktif(): array {
+    $q = kp_presence_db()->prepare("SELECT v.device_id, v.id sesi_id, v.page, v.started_at, v.last_seen, v.ip, d.platform, d.browser, d.app, d.label,
+            COALESCE(v.jabatan, d.jabatan) jabatan, COALESCE(v.area, d.area) area, COALESCE(v.kode, d.kode) kode, d.cabang,
+            g.city, g.region, g.country, g.isp, CAST(strftime('%s', v.last_seen) - strftime('%s', v.started_at) AS INTEGER) detik
+        FROM visits v JOIN devices d ON d.id = v.device_id LEFT JOIN ip_geo g ON g.ip = v.ip
+        WHERE v.ended = 0 AND v.last_seen >= ? ORDER BY v.started_at DESC LIMIT 500");
+    $q->execute([gmdate('Y-m-d H:i:s', time() - KP_AKTIF_SEC)]);
+    return kp_rows($q);
+}
+
+function kp_presence_hari_ini(): int {
+    $q = kp_presence_db()->prepare("SELECT COUNT(DISTINCT device_id) FROM visits WHERE date(last_seen, '" . KP_WIB . "') = ?");
+    $q->execute([gmdate('Y-m-d', time() + 7 * 3600)]);
+    return (int)$q->fetchColumn();
+}
+
+/** Mode live halaman admin (dipanggil tiap beberapa detik): ringan, tanpa geolokasi IP dan tanpa agregasi periode. */
+function kp_presence_live(): array {
+    $aktif = kp_presence_aktif();
+    return ['waktu' => gmdate('c'), 'aktifDetik' => KP_AKTIF_SEC, 'aktifSekarang' => count(array_unique(array_column($aktif, 'device_id'))),
+        'tabAktif' => count($aktif), 'hariIni' => kp_presence_hari_ini(), 'aktif' => $aktif];
+}
+
 function kp_presence_summary(int $hari): array {
     $db = kp_presence_db();
     $hari = max(1, min(KP_SIMPAN_HARI, $hari));
     $sejak = gmdate('Y-m-d H:i:s', time() - $hari * 86400);
-    $aktifBatas = gmdate('Y-m-d H:i:s', time() - KP_AKTIF_SEC);
     $hariIniWib = gmdate('Y-m-d', time() + 7 * 3600);
 
-    $aktif = $db->prepare("SELECT v.device_id, v.id sesi_id, v.page, v.started_at, v.last_seen, v.ip, d.platform, d.browser, d.app, d.label,
-            COALESCE(v.jabatan, d.jabatan) jabatan, COALESCE(v.area, d.area) area, COALESCE(v.kode, d.kode) kode, d.cabang,
-            g.city, g.region, g.country, g.isp, CAST(strftime('%s', v.last_seen) - strftime('%s', v.started_at) AS INTEGER) detik
-        FROM visits v JOIN devices d ON d.id = v.device_id LEFT JOIN ip_geo g ON g.ip = v.ip
-        WHERE v.ended = 0 AND v.last_seen >= ? ORDER BY v.last_seen DESC LIMIT 500");
-    $aktif->execute([$aktifBatas]); $aktif = kp_rows($aktif);
+    $aktif = kp_presence_aktif();
     // satu perangkat bisa membuka beberapa tab: hitung perangkat unik
     $aktifUnik = count(array_unique(array_column($aktif, 'device_id')));
 

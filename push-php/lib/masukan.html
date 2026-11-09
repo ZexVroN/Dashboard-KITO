@@ -71,7 +71,7 @@
     <section class="cd">
       <h2><span>Daftar masukan</span>
         <span class="tools">
-          <select id="fJenis" aria-label="Jenis"><option value="">Semua jenis</option><option value="keluhan">Keluhan</option><option value="rating">Rating</option></select>
+          <select id="fJenis" aria-label="Jenis"><option value="">Semua jenis</option><option value="keluhan">Keluhan Inbranch</option><option value="rating">Rating</option></select>
           <select id="fStatus" aria-label="Status"><option value="">Semua status</option><option value="baru">Baru</option><option value="diproses">Diproses</option><option value="selesai">Selesai</option><option value="ditolak">Ditolak</option></select>
           <input id="cari" type="search" placeholder="cari isi, cabang, area, nama…" />
         </span>
@@ -114,11 +114,11 @@
     const r = s.rating, k = s.keluhan;
     $('#stats').innerHTML = [
       ['Rata-rata rating', r.rata == null ? '–' : '★ ' + nf(r.rata, 2), 'star'], ['Jumlah rating', nf(r.n)], ['Puas (4–5★)', r.puasPersen == null ? '–' : r.puasPersen + '%'],
-      ['Kecewa (1–2★)', r.kecewaPersen == null ? '–' : r.kecewaPersen + '%'], ['Keluhan', nf(k.n)], ['Keluhan baru', nf(k.baru), 'baru'], ['Diproses', nf(k.diproses)], ['Selesai', nf(k.selesai)],
+      ['Kecewa (1–2★)', r.kecewaPersen == null ? '–' : r.kecewaPersen + '%'], ['Keluhan Inbranch', nf(k.n)], ['Keluhan Inbranch baru', nf(k.baru), 'baru'], ['Diproses', nf(k.diproses)], ['Selesai', nf(k.selesai)],
     ].map(([a, b, c]) => `<div class="stat ${c || ''}"><small>${a}</small><b>${b}</b></div>`).join('');
     const sebaran = [5, 4, 3, 2, 1].map((b) => ({ nama: b, n: (s.sebaranBintang.find((x) => x.bintang === b) || {}).n || 0 }));
     $('#bagi').innerHTML = bars('Sebaran bintang', sebaran, { st: true, lbl: (x) => `<span class="bintang">${bintang(x.nama)}</span>` })
-      + bars('Aspek yang dinilai (rata-rata ★)', s.aspek, { st: true }) + bars('Jenis keluhan', s.perKategori)
+      + bars('Aspek yang dinilai (rata-rata ★)', s.aspek, { st: true }) + bars('Jenis keluhan Inbranch', s.perKategori)
       + bars('Per area', s.perArea) + bars('Per cabang', s.perCabang);
   }
 
@@ -126,7 +126,7 @@
     const { masukan, status } = await api('GET', '/api/feedback?' + filter());
     $('#list').innerHTML = masukan.map((m) => `<tr>
       <td class="n">${m.id}</td><td class="n">${waktu(m.created_at)}</td>
-      <td><span class="pill ${m.jenis}">${m.jenis === 'rating' ? 'Rating' : 'Keluhan'}</span></td>
+      <td><span class="pill ${m.jenis}">${m.jenis === 'rating' ? 'Rating' : 'Keluhan Inbranch'}</span></td>
       <td class="psn">${m.jenis === 'rating' ? `<span class="bintang">${bintang(m.rating)}</span>${m.aspek ? `<br><span class="mu">${esc(m.aspek)}</span>` : ''}` : `<b>${esc(m.kategori)}</b>`}${m.pesan ? '<br>' + esc(m.pesan) : ''}</td>
       <td>${esc(m.nama || '–')}${m.kontak ? `<br><span class="mu">${esc(m.kontak)}</span>` : ''}${m.jabatan ? `<br><span class="mu">${esc(m.jabatan)}</span>` : ''}</td>
       <td>${m.kode ? esc(m.kode + ' ' + (m.cabang || '')) : '–'}${m.area ? `<br><span class="mu">${esc(m.area)}</span>` : ''}${m.tanggal_data ? `<br><span class="mu">data ${esc(m.tanggal_data)}</span>` : ''}</td>

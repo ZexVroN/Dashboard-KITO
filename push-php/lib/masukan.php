@@ -4,7 +4,9 @@
    Admin  : GET /api/feedback · GET /api/feedback/summary · PUT /api/feedback/<id> · GET /api/feedback/export (CSV) · halaman /admin/masukan */
 declare(strict_types=1);
 
-const KP_FB_KATEGORI = ['Data tidak sesuai', 'Data terlambat diperbarui', 'Aplikasi lambat / error', 'Tampilan sulit dibaca', 'Notifikasi', 'Login / akses', 'Lainnya'];
+// kategori keluhan data Inbranch cabang (harus sama dengan KATEGORI di assets/js/masukan.js)
+const KP_FB_KATEGORI = ['Waktu tunggu (P95/P100) tidak sesuai', 'Waktu layanan Teller/CS tidak sesuai', 'Jumlah antrian / transaksi tidak sesuai',
+    'Data reservasi (O2O) tidak sesuai', 'Data cabang kosong / tidak muncul', 'Data belum diperbarui', 'Nama / kode / area cabang salah', 'Lainnya'];
 const KP_FB_ASPEK = ['Kecepatan', 'Tampilan', 'Akurasi data', 'Kemudahan', 'Kelengkapan', 'Notifikasi'];
 const KP_FB_STATUS = ['baru', 'diproses', 'selesai', 'ditolak'];
 

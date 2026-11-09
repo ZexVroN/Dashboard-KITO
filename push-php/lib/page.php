@@ -11,24 +11,23 @@ function kp_base_url(): string {
 }
 
 /**
- * Menu bar bersama untuk semua halaman backend (admin notifikasi, perangkat, status, setup).
- * $aktif: notifikasi | perangkat | status | setup
+ * Menu bar bersama untuk semua halaman backend (admin notifikasi, perangkat, masukan).
+ * $aktif: notifikasi | perangkat | masukan
  * $app:   alamat rute aplikasi (index.php). Default "<folder>/index.php" yang selalu berfungsi, dengan atau tanpa rewrite.
+ * status.php dan setup.php tidak ada di menu (hanya untuk pemasangan/diagnosis lewat alamat langsung).
  */
+const KP_DASHBOARD_URL = 'https://inbranch.region2.co.id/';
+
 function kp_menu(string $aktif, ?string $app = null): string {
     $dir = rtrim(str_replace('\\', '/', dirname($_SERVER['SCRIPT_NAME'] ?? '/')), '/');
     $app = $app ?? $dir . '/index.php';
     $cfg = function_exists('kp_config') ? kp_config() : null;
-    $item = [
+    $item = $cfg ? [
         'notifikasi' => ['🔔', 'Notifikasi', $app . '/admin'],
         'perangkat'  => ['📱', 'Perangkat & Lokasi', $app . '/admin/perangkat'],
         'masukan'    => ['💬', 'Masukan', $app . '/admin/masukan'],
-        'status'     => ['🩺', 'Status', $dir . '/status.php'],
-        'setup'      => ['⚙️', 'Setup', $dir . '/setup.php'],
-    ];
-    if (!$cfg) $item = ['setup' => $item['setup'], 'status' => $item['status']];   // belum disetel: hanya halaman pemasangan
-    $dash = '';
-    foreach ($cfg['allowed_origins'] ?? [] as $o) if ($o !== '*') { $dash = $o; break; }
+    ] : [];   // belum disetel: menu kosong, halaman setup tetap bisa dibuka langsung
+    $dash = KP_DASHBOARD_URL;
     $h = '<nav class="kpm" aria-label="Menu backend"><div class="kpm-in"><a class="kpm-brand" href="' . kp_h($cfg ? $app . '/admin' : $dir . '/setup.php') . '">KITO <span>Backend</span></a><div class="kpm-list">';
     foreach ($item as $k => [$ic, $label, $url]) {
         $on = $k === $aktif;

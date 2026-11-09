@@ -1,6 +1,6 @@
 /* Masukan pengguna di halaman Cabang: tombol "💬 Masukan" + popup dua tab.
    - ⭐ Rating aplikasi: 1–5 bintang, aspek yang dinilai, komentar (opsional).
-   - 📝 Keluhan: kategori + uraian, nama/kontak opsional.
+   - 📝 Keluhan Inbranch: kategori + uraian, nama/kontak opsional.
    Cabang, area, tanggal data, dan jabatan login yang sedang dilihat ikut terkirim agar keluhan mudah ditindaklanjuti.
    Popup rating juga muncul sendiri sesekali (paling cepat setelah 3 hari pemakaian, lalu tiap 30 hari bila belum menilai).
    Bila offline, kiriman diantre di perangkat dan dikirim otomatis saat online.
@@ -11,7 +11,9 @@
   if (!API || typeof render !== 'function') return;
   const URL_FB = API + '/api/feedback';
 
-  const KATEGORI = ['Data tidak sesuai', 'Data terlambat diperbarui', 'Aplikasi lambat / error', 'Tampilan sulit dibaca', 'Notifikasi', 'Login / akses', 'Lainnya'];
+  // kategori keluhan data Inbranch cabang (harus sama dengan KP_FB_KATEGORI di push-php/lib/masukan.php)
+  const KATEGORI = ['Waktu tunggu (P95/P100) tidak sesuai', 'Waktu layanan Teller/CS tidak sesuai', 'Jumlah antrian / transaksi tidak sesuai',
+    'Data reservasi (O2O) tidak sesuai', 'Data cabang kosong / tidak muncul', 'Data belum diperbarui', 'Nama / kode / area cabang salah', 'Lainnya'];
   const ASPEK = ['Kecepatan', 'Tampilan', 'Akurasi data', 'Kemudahan', 'Kelengkapan', 'Notifikasi'];
   const LABEL_BINTANG = ['', 'Sangat buruk 😞', 'Kurang 🙁', 'Cukup 😐', 'Baik 🙂', 'Sangat baik 🤩'];
   const K_STATE = 'kito-masukan', K_ANTRE = 'kito-masukan-antre';
@@ -87,7 +89,7 @@
 
   const tabs = () => `<div class="kmk-tabs" role="tablist">
       <button type="button" role="tab" data-kmk-tab="rating" aria-selected="${tab === 'rating'}">⭐ Rating aplikasi</button>
-      <button type="button" role="tab" data-kmk-tab="keluhan" aria-selected="${tab === 'keluhan'}">📝 Keluhan</button></div>`;
+      <button type="button" role="tab" data-kmk-tab="keluhan" aria-selected="${tab === 'keluhan'}">📝 Keluhan Inbranch</button></div>`;
 
   const formRating = () => `${tabs()}
     <form id="kmk-f" novalidate>
@@ -118,12 +120,12 @@
       </div>
       <p class="kmk-note">Cabang, area, dan tanggal data yang sedang Anda lihat ikut terkirim agar keluhan mudah dicek. Isi kontak bila ingin dihubungi balik.</p>
       <p class="kmk-err" id="kmk-err" role="alert"></p>
-      <div class="kmk-act"><button type="submit" class="kmk-btn">Kirim keluhan</button></div>
+      <div class="kmk-act"><button type="submit" class="kmk-btn">Kirim keluhan Inbranch</button></div>
     </form>`;
 
   const selesai = (jenis, diantre) => `<div class="kmk-ok">
       <b aria-hidden="true">${jenis === 'rating' ? (draf.rating >= 4 ? '🎉' : '🙏') : '✅'}</b>
-      <h3>${jenis === 'rating' ? 'Terima kasih atas penilaian Anda!' : 'Keluhan Anda sudah kami terima'}</h3>
+      <h3>${jenis === 'rating' ? 'Terima kasih atas penilaian Anda!' : 'Keluhan Inbranch Anda sudah kami terima'}</h3>
       <p>${diantre ? 'Perangkat sedang offline. Masukan disimpan dan akan terkirim otomatis saat kembali online.'
         : jenis === 'rating' ? 'Masukan Anda membantu kami membuat KITO lebih baik.' : 'Tim Operation Region II akan menindaklanjuti secepatnya.'}</p>
       <button type="button" class="kmk-btn" data-kmk-tutup>Tutup</button></div>`;
@@ -200,7 +202,7 @@
       body.querySelector('[data-kmk-tutup]')?.focus();
     } catch (er) {
       err.textContent = 'Gagal mengirim: ' + er.message;
-      btn.disabled = false; btn.textContent = tab === 'rating' ? 'Kirim rating' : 'Kirim keluhan';
+      btn.disabled = false; btn.textContent = tab === 'rating' ? 'Kirim rating' : 'Kirim keluhan Inbranch';
     }
   });
 

@@ -9,7 +9,8 @@ Yang ditulis (kunci "mb" = MTD per bulan "YYYY-MM", P95; MTD Oktober tetap P90 d
   KITO_AREA_WAKTU    : areas[].mb / region.mb = rata-rata P95 harian bulan itu [.., Teller(2), .., .., CS(5), All(6)]
                        (rata-rata nilai harian di data, sama dengan definisi "Average ... P95" di laporan cabang)
   KITO_REGION        : regions[].waktu.mb / nasional.waktu.mb = rata-rata P95 harian [Teller, CS, All]
-  KITO_AREA_KELOMPOK : [].mb = {teller, cs, all} dari kolom "MTD <Bulan> 26 (... P95)" sheet cabang laporan antrian
+  KITO_AREA_KELOMPOK : [].mb = {teller, cs, all} dari kolom "MTD <Bulan> 26 (... P95)" sheet cabang laporan antrian;
+                       bila laporan tidak memuat kolom MTD (format harian), = rata-rata P95 harian bulan itu dari D.Q
 """
 
 import os
@@ -57,28 +58,64 @@ def mtd_region(R, bulan):
 
 def mtd_cabang(path, K, bulan):
     wb = openpyxl.load_workbook(path, read_only=True, data_only=True)
-    nama = next(n for n in wb.sheetnames if n not in ("Area", "RAW"))
-    ws = wb[nama]
-    judul = list(ws.iter_rows(min_row=3, max_row=3, values_only=True))[0]
-    kol = {}
-    for j, x in enumerate(judul):
-        m = isinstance(x, str) and re.match(r"MTD ([A-Za-z]+) (\d{2})\b.*P95", x)
-        if m and m.group(1).lower() in BULAN_PANJANG:
-            kol[f"20{m.group(2)}-{BULAN_PANJANG[m.group(1).lower()]:02d}"] = j
+    # cari sheet yang punya kolom "MTD <Bulan> 26 (... P95)" di baris judul ke-3. Laporan antrian format harian
+    # (Cara Pakai, Bankwide, Region, Area, Cabang, ...) tidak memuat MTD: MTD cabang yang ada dipertahankan.
+    ws, kol = None, {}
+    for nama in wb.sheetnames:
+        if nama in ("Area", "RAW"):
+            continue
+        baris = list(wb[nama].iter_rows(min_row=3, max_row=3, values_only=True))
+        judul = baris[0] if baris else ()
+        k = {}
+        for j, x in enumerate(judul):
+            m = isinstance(x, str) and re.match(r"MTD ([A-Za-z]+) (\d{2})\b.*P95", x)
+            if m and m.group(1).lower() in BULAN_PANJANG:
+                k[f"20{m.group(2)}-{BULAN_PANJANG[m.group(1).lower()]:02d}"] = j
+        if k:
+            ws, kol = wb[nama], k
+            break
+    if ws is None:
+        return 0, []
     # urutan kolom per blok: Antrian, P100, P95, club | Antrian(+5), P100, P95 CS | Antrian(+10), P100, P95 All
     off = {"teller": 2, "cs": 7, "all": 12}
     per_kode = {str(r["kode"]): r for r in K}
     n = 0
     for r in ws.iter_rows(min_row=7, values_only=True):
+        if len(r) < 2:
+            continue
         kode = str(r[1]) if r[1] is not None else None
         if kode not in per_kode:
             continue
         for b in bulan:
             if b not in kol:
                 continue
+            if kol[b] + max(off.values()) >= len(r):
+                continue
             per_kode[kode].setdefault("mb", {})[b] = {k: detik(r[kol[b] + o]) for k, o in off.items()}
         n += 1
     return n, sorted(kol)
+
+
+def mtd_cabang_harian(K, bulan):
+    """Cadangan bila laporan tidak memuat kolom MTD: MTD cabang = rata-rata P95 harian bulan itu dari D.Q
+    (definisi sama dengan Area/Region: "Average ... P95"), dibulatkan ke detik."""
+    D = kito_data.baca("D")
+    qm = D.get("queueMetricByDate", {})
+    idx = {str(b[0]): i for i, b in enumerate(D["B"])}
+    n = 0
+    for r in K:
+        i = idx.get(str(r["kode"]))
+        if i is None:
+            continue
+        for b in bulan:
+            js = [j for j, t in enumerate(D["dates"]) if t.startswith(b) and qm.get(t) == "P95"]
+            nilai = {}
+            for k, pos in (("teller", 0), ("cs", 1), ("all", 2)):
+                v = _rata([(D["Q"][i][j] or [None] * 3)[pos] for j in js])
+                nilai[k] = round(v) if v is not None else None
+            r.setdefault("mb", {})[b] = nilai
+        n += 1
+    return n
 
 
 def terapkan(path):
@@ -89,6 +126,9 @@ def terapkan(path):
     mtd_region(R, bulan)
     kito_data.tulis(JS + "region-data.js", R)
     n, ada = mtd_cabang(path, K, bulan)
+    if not ada:   # laporan format harian tanpa kolom MTD
+        n = mtd_cabang_harian(K, bulan)
+        ada = ["rata-rata P95 harian dari data dashboard"]
     kito_data.tulis(JS + "area-waktu-data.js", W)
     kito_data.tulis(JS + "area-kelompok-data.js", K)
     print(f"MTD P95 : bulan {bulan} · area {len(W['areas'])}+Region II (rata-rata harian) · {n} cabang dari {os.path.basename(path)} (kolom MTD: {ada})")

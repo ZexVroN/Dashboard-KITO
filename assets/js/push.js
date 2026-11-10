@@ -17,8 +17,7 @@
   const standalone = isTWA || window.matchMedia('(display-mode: standalone)').matches || window.matchMedia('(display-mode: fullscreen)').matches || navigator.standalone === true;
   const didukung = 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
   // perangkat/browser tanpa Web Push (APK lama berbasis WebView, browser lama, Safari iOS di luar Layar Utama):
-  // ikon 🔔 tidak ditampilkan sama sekali
-  if (!didukung) return;
+  // ikon 🔔 tetap tampil; panel hanya berisi tombol lapor keluhan cabang + keterangan
   const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const keyBytes = (b64) => { const r = atob(b64.replace(/-/g, '+').replace(/_/g, '/')); return Uint8Array.from(r, (c) => c.charCodeAt(0)); };
   const api = async (method, path, body) => {
@@ -48,12 +47,12 @@
   /* ---------- tombol & panel ---------- */
   const bell = document.createElement('button');
   bell.type = 'button'; bell.id = 'kito-bell'; bell.className = 'tema kito-bell';
-  bell.setAttribute('aria-label', 'Pengaturan notifikasi'); bell.innerHTML = '🔔<i></i>';
+  bell.setAttribute('aria-label', 'Notifikasi keluhan cabang'); bell.innerHTML = '🔔<i></i>';
   btnTema.before(bell);
 
   const sheet = document.createElement('div');
   sheet.className = 'knp-wrap'; sheet.hidden = true;
-  sheet.innerHTML = '<div class="knp-bg" data-knp-tutup></div><section class="knp" role="dialog" aria-modal="true" aria-labelledby="knp-h"><div class="knp-head"><h2 id="knp-h">🔔 Notifikasi KITO</h2><button type="button" class="knp-x" data-knp-tutup aria-label="Tutup">×</button></div><div class="knp-body"></div></section>';
+  sheet.innerHTML = '<div class="knp-bg" data-knp-tutup></div><section class="knp" role="dialog" aria-modal="true" aria-labelledby="knp-h"><div class="knp-head"><h2 id="knp-h">🔔 Notifikasi Keluhan Cabang</h2><button type="button" class="knp-x" data-knp-tutup aria-label="Tutup">×</button></div><div class="knp-body"></div></section>';
   document.body.appendChild(sheet);
   const body = sheet.querySelector('.knp-body');
 
@@ -76,7 +75,7 @@
   function tandaiBell() {
     const aktif = !!sub && server.terdaftar;
     bell.classList.toggle('on', aktif);
-    bell.title = aktif ? 'Notifikasi aktif' : 'Aktifkan notifikasi';
+    bell.title = aktif ? 'Notifikasi keluhan cabang · aktif' : 'Notifikasi keluhan cabang';
   }
 
   function opsiTopik() {
@@ -90,9 +89,21 @@
     return opsi.map(([v, n, k]) => `<label class="knp-opt"><input type="checkbox" value="${esc(v)}" ${ada.has(v) ? 'checked' : ''}><span><b>${esc(n)}</b><small>${esc(k)}</small></span></label>`).join('');
   }
 
+  // bagian atas panel: lapor masalah operasional cabang (form Keluhan Cabang di masukan.js)
+  function bagianLapor() {
+    if (!window.KITO_MASUKAN) return '';
+    const p = pilihan();
+    return `<button type="button" class="knp-lapor" data-knp-lapor><b>⚠️ Laporkan masalah operasional cabang</b><small>${p.kode ? esc(p.kode + ' ' + (p.cabang || '')) + ' · ' : ''}Ketuk untuk isi form Keluhan Cabang</small></button>`;
+  }
+
   function gambar() {
-    const izin = Notification.permission;
     let h = '';
+    if (!didukung) {
+      h = `<p class="knp-status">○ Notifikasi push belum didukung di ${isTWA ? 'versi aplikasi ini' : 'browser ini'}</p><p class="knp-note">${isIOS ? 'Di iPhone/iPad, tambahkan KITO ke Layar Utama lalu buka dari sana.' : 'Perbarui aplikasi KITO atau Google Chrome ke versi terbaru untuk menerima notifikasi.'}</p>`;
+      body.innerHTML = bagianLapor() + h + (pesan ? `<p class="knp-msg">${esc(pesan)}</p>` : '');
+      return;
+    }
+    const izin = Notification.permission;
     if (izin === 'denied') {
       h = `<p class="knp-lead">Notifikasi <b>diblokir</b> untuk situs ini.</p><p class="knp-note">Buka pengaturan situs di browser (ikon gembok di samping alamat${isIOS ? ', atau Pengaturan › Notifikasi › KITO di iPhone' : ''}), izinkan Notifikasi, lalu muat ulang halaman.</p>`;
     } else {
@@ -104,7 +115,7 @@
           : '<button type="button" class="knp-btn" data-knp="aktifkan">Aktifkan notifikasi</button>'}</div>
         <p class="knp-note">Pilihan area dan cabang mengikuti filter di atas. Notifikasi tetap masuk walau dashboard ditutup${isIOS ? ' (selama aplikasi KITO masih terpasang)' : ''}.</p>`;
     }
-    body.innerHTML = h + (pesan ? `<p class="knp-msg">${esc(pesan)}</p>` : '');
+    body.innerHTML = bagianLapor() + h + (pesan ? `<p class="knp-msg">${esc(pesan)}</p>` : '');
     body.querySelectorAll('.knp-btn').forEach((b) => { b.disabled = sibuk; });
     tandaiBell();
   }
@@ -159,6 +170,7 @@
   bell.addEventListener('click', buka);
   sheet.addEventListener('click', (e) => {
     if (e.target.closest('[data-knp-tutup]')) return tutup();
+    if (e.target.closest('[data-knp-lapor]')) { sheet.hidden = true; document.body.classList.remove('knp-open'); return window.KITO_MASUKAN?.laporCabang(); }
     const b = e.target.closest('[data-knp]'); if (b) aksi(b.dataset.knp);
   });
   document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !sheet.hidden) tutup(); });

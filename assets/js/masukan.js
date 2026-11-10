@@ -16,8 +16,7 @@
 
   const KATEGORI = ['Data tidak sesuai', 'Data terlambat diperbarui', 'Aplikasi lambat / error', 'Tampilan sulit dibaca', 'Notifikasi', 'Login / akses', 'Lainnya'];
   // keluhan cabang (harus sama dengan KP_FB_KATEGORI_CABANG di push-php/lib/masukan.php)
-  const KATEGORI_CABANG = ['Mesin antrian / Inbranch error', 'Printer / tiket antrian bermasalah', 'Layar display antrian mati', 'Jaringan / koneksi cabang terputus',
-    'Antrian nasabah menumpuk', 'Petugas Teller/CS kurang', 'Komplain nasabah', 'Fasilitas cabang (listrik, AC, gedung)', 'Lainnya'];
+  const KATEGORI_CABANG = ['Waktu Tunggu Antrian', 'Utilisasi O2O', 'Utilisasi NBDS', 'Aspek Fisik Cabang', 'Akuisisi Inbranch', 'Lainnya'];
   const URGENSI = [['rendah', 'Rendah'], ['sedang', 'Sedang'], ['tinggi', 'Tinggi'], ['kritis', 'Kritis']];
   const ASPEK = ['Kecepatan', 'Tampilan', 'Akurasi data', 'Kemudahan', 'Kelengkapan', 'Notifikasi'];
   const LABEL_BINTANG = ['', 'Sangat buruk 😞', 'Kurang 🙁', 'Cukup 😐', 'Baik 🙂', 'Sangat baik 🤩'];
@@ -266,7 +265,7 @@
       <label class="kmk-l" for="kmk-wk">Waktu kejadian</label>
       <input type="datetime-local" id="kmk-wk" value="${esc(draf.waktu)}" max="${sekarangLokal()}">
       <label class="kmk-l" for="kmk-pc">Uraian masalah</label>
-      <textarea id="kmk-pc" maxlength="2000" required placeholder="Contoh: Mesin antrian mati sejak 09.15, tiket tidak keluar. Nasabah diarahkan antri manual, ±25 nasabah terdampak.">${esc(draf.pesanC)}</textarea>
+      <textarea id="kmk-pc" maxlength="2000" required placeholder="Contoh: Waktu tunggu antrian Teller lebih dari 30 menit sejak 10.00, ±25 nasabah menunggu.">${esc(draf.pesanC)}</textarea>
       <div class="kmk-hit"><span id="kmk-nc">${draf.pesanC.length}</span>/2000</div>
       <div class="kmk-row">
         <div><label class="kmk-l" for="kmk-nm">Nama pelapor</label><input type="text" id="kmk-nm" maxlength="80" autocomplete="name" required value="${esc(draf.nama)}"></div>
@@ -299,6 +298,8 @@
     tampilkan(); wrap.hidden = false; document.body.classList.add('kmk-open');
     (body.querySelector('.kmk-stars input:checked, .kmk-stars input, select') || body.querySelector('button'))?.focus({ preventScroll: true });
   }
+  // dipakai panel 🔔 Notifikasi Keluhan Cabang (push.js)
+  window.KITO_MASUKAN = { laporCabang: () => { tabTerakhir = 'cabang'; buka('cabang'); } };
   function tutup() {
     if (wrap.hidden) return;
     if (otomatis) catatTanya();

@@ -9,8 +9,7 @@ const KP_FB_KATEGORI = ['Data tidak sesuai', 'Data terlambat diperbarui', 'Aplik
 const KP_FB_ASPEK = ['Kecepatan', 'Tampilan', 'Akurasi data', 'Kemudahan', 'Kelengkapan', 'Notifikasi'];
 const KP_FB_STATUS = ['baru', 'diproses', 'selesai', 'ditolak'];
 // keluhan cabang (harus sama dengan KATEGORI_CABANG di assets/js/masukan.js)
-const KP_FB_KATEGORI_CABANG = ['Mesin antrian / Inbranch error', 'Printer / tiket antrian bermasalah', 'Layar display antrian mati', 'Jaringan / koneksi cabang terputus',
-    'Antrian nasabah menumpuk', 'Petugas Teller/CS kurang', 'Komplain nasabah', 'Fasilitas cabang (listrik, AC, gedung)', 'Lainnya'];
+const KP_FB_KATEGORI_CABANG = ['Waktu Tunggu Antrian', 'Utilisasi O2O', 'Utilisasi NBDS', 'Aspek Fisik Cabang', 'Akuisisi Inbranch', 'Lainnya'];
 const KP_FB_URGENSI = ['rendah', 'sedang', 'tinggi', 'kritis'];
 const KP_FB_JENIS = ['rating', 'keluhan', 'cabang'];
 

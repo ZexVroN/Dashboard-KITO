@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>KITO · Pengguna</title>
+<style>
+:root{--bg:#f4f7fc;--cd:#fff;--tx:#182842;--mu:#64748b;--ln:#e2e9f3;--c1:#245bd7}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--tx);font:14px/1.65 system-ui,sans-serif}
+header,main{max-width:1240px;margin:auto;padding:24px}h1{margin:0}h2{font-size:14px}p{color:var(--mu)}
+.cd{padding:24px;background:var(--cd);border:1px solid var(--ln);border-radius:18px;margin-bottom:18px}
+button{border:0;border-radius:10px;background:var(--c1);color:white;padding:11px 18px;font:inherit;cursor:pointer}button:disabled{opacity:.6;cursor:wait}
+input,select{padding:11px;border:1px solid var(--ln);border-radius:10px;font:inherit}label{display:block;margin-bottom:6px}
+#login{max-width:460px}#tok{width:100%;margin-bottom:12px}.tools{display:flex;flex-wrap:wrap;gap:12px;align-items:end}.tools label{margin:0}.tools input{width:min(360px,100%)}
+.tw{overflow:auto}table{width:100%;border-collapse:collapse;text-align:left;font-size:13px}th,td{padding:12px;border-bottom:1px solid var(--ln)}th{white-space:nowrap;color:var(--mu)}td{vertical-align:top}.hidden{display:none!important}.err{color:#c43636}#msg{display:block;margin-top:10px}#info{margin-top:16px}
+</style>
+</head>
+<body>
+<!--KP_MENU-->
+<header><h1>Pengguna</h1><p>Daftar jabatan, level akses, dan nama BOM/BOS per cabang. Password login tetap sama dengan password KPI masing-masing jabatan.</p></header>
+<main>
+<form class="cd" id="login"><h2>Masuk backend</h2><label for="tok">Token admin</label><input id="tok" type="password" autocomplete="current-password" required><button id="masuk" type="submit">Masuk</button><span id="msg" role="status" aria-live="polite"></span></form>
+<section class="cd hidden" id="isi" aria-label="Daftar pengguna">
+<div class="tools"><label>Level akses<br><select id="level"><option value="">Semua level akses</option></select></label><label>Cari pengguna<br><input id="cari" type="search" placeholder="Nama, kode cabang, cabang, atau area"></label><button id="ulang" type="button">Muat ulang</button></div>
+<p id="info" role="status" aria-live="polite"></p>
+<div class="tw"><table><thead><tr><th>Nama pengguna / BOM-BOS</th><th>Jabatan</th><th>Level akses</th><th>Kode cabang</th><th>Cabang</th><th>Area</th><th>Login KPI</th><th>Password login</th></tr></thead><tbody id="list"></tbody></table></div>
+<p>Nama BOM/BOS mengikuti data pimpinan cabang. Untuk login KPI, pilih jabatan pada kolom Login KPI dan gunakan password KPI yang sudah berlaku.</p>
+</section>
+</main>
+<script>
+(() => {
+  'use strict';
+  const base = '__KP_API_BASE__', $ = s => document.querySelector(s);
+  const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  let token = '', rows = [];
+  try { token = sessionStorage.getItem('kitoPushToken') || ''; } catch (e) {}
+  function render() {
+    const q = $('#cari').value.trim().toLocaleLowerCase('id-ID'), level = $('#level').value;
+    const filtered = rows.filter(r => (!level || r.level === level) && [r.nama,r.kode,r.cabang,r.area,r.level].join(' ').toLocaleLowerCase('id-ID').includes(q));
+    $('#list').innerHTML = filtered.map(r => '<tr>' + [r.nama || 'Belum ada data',r.jabatan,r.level,r.kode || '—',r.cabang || '—',r.area || '—',r.login,'Sama dengan KPI'].map(v => '<td>'+esc(v)+'</td>').join('')+'</tr>').join('') || '<tr><td colspan="8">Tidak ada pengguna yang sesuai.</td></tr>';
+    $('#info').textContent = filtered.length + ' dari ' + rows.length + ' pengguna · ' + rows.filter(r => r.level === 'BOM-BOS' && !r.nama).length + ' cabang belum memiliki nama BOM/BOS.';
+  }
+  async function load() {
+    $('#masuk').disabled = $('#ulang').disabled = true;
+    $('#msg').textContent = 'Memuat pengguna…'; $('#msg').className = '';
+    try {
+      const response = await fetch(base + '/api/pengguna', {headers:{Authorization:'Bearer '+token,'X-Admin-Token':token},cache:'no-store'});
+      const data = await response.json();
+      if (!response.ok) { if (response.status === 401) { $('#isi').classList.add('hidden'); rows = []; $('#list').textContent = ''; try { sessionStorage.removeItem('kitoPushToken'); } catch(e) {} } throw new Error(data.error || 'Tidak dapat memuat pengguna'); }
+      rows = data.pengguna;
+      const selected = $('#level').value;
+      $('#level').innerHTML = '<option value="">Semua level akses</option>' + data.levels.map(v => '<option>'+esc(v)+'</option>').join('');
+      $('#level').value = selected;
+      try { sessionStorage.setItem('kitoPushToken', token); } catch(e) {}
+      $('#login').classList.add('hidden'); $('#isi').classList.remove('hidden'); render();
+    } catch(e) {
+      $('#login').classList.remove('hidden'); $('#msg').className = 'err'; $('#msg').textContent = e.message;
+    } finally { $('#masuk').disabled = $('#ulang').disabled = false; }
+  }
+  $('#login').addEventListener('submit', e => { e.preventDefault(); token = $('#tok').value.trim(); load(); });
+  $('#cari').addEventListener('input', render); $('#level').addEventListener('change', render); $('#ulang').addEventListener('click', load);
+  if(token) load();
+})();
+</script>
+</body>
+</html>

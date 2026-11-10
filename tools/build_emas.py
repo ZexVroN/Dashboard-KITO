@@ -6,6 +6,7 @@ Sumber (laporan "Monitoring Emas"):
   - sheet Monitoring  (area kerja, kolom AA..AW) : 12 region: pegawai, partisipasi, Tab. Emas & Cetak Emas MTD vs target, rank
   - sheet Detail Cabang                         : cabang Region II: pegawai, sudah input, Tab. Emas D-1 / D / target, Cetak D / target
   - sheet Data Pegawai                          : pegawai in-branch Region II (NIP, nama, jabatan, kode cabang)
+  - tools/sales_penyesuaian.json                : takeout / pindah cabang / ganti jabatan, sama dengan Informasi Sales Pegawai
   - sheet Data by Form                          : transaksi yang DIHITUNG (kolom Dihitung = 1) s.d. D dan s.d. D-1,
                                                   dijumlah per pegawai (Kunci NIP) dan layanan
   - sheet Target                                : target per orang / bulan (Tab. Emas BOM/BOS/CS 5, Teller 3, Cetak 2)
@@ -14,6 +15,7 @@ Yang disimpan hanya jumlah per pegawai/cabang/region. Nama nasabah dan nomor rek
 """
 import collections
 import datetime as dt
+import json
 import os
 import re
 import sys
@@ -152,6 +154,49 @@ for nip, r in daftar:
                     "T" if teller else "B",
                     h["tab"], tgt["tabTeller"] if teller else tgt["tabBom"], h["tab"] - h["tabD1"],
                     h["cetak"], tgt["cetak"], h["cetak"] - h["cetakD1"]])
+
+# ---------- penyesuaian pegawai, sama dengan Informasi Sales Pegawai (tools/sales_penyesuaian.json) ----------
+# takeout = dikeluarkan · pindah = kode cabang diganti · jabatan = jabatan, kelompok & target Tab. Emas diganti.
+# Ringkasan cabang (jumlah BOM/BOS/CS & Teller, partisipasi, target) ikut digeser; angka transaksi cabang tetap
+# mengikuti sheet Detail Cabang (dihitung per kode cabang input).
+PENYESUAIAN = os.path.join(os.path.dirname(os.path.abspath(__file__)), "sales_penyesuaian.json")
+ATUR = {"takeout": [], "pindah": [], "jabatan": []}
+if os.path.exists(PENYESUAIAN):
+    with open(PENYESUAIAN, encoding="utf-8") as fp:
+        ATUR.update(json.load(fp))
+CAB = {c["kode"]: c for c in cabang}
+cocok = lambda a, p: a["nama"].strip().upper() == p[0].strip().upper() and (not a.get("dari") or str(a["dari"]) == p[3])
+
+def geser(p, arah):
+    """tambah (arah=+1) / kurangi (arah=-1) pegawai p di ringkasan cabangnya"""
+    c = CAB.get(p[3])
+    if not c:
+        return
+    pg = c["pegawai"]
+    pg["teller" if p[4] == "T" else "bom"] = (pg["teller" if p[4] == "T" else "bom"] or 0) + arah
+    pg["total"] = (pg["total"] or 0) + arah
+    if p[5] or p[8]:
+        pg["input"] = (pg["input"] or 0) + arah
+    c["tab"]["t"] = (c["tab"]["t"] or 0) + arah * p[6]
+    c["cetak"]["t"] = (c["cetak"]["t"] or 0) + arah * p[9]
+
+ubah = []
+for a in ATUR["takeout"]:
+    for p in [p for p in pegawai if cocok(a, p)]:
+        geser(p, -1); pegawai.remove(p); ubah.append(f"takeout {p[0]} ({p[3]})")
+for a in ATUR["pindah"]:
+    for p in pegawai:
+        if cocok(a, p) and p[3] != str(a["ke"]):
+            geser(p, -1); dari = p[3]; p[3] = str(a["ke"]); geser(p, +1); ubah.append(f"pindah {p[0]} {dari} -> {p[3]}")
+for a in ATUR["jabatan"]:
+    for p in pegawai:
+        if cocok(a, p) and p[2] != a["jabatan"]:
+            geser(p, -1)
+            lama = p[2]; teller = a["jabatan"].strip().lower() == "teller"
+            p[2], p[4], p[6] = a["jabatan"], "T" if teller else "B", tgt["tabTeller"] if teller else tgt["tabBom"]
+            geser(p, +1); ubah.append(f"jabatan {p[0]} ({p[3]}) {lama} -> {p[2]}")
+for x in ubah:
+    print("  penyesuaian:", x)
 
 # cek: jumlah per cabang dari pegawai vs sheet Detail Cabang
 per_kode = collections.Counter()

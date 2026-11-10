@@ -84,3 +84,14 @@ Cabang, area, tanggal data yang dilihat, jabatan login KPI, dan jenis perangkat 
 Halaman admin: menu **💬 Masukan** (`…/admin/masukan`). Isinya rata-rata rating, persentase puas/kecewa, sebaran bintang, aspek, jenis keluhan, per area/cabang, dan daftar masukan. Status keluhan bisa diubah (baru, diproses, selesai, ditolak), catatan tindak lanjut bisa ditambahkan, dan daftar bisa diunduh sebagai CSV.
 
 API: `POST /api/feedback` (publik, maks. 10 per menit per IP) · `GET /api/feedback?days=&jenis=&status=&q=` · `GET /api/feedback/summary?days=` · `PUT /api/feedback/<id>` `{status, catatan}` · `GET /api/feedback/export` (admin).
+
+## Akun login dashboard (ikon Profil)
+
+Ikon profil di pojok kanan atas dashboard menampilkan foto, nama pengguna, dan jabatan, dengan menu **Edit profil**, **Reset password**, dan **Logout**.
+
+- `POST /api/akun/login`: cek password `{jabatan, cabang?, hash}`. `hash` = SHA-256 dari `"jabatan:password"`, sehingga password asli tidak pernah dikirim.
+- `POST /api/akun/password`: ganti password `{jabatan, cabang?, hash, baru}`.
+- `POST /api/akun/profil`: simpan nama dan foto `{jabatan, cabang?, hash, nama, foto}`. Foto berupa data URL JPEG/PNG/WebP, maksimal ±44 KB; dashboard otomatis memperkecilnya ke 160×160.
+- Akun yang dipakai: `roh`, `toh`, `sqor`, `asm`, `sqoa`, `atom`, serta BOM-BOS per cabang (`bom:<kode cabang>`).
+- Data disimpan di tabel `akun` (`data/push.sqlite`). Akun yang belum pernah ganti password memakai hash bawaan `KP_AKUN_BAWAAN` di `lib/akun.php`, yang harus sama dengan `KPI_AKUN` di `assets/js/kpi-login.js`.
+- Mengembalikan satu akun ke password bawaan: hapus kolom `hash` akun tersebut (`UPDATE akun SET hash = NULL WHERE kunci = 'bom:11325'`).

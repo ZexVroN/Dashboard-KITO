@@ -17,6 +17,7 @@ require __DIR__ . '/lib/app.php';
 require __DIR__ . '/lib/presence.php';
 require __DIR__ . '/lib/masukan.php';
 require __DIR__ . '/lib/pengguna.php';
+require __DIR__ . '/lib/akun.php';
 
 function kp_json(int $status, $data): void {
     http_response_code($status);
@@ -251,6 +252,14 @@ try {
         kp_admin(); $q = kp_db()->prepare("UPDATE scheduled SET status = 'dibatalkan' WHERE id = ? AND status = 'menunggu'"); $q->execute([(int)$m[1]]);
         if (!$q->rowCount()) kp_fail(404, 'jadwal tidak ditemukan atau sudah terkirim');
         kp_json(200, ['ok' => true, 'dibatalkan' => (int)$m[1]]);
+    }
+    /* ---------- akun login dashboard: profil & ganti password (ikon Profil) ---------- */
+    if ($method === 'POST' && in_array($route, ['/api/akun/login', '/api/akun/password', '/api/akun/profil'], true)) {
+        if (!kp_rate('akun:' . kp_ip(), 20)) kp_fail(429, 'terlalu banyak permintaan, coba lagi sebentar lagi');
+        $b = kp_body();
+        if ($route === '/api/akun/login') kp_json(200, kp_akun_login($b));
+        if ($route === '/api/akun/password') kp_json(200, kp_akun_password($b));
+        kp_json(200, kp_akun_simpan_profil($b));
     }
     /* ---------- masukan: rating & keluhan dari halaman Cabang ---------- */
     if ($method === 'POST' && $route === '/api/feedback') {

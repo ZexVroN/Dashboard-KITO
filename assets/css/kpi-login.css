@@ -32,3 +32,64 @@ body.mode-kpi-login .nav{z-index:12}
 .kl-card select{display:block;width:100%;box-sizing:border-box;margin-top:4px;padding:10px 36px 10px 12px;border:1px solid rgba(255,255,255,.35);border-radius:10px;background:rgba(255,255,255,.92);color:#14213d;font:inherit;font-size:14px;appearance:none;-webkit-appearance:none;cursor:pointer}
 .kl-card select:focus{outline:2px solid #f6bd28;outline-offset:1px}
 .kl-sel::after{content:'⌄';position:absolute;right:13px;top:calc(50% + 2px);transform:translateY(-55%);font-size:18px;color:#14213d;pointer-events:none}
+/* Gerbang login setelah loading page (di bawah splash, di atas seluruh dashboard) */
+body.mode-gerbang{overflow:hidden}
+.kl.kl-gerbang{z-index:2147482000;transition:opacity .3s ease}
+.kl.kl-gerbang.kl-pergi{opacity:0;pointer-events:none}
+.kl-lewati{display:block;width:100%;margin-top:8px;padding:9px;border:1px solid rgba(255,255,255,.4);border-radius:10px;background:transparent;color:#fff;font:inherit;font-size:13px;font-weight:600;cursor:pointer}
+.kl-lewati:hover,.kl-lewati:focus-visible{background:rgba(255,255,255,.12)}
+/* Mode tamu (lanjut tanpa login): tab selain Cabang terkunci */
+#nav button.kl-kunci{opacity:.45;position:relative}
+#nav button.kl-kunci::after{content:'🔒';position:absolute;top:3px;left:calc(50% + 6px);font-size:10px;line-height:1}
+.kl-card label.kl-cab[hidden]{display:none}
+.kl-card .kl-nama input:disabled{background:rgba(255,255,255,.55);color:#14213d;-webkit-text-fill-color:#14213d;opacity:1;cursor:not-allowed;font-weight:600}
+/* ===== Profil: ikon paling kanan atas + kotak profil + dialog ===== */
+.bar-atas .kpf-btn{margin-left:8px;padding:0;display:inline-flex;align-items:center;justify-content:center;overflow:hidden}
+.bar-atas .kpf-btn:focus-visible{outline:none;box-shadow:0 0 0 3px rgba(246,189,40,.7)}
+.kpf-av{display:inline-flex;align-items:center;justify-content:center;width:100%;height:100%;border-radius:50%;overflow:hidden;flex:none}
+.kpf-av img{width:100%;height:100%;object-fit:cover;display:block}
+.kpf-av svg{width:19px;height:19px}
+.kpf-av.kpf-ini{background:#f6bd28;color:#002060;font:800 13px/1 "Inter",system-ui,sans-serif;letter-spacing:.3px}
+.kpf-av-b{width:56px;height:56px;background:#e6ecf8;color:#002060}
+.kpf-av-b svg{width:30px;height:30px}
+.kpf-av-b.kpf-ini{font-size:20px}
+.kpf-box{position:fixed;right:max(10px,env(safe-area-inset-right));z-index:10050;width:min(300px,calc(100vw - 20px));background:var(--cd,#fff);color:var(--tx,#13203d);border:1px solid var(--ln,#e1e6f0);border-radius:16px;box-shadow:0 14px 40px rgba(0,16,60,.28);padding:14px;font-family:"Inter",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;animation:kpf-in .16s ease-out}
+.kpf-box::before{content:'';position:absolute;top:-7px;right:14px;width:12px;height:12px;background:inherit;border-left:1px solid var(--ln,#e1e6f0);border-top:1px solid var(--ln,#e1e6f0);transform:rotate(45deg)}
+@keyframes kpf-in{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
+.kpf-head{display:flex;align-items:center;gap:12px;padding-bottom:12px;border-bottom:1px solid var(--ln,#e1e6f0)}
+.kpf-id{min-width:0}
+.kpf-id b{display:block;font-size:15px;line-height:1.3;overflow-wrap:anywhere}
+.kpf-id small{display:block;font-size:12px;color:var(--mu,#66728c);margin-top:2px;line-height:1.35}
+.kpf-menu{display:flex;flex-direction:column;padding-top:8px}
+.kpf-menu button{display:flex;align-items:center;gap:10px;width:100%;padding:10px 8px;border:0;border-radius:10px;background:transparent;color:inherit;font:600 14px/1.2 inherit;font-family:inherit;text-align:left;cursor:pointer}
+.kpf-menu button span{width:22px;text-align:center}
+.kpf-menu button:hover,.kpf-menu button:focus-visible{background:rgba(0,87,174,.08);outline:none}
+.kpf-menu .kpf-out{color:#d92d20}
+body.kpf-open{overflow:hidden}
+.kpf-wrap{position:fixed;inset:0;z-index:10060;display:flex;align-items:flex-end;justify-content:center}
+.kpf-bg{position:absolute;inset:0;background:rgba(7,14,33,.45)}
+.kpf-dlg{position:relative;width:100%;max-width:420px;max-height:90vh;overflow:auto;background:var(--cd,#fff);color:var(--tx,#13203d);border-radius:18px 18px 0 0;padding:16px 16px calc(16px + env(safe-area-inset-bottom));box-shadow:0 -10px 40px rgba(0,0,0,.25);font-family:"Inter",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;animation:kpf-up .2s ease-out}
+@media (min-width:640px){.kpf-wrap{align-items:center}.kpf-dlg{border-radius:18px}}
+@keyframes kpf-up{from{transform:translateY(24px);opacity:0}to{transform:none;opacity:1}}
+.kpf-dh{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.kpf-dh h2{margin:0;font-size:17px}
+.kpf-x{border:0;background:transparent;font-size:24px;line-height:1;color:var(--mu,#66728c);cursor:pointer;padding:4px 8px}
+.kpf-l{display:block;font-size:12.5px;font-weight:600;margin:10px 0 0}
+.kpf-l input{display:block;width:100%;box-sizing:border-box;margin-top:4px;padding:10px 12px;border:1px solid var(--ln,#d5dbe8);border-radius:10px;background:var(--bg,#f3f5fa);color:var(--tx,#13203d);font:inherit;font-size:14px}
+.kpf-l input:disabled{opacity:.75;cursor:not-allowed}
+.kpf-l input:focus{outline:2px solid #1565d8;outline-offset:1px}
+.kpf-l .kl-pw button{color:inherit}
+.kpf-foto{display:flex;align-items:center;gap:14px}
+.kpf-foto>div{display:flex;flex-direction:column;align-items:flex-start;gap:4px}
+.kpf-up{display:inline-block;padding:8px 12px;border-radius:10px;background:#0057ae;color:#fff;font-size:13px;font-weight:700;cursor:pointer}
+.kpf-link{border:0;background:transparent;color:#d92d20;font:600 12.5px inherit;font-family:inherit;padding:2px 0;cursor:pointer}
+.kpf-note{font-size:12px;color:var(--mu,#66728c);margin:10px 0 0}
+.kpf-err{display:block;min-height:16px;margin-top:8px;font-size:12px;font-weight:600;color:#d92d20}
+.kpf-act{display:flex;gap:8px;justify-content:flex-end;margin-top:8px}
+.kpf-act button{border:0;border-radius:10px;padding:10px 16px;font:700 14px inherit;font-family:inherit;cursor:pointer}
+.kpf-b1{background:#0057ae;color:#fff}.kpf-b1:disabled{opacity:.6;cursor:wait}
+.kpf-b2{background:transparent;color:var(--tx,#13203d);border:1px solid var(--ln,#d5dbe8)!important}
+.kpf-toast{position:fixed;left:50%;bottom:calc(90px + env(safe-area-inset-bottom));transform:translateX(-50%);z-index:10070;background:#13203d;color:#fff;padding:10px 16px;border-radius:12px;font:600 13px "Inter",system-ui,sans-serif;box-shadow:0 8px 24px rgba(0,0,0,.25);transition:opacity .4s}
+.kpf-toast.pergi{opacity:0}
+@media (prefers-reduced-motion:reduce){.kpf-box,.kpf-dlg{animation:none}}
+@media print{.kpf-btn,.kpf-box,.kpf-wrap{display:none}}

@@ -31,7 +31,8 @@ memakai total ini; tabel per pegawai tetap memakai nilai pegawai (tanggal tanpa 
     --ganti-label  memperbaiki label tanggal di riwayat (mis. kolom berjudul "28 Okt" yang ternyata data 30 Okt)
 
 Penyesuaian manual (tools/sales_penyesuaian.json, atau --penyesuaian <file>): pegawai di daftar "takeout" dibuang,
-pegawai di daftar "pindah" dipindah ke kode cabang "ke". Diterapkan sebelum riwayat dicocokkan dan sebelum total
+pegawai di daftar "pindah" dipindah ke kode cabang "ke", pegawai di daftar "jabatan" diganti jabatannya dan target +
+target balance Ekstensifikasi/Intensifikasi-nya mengikuti standar jabatan baru (akuisisi & balance tetap). Diterapkan sebelum riwayat dicocokkan dan sebelum total
 per cabang dihitung, jadi target & pencapaian cabang ikut menyesuaikan. Entri yang tidak ditemukan di laporan
 dicetak sebagai PERINGATAN (mis. Excel sudah memperbarui datanya, entri boleh dihapus).
 """
@@ -140,11 +141,11 @@ if path_riwayat:
 def _cocok(aturan, nama, kd):
     return aturan["nama"].strip().upper() == nama.upper() and (not aturan.get("dari") or str(aturan["dari"]) == kd)
 
-ATUR = {"takeout": [], "pindah": []}
+ATUR = {"takeout": [], "pindah": [], "jabatan": []}
 if A.penyesuaian and os.path.exists(A.penyesuaian):
     with open(A.penyesuaian, encoding="utf-8") as f:
         ATUR.update(json.load(f))
-    print(f"Penyesuaian: {A.penyesuaian} · takeout {len(ATUR['takeout'])} · pindah {len(ATUR['pindah'])}")
+    print(f"Penyesuaian: {A.penyesuaian} · takeout {len(ATUR['takeout'])} · pindah {len(ATUR['pindah'])} · jabatan {len(ATUR['jabatan'])}")
 dipakai = set()
 
 # ---------- laporan baru ----------
@@ -164,12 +165,35 @@ for r in rows[5:]:
         dipakai.add(("pindah", pi))
         p["id"][4] = str(ATUR["pindah"][pi]["ke"])
         print(f"  pindah : {nm} {kd} -> {p['id'][4]}")
+    ji = next((i for i, a in enumerate(ATUR["jabatan"]) if _cocok(a, nm, kd)), None)
+    if ji is not None:
+        dipakai.add(("jabatan", ji))
+        print(f"  jabatan: {nm} ({kd}) {p['id'][2]} -> {ATUR['jabatan'][ji]['jabatan']}")
+        p["id"][2] = ATUR["jabatan"][ji]["jabatan"]
+        p["ubah_jabatan"] = True
     for key in ("e", "i"):
         b = BL[key]
         p[key] = {"seri": dict(zip(b["tgl"], (num(r[i]) for i in b["akuisisi"]))),
                   "sisa": [num(r[b["target"]]), num(r[b["bal"]]), num(r[b["tbal"]])]}
     pegawai.append(p)
-for jenis in ("takeout", "pindah"):
+# ubah jabatan: target & target balance ikut standar jabatan baru (nilai terbanyak pegawai lain dengan jabatan itu
+# di laporan yang sama); akuisisi & balance tetap pencapaian pegawai tersebut
+if any(p.get("ubah_jabatan") for p in pegawai):
+    from collections import Counter
+    standar = {}
+    for p in pegawai:
+        if not p.get("ubah_jabatan"):
+            standar.setdefault(p["id"][2], Counter())[(p["e"]["sisa"][0], p["e"]["sisa"][2], p["i"]["sisa"][0], p["i"]["sisa"][2])] += 1
+    for p in pegawai:
+        if p.pop("ubah_jabatan", False):
+            s = standar.get(p["id"][2])
+            if not s:
+                print(f"  PERINGATAN jabatan: tidak ada pegawai lain berjabatan '{p['id'][2]}', target {p['id'][0]} tidak diubah")
+                continue
+            (p["e"]["sisa"][0], p["e"]["sisa"][2], p["i"]["sisa"][0], p["i"]["sisa"][2]), n = s.most_common(1)[0]
+            print(f"           target {p['id'][0]} -> eksten {p['e']['sisa'][0]} (bal {p['e']['sisa'][2]}) · inten {p['i']['sisa'][0]} (bal {p['i']['sisa'][2]})"
+                  f" · standar {n} pegawai {p['id'][2]}")
+for jenis in ("takeout", "pindah", "jabatan"):
     for i, a in enumerate(ATUR[jenis]):
         if (jenis, i) not in dipakai:
             print(f"  PERINGATAN {jenis}: '{a['nama']}'" + (f" (cabang {a['dari']})" if a.get("dari") else "")

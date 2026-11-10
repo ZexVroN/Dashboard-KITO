@@ -7,7 +7,12 @@
     {"nama": "ASSYAHID HASAN ALBANA"}
   ],
   "pindah": [
+    {"nama": "MARDIANA", "dari": "11315", "ke": "11388", "catatan": "KCP Sungai Lilin -> KCP Pangkalan Balai"},
     {"nama": "M FADIL RIZQULLA", "dari": "11321", "ke": "11315", "catatan": "KCP Palembang R. Sukamto -> KCP Sungai Lilin"}
+  ],
+  "_keterangan_jabatan": "Ganti jabatan pegawai; target & target balance Ekstensifikasi/Intensifikasi otomatis mengikuti standar jabatan baru (akuisisi & balance tetap).",
+  "jabatan": [
+    {"nama": "Sajena", "dari": "11325", "jabatan": "Teller", "catatan": "Customer Service Representative -> Teller"}
   ],
   "_keterangan_pegawai": "Daftar induk pegawai inbranch (selain takeout & pindah), urut kode cabang. Hanya acuan: tidak menyaring data. Saat build, pegawai Excel yang tidak ada di daftar ini dan pegawai daftar yang tidak ada di Excel dicetak sebagai INFO.",
   "pegawai": [
@@ -583,7 +588,6 @@
     {"nama": "NOVIA PRAMITA", "kode": "11313", "jabatan": "Customer Service Supervisor"},
     {"nama": "ALDIAN SUDHA", "kode": "11315", "jabatan": "Teller"},
     {"nama": "CHA CHA KIRANA", "kode": "11315", "jabatan": "Teller"},
-    {"nama": "MARDIANA", "kode": "11315", "jabatan": "Teller"},
     {"nama": "WAHYU SYAFRI MAULANA", "kode": "11315", "jabatan": "Branch Operation Manager"},
     {"nama": "ALVINA LOVE LANTI", "kode": "11317", "jabatan": "Customer Service Administrative"},
     {"nama": "ANDRIANE ARLIN", "kode": "11317", "jabatan": "Customer Service Administrative"},
@@ -635,7 +639,7 @@
     {"nama": "SUHAIDAR", "kode": "11324", "jabatan": "General Banker Staff"},
     {"nama": "ANGEL NOVIYANTI PUTRI", "kode": "11325", "jabatan": "Teller"},
     {"nama": "Luthfita Alfaini", "kode": "11325", "jabatan": "Customer Service Representative"},
-    {"nama": "Sajena", "kode": "11325", "jabatan": "Customer Service Representative"},
+    {"nama": "Sajena", "kode": "11325", "jabatan": "Teller"},
     {"nama": "YENI PURWATI", "kode": "11325", "jabatan": "Branch Operation Supervisor"},
     {"nama": "ADITYA HIDAYATULLAH", "kode": "11330", "jabatan": "Teller"},
     {"nama": "BUYUNG GIADE", "kode": "11330", "jabatan": "Branch Operation Supervisor"},

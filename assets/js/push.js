@@ -96,11 +96,100 @@
     return `<button type="button" class="knp-lapor" data-knp-lapor><b>⚠️ Laporkan masalah operasional cabang</b><small>${p.kode ? esc(p.kode + ' ' + (p.cabang || '')) + ' · ' : ''}Ketuk untuk isi form Keluhan Cabang</small></button>`;
   }
 
+
+  /* ---------- keluhan & feedback cabang + tindak lanjut (balasan ROH / SQO Region / SQO Area / ASM) ---------- */
+  const PEMBALAS = ['roh', 'sqor', 'sqoa', 'asm'];
+  const NM_STATUS = { baru: 'Baru', diproses: 'Diproses', selesai: 'Selesai', ditolak: 'Ditolak' };
+  const kel = { kode: null, list: null, err: '', muat: false, buka: null, kirim: false, pesanBalas: '' };
+  const akun = () => { try { return window.KITO_AKUN?.kini() || null; } catch (e) { return null; } };
+  const bisaBalas = () => { const a = akun(); return !!a && PEMBALAS.includes(a.jab); };
+  const wib = (s) => {
+    if (!s) return '';
+    const d = new Date(String(s).replace(' ', 'T') + (/[zZ+]/.test(s) ? '' : 'Z'));
+    return isNaN(d) ? s : d.toLocaleString('id-ID', { timeZone: 'Asia/Jakarta', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) + ' WIB';
+  };
+  const terbuka = (r) => r.status === 'baru' || r.status === 'diproses';
+
+  async function muatKeluhan(paksa) {
+    const kode = pilihan().kode;
+    if (!kode) { kel.kode = null; kel.list = []; tandaiJumlah(); return; }
+    if (!paksa && kel.kode === kode && kel.list) return;
+    kel.muat = true; kel.err = '';
+    if (kel.kode !== kode) { kel.list = null; kel.buka = null; }
+    kel.kode = kode;
+    try {
+      const r = await api('GET', '/api/feedback/cabang?kode=' + encodeURIComponent(kode));
+      if (kel.kode === kode) kel.list = r.keluhan || [];
+    } catch (e) { if (kel.kode === kode) { kel.err = e.message; kel.list = kel.list || []; } }
+    kel.muat = false;
+    tandaiJumlah();
+  }
+  // angka di lonceng = keluhan cabang ini yang masih Baru / Diproses
+  function tandaiJumlah() {
+    const n = (kel.list || []).filter(terbuka).length;
+    let c = bell.querySelector('.knp-cnt');
+    if (!n) { c?.remove(); return; }
+    if (!c) { c = document.createElement('b'); c.className = 'knp-cnt'; bell.appendChild(c); }
+    c.textContent = n > 9 ? '9+' : String(n);
+    bell.setAttribute('aria-label', `Notifikasi keluhan cabang, ${n} belum selesai`);
+  }
+
+  function bagianKeluhan() {
+    const p = pilihan();
+    if (!p.kode) return '';
+    const judul = `<p class="knp-g">Keluhan &amp; feedback · ${esc(p.kode + ' ' + (p.cabang || ''))}</p>`;
+    if (kel.muat && !kel.list) return judul + '<p class="knp-note">Memuat keluhan…</p>';
+    const list = kel.list || [];
+    const a = akun(), balas = bisaBalas();
+    const info = balas
+      ? `<p class="knp-note knp-as">Anda login sebagai <b>${esc(a.jabatan)}</b> dan dapat membalas tindak lanjut.</p>`
+      : '<p class="knp-note knp-as">Tindak lanjut dibalas oleh ROH, SQO Region, SQO Area, dan ASM (login).</p>';
+    if (!list.length) return judul + (kel.err ? `<p class="knp-msg">Keluhan tidak bisa dimuat: ${esc(kel.err)}</p>` : '<p class="knp-kosong">Belum ada keluhan untuk cabang ini dalam 120 hari terakhir.</p>') + info;
+    const item = (r) => {
+      const jenis = r.jenis === 'cabang' ? 'Keluhan cabang' : 'Keluhan aplikasi';
+      const bls = (r.balasan || []).map((b) => `<div class="knp-bl"><div class="knp-blh"><b>${esc(b.jabatan)}${b.nama ? ' · ' + esc(b.nama) : ''}</b><small>${esc(wib(b.created_at))}</small></div><p>${esc(b.pesan)}</p>${b.status ? `<span class="knp-st st-${esc(b.status)}">→ ${esc(NM_STATUS[b.status] || b.status)}</span>` : ''}</div>`).join('');
+      const form = balas && kel.buka === r.id ? `
+        <div class="knp-bf">
+          <textarea id="knp-bt" maxlength="1000" rows="3" placeholder="Tulis tindak lanjut / arahan untuk cabang…">${esc(kel.pesanBalas)}</textarea>
+          <div class="knp-bfr"><select id="knp-bs" aria-label="Status tindak lanjut">
+            <option value="">Status: ${esc(NM_STATUS[r.status] || r.status)} (tetap)</option>
+            <option value="diproses">Diproses</option><option value="selesai">Selesai</option><option value="ditolak">Ditolak</option></select>
+            <button type="button" class="knp-btn" data-knp-kirim="${r.id}"${kel.kirim ? ' disabled' : ''}>${kel.kirim ? 'Mengirim…' : 'Kirim'}</button>
+            <button type="button" class="knp-btn link" data-knp-balas="0">Batal</button></div>
+        </div>` : '';
+      return `<article class="knp-k ${terbuka(r) ? 'buka' : ''}">
+        <div class="knp-kh"><span class="knp-jn">${esc(jenis)}</span>${r.urgensi ? `<span class="knp-ur ur-${esc(r.urgensi)}">${esc(r.urgensi)}</span>` : ''}<span class="knp-st st-${esc(r.status)}">${esc(NM_STATUS[r.status] || r.status)}</span></div>
+        ${r.kategori ? `<b class="knp-kat">${esc(r.kategori)}</b>` : ''}
+        <p class="knp-ps">${esc(r.pesan || '')}</p>
+        <small class="knp-mt">${esc(wib(r.created_at))}${r.nama ? ' · ' + esc(r.nama) : ''}${r.waktu_kejadian ? ' · kejadian ' + esc(String(r.waktu_kejadian).replace('T', ' ')) : ''}</small>
+        ${bls ? `<div class="knp-bls">${bls}</div>` : ''}
+        ${form || (balas ? `<button type="button" class="knp-balas" data-knp-balas="${r.id}">↩ Balas / tindak lanjut</button>` : '')}
+      </article>`;
+    };
+    return judul + info + `<div class="knp-kl">${list.map(item).join('')}</div>` + (kel.err ? `<p class="knp-msg">${esc(kel.err)}</p>` : '');
+  }
+
+  async function kirimBalasan(id) {
+    const a = akun(), t = body.querySelector('#knp-bt'), s = body.querySelector('#knp-bs');
+    if (!a || !t) return;
+    kel.pesanBalas = t.value;
+    if (!t.value.trim()) { t.focus(); return; }
+    kel.kirim = true; kel.err = ''; gambar();
+    try {
+      await api('POST', `/api/feedback/${id}/balas`, { jabatan: a.jab, cabang: a.cab || undefined, hash: a.h, nama: a.profil?.nama || null, pesan: kel.pesanBalas.trim(), status: s?.value || null });
+      kel.buka = null; kel.pesanBalas = '';
+      await muatKeluhan(true);
+    } catch (e) {
+      kel.err = /password salah/i.test(e.message) ? 'Sesi login tidak berlaku lagi. Silakan logout lalu login ulang.' : 'Balasan gagal dikirim: ' + e.message;
+    }
+    kel.kirim = false; gambar();
+  }
+
   function gambar() {
     let h = '';
     if (!didukung) {
       h = `<p class="knp-status">○ Notifikasi push belum didukung di ${isTWA ? 'versi aplikasi ini' : 'browser ini'}</p><p class="knp-note">${isIOS ? 'Di iPhone/iPad, tambahkan KITO ke Layar Utama lalu buka dari sana.' : 'Perbarui aplikasi KITO atau Google Chrome ke versi terbaru untuk menerima notifikasi.'}</p>`;
-      body.innerHTML = bagianLapor() + h + (pesan ? `<p class="knp-msg">${esc(pesan)}</p>` : '');
+      body.innerHTML = bagianLapor() + bagianKeluhan() + '<p class="knp-g knp-sep">Pengaturan notifikasi push</p>' + h + (pesan ? `<p class="knp-msg">${esc(pesan)}</p>` : '');
       return;
     }
     const izin = Notification.permission;
@@ -115,7 +204,7 @@
           : '<button type="button" class="knp-btn" data-knp="aktifkan">Aktifkan notifikasi</button>'}</div>
         <p class="knp-note">Pilihan area dan cabang mengikuti filter di atas. Notifikasi tetap masuk walau dashboard ditutup${isIOS ? ' (selama aplikasi KITO masih terpasang)' : ''}.</p>`;
     }
-    body.innerHTML = bagianLapor() + h + (pesan ? `<p class="knp-msg">${esc(pesan)}</p>` : '');
+    body.innerHTML = bagianLapor() + bagianKeluhan() + '<p class="knp-g knp-sep">Pengaturan notifikasi push</p>' + h + (pesan ? `<p class="knp-msg">${esc(pesan)}</p>` : '');
     body.querySelectorAll('.knp-btn').forEach((b) => { b.disabled = sibuk; });
     tandaiBell();
   }
@@ -160,6 +249,7 @@
   async function buka() {
     sheet.hidden = false; document.body.classList.add('knp-open');
     pesan = ''; body.innerHTML = '<p class="knp-note">Memuat…</p>';
+    muatKeluhan(true).then(() => { if (!sheet.hidden) gambar(); });
     try { if (didukung && !reg) await siapkanSW(); else if (reg) sub = await reg.pushManager.getSubscription(); await segarkanStatus(); }
     catch (e) { pesan = 'Gagal menyiapkan notifikasi: ' + e.message; }
     gambar();
@@ -171,8 +261,22 @@
   sheet.addEventListener('click', (e) => {
     if (e.target.closest('[data-knp-tutup]')) return tutup();
     if (e.target.closest('[data-knp-lapor]')) { sheet.hidden = true; document.body.classList.remove('knp-open'); return window.KITO_MASUKAN?.laporCabang(); }
+    const bl = e.target.closest('[data-knp-balas]');
+    if (bl) {
+      const t = body.querySelector('#knp-bt'); if (t) kel.pesanBalas = t.value;
+      const id = +bl.dataset.knpBalas; if (kel.buka !== id) kel.pesanBalas = '';
+      kel.buka = id || null; gambar(); body.querySelector('#knp-bt')?.focus(); return;
+    }
+    const kr = e.target.closest('[data-knp-kirim]'); if (kr) return kirimBalasan(+kr.dataset.knpKirim);
     const b = e.target.closest('[data-knp]'); if (b) aksi(b.dataset.knp);
   });
+  // login / logout / ganti cabang: perbarui daftar keluhan & angka di lonceng
+  window.addEventListener('kito-akun', () => { if (!sheet.hidden) gambar(); });
+  if (typeof render === 'function') {
+    const renderAsli = render;
+    render = function (...a) { const r = renderAsli.apply(this, a); if (pilihan().kode !== kel.kode) muatKeluhan().then(() => { if (!sheet.hidden) gambar(); }); return r; };
+  }
+  muatKeluhan();
   document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !sheet.hidden) tutup(); });
 
   // status lonceng saat halaman dibuka (tanpa meminta izin)

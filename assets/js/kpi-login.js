@@ -329,6 +329,7 @@
     btnProfil.title = a ? `${a.nama} · ${a.jabatan}` : 'Profil (belum login)';
     btnProfil.setAttribute('aria-label', a ? `Profil ${a.nama}` : 'Profil, belum login');
     if (kotak) gambarKotak();
+    try { window.dispatchEvent(new Event('kito-akun')); } catch (e) {}
   }
   function gambarKotak() {
     const a = akunKini();
@@ -488,6 +489,7 @@
   }
 
   pasangProfil();
+  window.KITO_AKUN = { kini: akunKini };   // dipakai push.js (balasan keluhan cabang)
 
   if (tamu() && TAB_TERKUNCI.includes(tampil)) { tampil = 'cabang'; render(); }
   if (sudahMasuk()) {

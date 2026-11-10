@@ -268,6 +268,15 @@ try {
         if (is_string($hasil)) kp_fail($kode, $hasil);
         kp_json($kode, $hasil);
     }
+    if ($method === 'GET' && $route === '/api/feedback/cabang') {
+        if (!kp_rate('fbc:' . kp_ip(), 60)) kp_fail(429, 'terlalu banyak permintaan');
+        header('Cache-Control: no-store');
+        kp_json(200, ['ok' => true, 'keluhan' => kp_fb_cabang((string)($_GET['kode'] ?? ''), (int)($_GET['limit'] ?? 20)), 'pembalas' => array_keys(KP_FB_PEMBALAS)]);
+    }
+    if ($method === 'POST' && preg_match('#^/api/feedback/(\d+)/balas$#', $route, $m)) {
+        if (!kp_rate('fbb:' . kp_ip(), 20)) kp_fail(429, 'terlalu banyak balasan, coba lagi sebentar lagi');
+        kp_json(200, kp_fb_balas((int)$m[1], kp_body()));
+    }
     if ($method === 'GET' && $route === '/api/feedback') { kp_admin(); kp_json(200, ['masukan' => kp_fb_list($_GET), 'kategori' => KP_FB_KATEGORI, 'status' => KP_FB_STATUS]); }
     if ($method === 'GET' && $route === '/api/feedback/summary') { kp_admin(); kp_json(200, kp_fb_summary((int)($_GET['days'] ?? 90))); }
     if ($method === 'GET' && $route === '/api/feedback/export') {

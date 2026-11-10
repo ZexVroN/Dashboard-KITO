@@ -95,3 +95,9 @@ Ikon profil di pojok kanan atas dashboard menampilkan foto, nama pengguna, dan j
 - Akun yang dipakai: `roh`, `toh`, `sqor`, `asm`, `sqoa`, `atom`, serta BOM-BOS per cabang (`bom:<kode cabang>`).
 - Data disimpan di tabel `akun` (`data/push.sqlite`). Akun yang belum pernah ganti password memakai hash bawaan `KP_AKUN_BAWAAN` di `lib/akun.php`, yang harus sama dengan `KPI_AKUN` di `assets/js/kpi-login.js`.
 - Mengembalikan satu akun ke password bawaan: hapus kolom `hash` akun tersebut (`UPDATE akun SET hash = NULL WHERE kunci = 'bom:11325'`).
+
+## Keluhan & tindak lanjut di kotak 🔔 dashboard
+
+- `GET /api/feedback/cabang?kode=<kode cabang>`: keluhan cabang dan keluhan aplikasi dari cabang itu dalam 120 hari terakhir (maksimal 20), beserta balasannya. NIP pelapor, IP, dan data perangkat tidak ditampilkan.
+- `POST /api/feedback/<id>/balas` `{jabatan, hash, pesan, status?, nama?}`: balasan tindak lanjut. Hanya untuk akun **ROH, SQO Region, SQO Area, dan ASM** (`KP_FB_PEMBALAS`), dan password dicek lewat akun login (`lib/akun.php`). Balasan pertama otomatis mengubah status keluhan "baru" menjadi "diproses". Status bisa diubah ke diproses, selesai, atau ditolak.
+- Balasan disimpan di tabel `feedback_balasan`.

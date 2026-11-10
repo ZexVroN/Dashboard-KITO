@@ -160,3 +160,60 @@ function kp_fb_export(array $g): array {
         $r['nama'], $r['kontak'], $r['jabatan'], $r['area'], $r['kode'], $r['cabang'], $r['tanggal_data'], $r['app'], $r['platform'], $r['browser'], $r['status'], $r['catatan'], $wib($r['updated_at'])];
     return ['masukan-' . ($g['jenis'] ?? 'semua') . '-' . gmdate('Ymd-Hi', time() + 7 * 3600) . '.csv', $rows];
 }
+
+/* ---------- tindak lanjut di kotak 🔔 dashboard ----------
+   Publik : GET  /api/feedback/cabang?kode=<kode cabang>  -> keluhan cabang & keluhan aplikasi dari cabang itu + balasannya
+            (NIP pelapor, IP, dan data perangkat tidak ditampilkan)
+   Login  : POST /api/feedback/<id>/balas {jabatan, cabang?, hash, pesan, status?, nama?}
+            hanya jabatan KP_FB_PEMBALAS; password dicek lewat akun login (lib/akun.php) */
+const KP_FB_PEMBALAS = ['roh' => 'ROH', 'sqor' => 'SQO Region', 'sqoa' => 'SQO Area', 'asm' => 'ASM'];
+
+function kp_fb_balasan_db(): PDO {
+    static $siap = false;
+    $db = kp_fb_db();
+    if (!$siap) {
+        $db->exec("CREATE TABLE IF NOT EXISTS feedback_balasan (id INTEGER PRIMARY KEY AUTOINCREMENT, feedback_id INTEGER NOT NULL,
+            jabatan TEXT NOT NULL, nama TEXT, pesan TEXT NOT NULL, status TEXT, ip TEXT, created_at TEXT NOT NULL DEFAULT (datetime('now')));
+          CREATE INDEX IF NOT EXISTS idx_fbb_fb ON feedback_balasan(feedback_id, id);");
+        $siap = true;
+    }
+    return $db;
+}
+
+function kp_fb_cabang(string $kode, int $limit = 20): array {
+    if (!preg_match('/^\d{3,6}$/', $kode)) return [];
+    $db = kp_fb_balasan_db();
+    $lim = max(1, min(50, $limit));
+    $q = $db->prepare("SELECT id, jenis, kategori, urgensi, waktu_kejadian, pesan, nama, jabatan, kode, cabang, status, created_at, updated_at
+        FROM feedback WHERE kode = ? AND jenis IN ('cabang', 'keluhan') AND created_at >= datetime('now', '-120 days') ORDER BY id DESC LIMIT $lim");
+    $q->execute([$kode]);
+    $rows = $q->fetchAll(PDO::FETCH_ASSOC);
+    if (!$rows) return [];
+    $ids = array_map(function ($r) { return (int)$r['id']; }, $rows);
+    $b = $db->prepare('SELECT id, feedback_id, jabatan, nama, pesan, status, created_at FROM feedback_balasan WHERE feedback_id IN (' . implode(',', array_fill(0, count($ids), '?')) . ') ORDER BY id');
+    $b->execute($ids);
+    $per = [];
+    foreach ($b->fetchAll(PDO::FETCH_ASSOC) as $x) { $fid = (int)$x['feedback_id']; unset($x['feedback_id']); $x['id'] = (int)$x['id']; $per[$fid][] = $x; }
+    foreach ($rows as &$r) { $r['id'] = (int)$r['id']; $r['balasan'] = $per[$r['id']] ?? []; }
+    return $rows;
+}
+
+function kp_fb_balas(int $id, array $b): array {
+    $jab = strtolower(trim((string)($b['jabatan'] ?? '')));
+    if (!isset(KP_FB_PEMBALAS[$jab])) kp_fail(403, 'hanya ROH, SQO Region, SQO Area, dan ASM yang dapat membalas');
+    kp_akun_cek($b);   // gagal -> 401
+    $pesan = kp_fb_teks($b['pesan'] ?? null, 1000);
+    if ($pesan === null) kp_fail(400, 'isi balasan wajib diisi');
+    $status = $b['status'] ?? null;
+    if ($status !== null && $status !== '' && !in_array($status, ['diproses', 'selesai', 'ditolak'], true)) kp_fail(400, 'status tidak valid');
+    $db = kp_fb_balasan_db();
+    $ada = $db->prepare("SELECT status FROM feedback WHERE id = ? AND jenis IN ('cabang', 'keluhan')"); $ada->execute([$id]);
+    $lama = $ada->fetchColumn();
+    if ($lama === false) kp_fail(404, 'keluhan tidak ditemukan');
+    $baru = $status ?: ($lama === 'baru' ? 'diproses' : null);   // balasan pertama otomatis menandai "diproses"
+    $nama = kp_fb_teks($b['nama'] ?? null, 80);
+    $db->prepare('INSERT INTO feedback_balasan (feedback_id, jabatan, nama, pesan, status, ip) VALUES (?, ?, ?, ?, ?, ?)')
+       ->execute([$id, KP_FB_PEMBALAS[$jab], $nama, $pesan, $baru, kp_ip()]);
+    if ($baru && $baru !== $lama) $db->prepare("UPDATE feedback SET status = ?, updated_at = datetime('now') WHERE id = ?")->execute([$baru, $id]);
+    return ['ok' => true, 'status' => $baru ?: $lama];
+}

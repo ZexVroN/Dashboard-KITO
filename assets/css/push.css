@@ -47,3 +47,38 @@ body.knp-open { overflow: hidden; }
 .knp-lapor b { display: block; font-size: 14px; }
 .knp-lapor small { display: block; font-size: 12px; opacity: .85; margin-top: 2px; }
 .knp-lapor:active { transform: scale(.98); }
+
+/* angka keluhan belum selesai di lonceng */
+.kito-bell .knp-cnt { position: absolute; top: -4px; right: -4px; min-width: 17px; height: 17px; padding: 0 4px; border-radius: 9px; background: #e5484d; color: #fff;
+  font: 800 10.5px/17px system-ui, sans-serif; text-align: center; box-shadow: 0 0 0 2px #002060; }
+
+/* keluhan & feedback cabang + tindak lanjut */
+.knp-sep { margin-top: 16px; padding-top: 12px; border-top: 1px solid var(--ln, #e1e6f0); }
+.knp-as { margin: 0 0 8px; }
+.knp-kosong { font-size: 12.5px; color: var(--mu, #66728c); background: var(--bg, #f3f5fa); border-radius: 10px; padding: 10px 12px; margin: 0 0 8px; }
+.knp-kl { display: flex; flex-direction: column; gap: 8px; max-height: 46vh; overflow: auto; padding-right: 2px; }
+.knp-k { border: 1px solid var(--ln, #e1e6f0); border-radius: 12px; padding: 10px 12px; background: var(--cd, #fff); }
+.knp-k.buka { border-left: 4px solid #f59e0b; }
+.knp-kh { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-bottom: 4px; }
+.knp-jn { font-size: 11px; font-weight: 700; color: #0057ae; }
+.knp-ur, .knp-st { font-size: 10.5px; font-weight: 700; border-radius: 999px; padding: 2px 8px; text-transform: capitalize; }
+.knp-ur { background: #eef2f8; color: #475569; }
+.knp-ur.ur-tinggi { background: #fff1e6; color: #c2410c; } .knp-ur.ur-kritis { background: #fde8e8; color: #b42318; }
+.knp-ur.ur-sedang { background: #fef7e0; color: #a16207; }
+.knp-st { margin-left: auto; background: #eef2f8; color: #475569; }
+.knp-st.st-baru { background: #fde8e8; color: #b42318; } .knp-st.st-diproses { background: #fef3c7; color: #92400e; }
+.knp-st.st-selesai { background: #dcfce7; color: #166534; } .knp-st.st-ditolak { background: #e5e7eb; color: #374151; }
+.knp-kat { display: block; font-size: 13px; }
+.knp-ps { margin: 2px 0 4px; font-size: 13px; white-space: pre-wrap; overflow-wrap: anywhere; }
+.knp-mt { display: block; font-size: 11px; color: var(--mu, #66728c); }
+.knp-bls { margin-top: 8px; display: flex; flex-direction: column; gap: 6px; }
+.knp-bl { background: rgba(0, 87, 174, .06); border-left: 3px solid #0057ae; border-radius: 8px; padding: 6px 10px; }
+.knp-blh { display: flex; justify-content: space-between; gap: 8px; font-size: 11.5px; }
+.knp-blh small { color: var(--mu, #66728c); white-space: nowrap; }
+.knp-bl p { margin: 2px 0 0; font-size: 12.5px; white-space: pre-wrap; overflow-wrap: anywhere; }
+.knp-bl .knp-st { display: inline-block; margin: 4px 0 0; }
+.knp-balas { margin-top: 8px; border: 1px solid var(--ln, #d5dbe8); background: transparent; color: #0057ae; border-radius: 9px; padding: 6px 10px; font: 700 12.5px system-ui, sans-serif; cursor: pointer; }
+.knp-bf { margin-top: 8px; }
+.knp-bf textarea { width: 100%; box-sizing: border-box; border: 1px solid var(--ln, #d5dbe8); border-radius: 10px; padding: 8px 10px; font: 13px/1.4 system-ui, sans-serif; background: var(--bg, #f3f5fa); color: var(--tx, #13203d); resize: vertical; }
+.knp-bfr { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-top: 6px; }
+.knp-bfr select { flex: 1; min-width: 140px; border: 1px solid var(--ln, #d5dbe8); border-radius: 9px; padding: 7px 8px; font: 12.5px system-ui, sans-serif; background: var(--cd, #fff); color: var(--tx, #13203d); }

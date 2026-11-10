@@ -13,6 +13,7 @@ Isi file = satu objek; tiap kunci menjadi variabel global di browser (assets/js/
     KITO_KPI            KPI (dulu kpi-data.js)
     KITO_PIMPINAN       BM & BOM/BOS (dulu pimpinan-data.js)
     KITO_ASM            Area Service Manager (dulu asm-data.js)
+    KITO_EMAS           Program Emas: Tabungan Emas & Cetak Emas per region / cabang / pegawai (tools/build_emas.py)
 
 Semua tools memakai modul ini. Nama file lama (mis. "assets/js/region-data.js") tetap diterima sebagai alamat bagian,
 sehingga argumen --out/OUT lama masih berlaku. Browser selalu memeriksa versi terbaru data/kito.json
@@ -36,6 +37,7 @@ PETA = {
     "kpi-data.js": "KITO_KPI",
     "pimpinan-data.js": "KITO_PIMPINAN",
     "asm-data.js": "KITO_ASM",
+    "emas-data.js": "KITO_EMAS",
 }
 URUTAN = list(PETA.values())
 

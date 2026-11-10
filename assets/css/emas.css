@@ -1,0 +1,77 @@
+/* Program Emas (emas.js): kartu cabang di Informasi Sales + infografis Area/Region II */
+:root{--em-gold:#c99a12;--em-gold-l:#fff4d6;--em-jl:#f5b700;--em-bl:#d0d5dd}
+[data-theme="dark"]{--em-gold-l:#3a3018;--em-bl:#3a4c75}
+
+.em-card h2,.em-hero h3{display:flex;align-items:center;gap:8px}
+.em-tiles{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:12px 0 4px}
+.em-tiles-h{grid-template-columns:repeat(auto-fit,minmax(150px,1fr))}
+@media(max-width:560px){.em-tiles{grid-template-columns:1fr}}
+.em-tile,.em-rank{display:flex;flex-direction:column;gap:6px;padding:12px 14px;border-radius:14px;background:var(--em-gold-l);border:1px solid rgba(201,154,18,.35)}
+.em-tl,.em-rank span{font-size:11px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:var(--em-gold)}
+.em-big{font-size:26px;font-weight:800;line-height:1.1;color:var(--tx)}
+.em-big small{font-size:14px;font-weight:600;color:var(--mu)}
+.em-ts,.em-rank small{font-size:12px;color:var(--mu)}
+.em-rank{justify-content:center;background:var(--nv);border-color:var(--nv)}
+.em-rank b{font-size:34px;font-weight:900;color:#f5b700;line-height:1}
+.em-rank span{color:#f5d77a}.em-rank small{color:#c9d4ee}
+.em-bar{display:block;height:8px;border-radius:99px;background:rgba(0,0,0,.08);overflow:hidden}
+[data-theme="dark"] .em-bar{background:rgba(255,255,255,.12)}
+.em-bar b{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,#e0a50c,#f5c542)}
+
+.em-h3{margin:16px 0 8px;font-size:15px;font-weight:800;color:var(--tx)}
+.em-chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
+.em-chips button{border:1px solid var(--ln);background:var(--cd);color:var(--tx);border-radius:99px;padding:5px 12px;font:600 12px Inter,system-ui,sans-serif;cursor:pointer}
+.em-chips button.on{background:var(--nv);border-color:var(--nv);color:#fff}
+.em-tbl-w{overflow-x:auto;-webkit-overflow-scrolling:touch}
+.em-tbl{width:100%;border-collapse:collapse;font-size:13px}
+.em-tbl th{text-align:left;font-size:11px;font-weight:800;letter-spacing:.5px;text-transform:uppercase;color:var(--mu);padding:6px 8px;border-bottom:1px solid var(--ln)}
+.em-tbl td{padding:8px;border-bottom:1px solid var(--ln);vertical-align:top;color:var(--tx)}
+.em-tbl td small{display:block;font-size:11px;color:var(--mu);margin-top:2px}
+.em-tbl .em-num{text-align:right;white-space:nowrap}
+.em-tbl .em-plus{color:var(--ok)}
+.em-tbl .em-lain td{background:rgba(201,154,18,.06)}
+.em-kosong{text-align:center;color:var(--mu);padding:12px 0;font-size:13px}
+.em-pr,.em-prh{display:grid;grid-template-columns:minmax(0,1fr) 62px 52px 86px;gap:8px;align-items:center;padding:8px 4px;border-bottom:1px solid var(--ln);font-size:13px;color:var(--tx)}
+.em-prh{padding-top:0;font-size:11px;font-weight:800;letter-spacing:.5px;text-transform:uppercase;color:var(--mu)}
+.em-prh span:nth-child(2),.em-prh span:nth-child(3){text-align:right}
+.em-pr .em-rv b i{font-style:normal;font-weight:500;font-size:12px;color:var(--mu)}
+.em-pr .em-plus{color:var(--ok)}
+.em-pr .em-st{justify-self:start}
+.em-lain{background:rgba(201,154,18,.06)}
+.em-st{display:inline-block;padding:2px 9px;border-radius:99px;font-size:11px;font-weight:800;white-space:nowrap}
+.em-st.em-ok{background:rgba(18,161,80,.14);color:#0b7a3c}
+.em-st.em-jl{background:rgba(245,183,0,.18);color:#8a6400}
+.em-st.em-bl{background:rgba(102,112,133,.14);color:var(--mu)}
+[data-theme="dark"] .em-st.em-ok{color:#5fd896}[data-theme="dark"] .em-st.em-jl{color:#f5cd5a}
+.em-more{display:block;margin:10px auto 0;border:1px solid var(--ln);background:var(--cd);color:var(--tx);border-radius:99px;padding:7px 16px;font:600 12px Inter,system-ui,sans-serif;cursor:pointer}
+.em-note{margin-top:10px}
+
+/* infografis area */
+.em-hero{background:linear-gradient(135deg,#0a2a78,#1450b8);color:#fff}
+.em-hero h3{color:#fff;margin:4px 0}.em-hero .wt-sub{color:#d6e2f7}.em-hero .wt-eyebrow{color:#f5b700}
+.em-hero .em-tile{background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.2)}
+.em-hero .em-tl{color:#f5d77a}.em-hero .em-big{color:#fff}.em-hero .em-big small,.em-hero .em-ts{color:#c9d4ee}
+.em-hero .em-bar{background:rgba(255,255,255,.18)}
+.em-rr,.em-ar,.em-tp,.em-sp{display:grid;align-items:center;gap:8px;padding:8px 6px;border-bottom:1px solid var(--ln);font-size:13px;color:var(--tx)}
+.em-rr{grid-template-columns:24px minmax(90px,1.2fr) minmax(60px,2fr) 70px 70px}
+.em-ar{grid-template-columns:24px minmax(100px,2fr) repeat(3,minmax(58px,1fr));width:100%;background:none;border-left:0;border-right:0;border-top:0;text-align:left;cursor:pointer;font:inherit}
+.em-arh{display:grid;grid-template-columns:24px minmax(100px,2fr) repeat(3,minmax(58px,1fr));gap:8px;padding:0 6px 6px;font-size:11px;font-weight:800;text-transform:uppercase;color:var(--mu)}
+.em-arh span:first-child{grid-column:1/3}.em-arh span{text-align:right}.em-arh span:first-child{text-align:left}
+.em-tp{grid-template-columns:24px minmax(120px,1fr) 70px 60px}
+.em-sp{grid-template-columns:minmax(90px,120px) 1fr auto}
+.em-me{background:rgba(245,183,0,.14);border-radius:10px}
+.em-no{font-weight:800;color:var(--mu);text-align:center}
+.em-nm{font-weight:700;min-width:0}.em-nm small{display:block;font-weight:500;font-size:11px;color:var(--mu)}
+.em-rv{text-align:right;white-space:nowrap}.em-rv b{display:block;font-size:14px}.em-rv small{font-size:11px;color:var(--mu)}
+.em-rb{height:10px;border-radius:99px;background:rgba(0,0,0,.06);overflow:hidden}
+[data-theme="dark"] .em-rb{background:rgba(255,255,255,.1)}
+.em-rb b{display:block;height:100%;background:#1450b8;border-radius:99px}
+.em-me .em-rb b{background:#e0a50c}
+.em-stack{display:flex;height:14px;border-radius:99px;overflow:hidden;background:var(--em-bl)}
+.em-stack i{display:block;height:100%}
+.em-stack .em-ok,.em-key.em-ok{background:#12a150}.em-stack .em-jl,.em-key.em-jl{background:var(--em-jl)}.em-stack .em-bl,.em-key.em-bl{background:var(--em-bl)}
+.em-spv{font-size:12px;white-space:nowrap;color:var(--mu)}.em-okt{color:#0b7a3c}.em-jlt{color:#8a6400}
+[data-theme="dark"] .em-okt{color:#5fd896}[data-theme="dark"] .em-jlt{color:#f5cd5a}
+.em-key{display:inline-block;width:10px;height:10px;border-radius:3px;margin:0 4px 0 10px;vertical-align:-1px}
+.em-key:first-child{margin-left:0}
+@media(max-width:520px){.em-rr{grid-template-columns:22px 1fr 64px 64px}.em-rr .em-rb{display:none}}

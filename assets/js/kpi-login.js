@@ -41,7 +41,11 @@
   };
   // backend akun (push-php): login, ganti password, profil. Tanpa koneksi: cek lokal (hash terakhir yang berhasil / bawaan)
   const API = (window.KITO_PUSH?.api || '').replace(/\/+$/, '');
-  const kunciAkun = (jab, kodeCab) => (jab === 'bom' ? 'bom:' + kodeCab : jab);
+  // akun per orang: BOM-BOS per kode cabang; ASM & SQO Area per area; SQO Region per region (kunci dari KITO_ASM).
+  // Tanpa sub = akun jabatan (sesi lama).
+  const JAB_ORANG = ['asm', 'sqoa', 'sqor'];
+  const kunciAkun = (jab, sub) => ((jab === 'bom' || JAB_ORANG.includes(jab)) && sub ? jab + ':' + sub : jab);
+  const kredAkun = (jab, sub, h) => ({ jabatan: jab, cabang: jab === 'bom' && sub ? sub : undefined, area: JAB_ORANG.includes(jab) && sub ? sub : undefined, hash: h });
   const lsBaca = (k, d) => { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch (e) { return d; } };
   const lsTulis = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} };
   async function apiAkun(jalur, body) {
@@ -53,9 +57,9 @@
     if (r.status === 404 || r.status >= 500) return { offline: true };   // backend belum diperbarui / gangguan server
     return { status: r.status, ...j };
   }
-  async function verifikasi(jab, kodeCab, h) {
-    const kunci = kunciAkun(jab, kodeCab);
-    const r = await apiAkun('login', { jabatan: jab, cabang: kodeCab || undefined, hash: h });
+  async function verifikasi(jab, sub, h) {
+    const kunci = kunciAkun(jab, sub);
+    const r = await apiAkun('login', kredAkun(jab, sub, h));
     if (r.offline) return { ok: h === (lsBaca('kito-akun-h:' + kunci, null) || KPI_AKUN[jab]) };
     if (r.status === 200 && r.ok) {
       lsTulis('kito-akun-h:' + kunci, h);
@@ -81,11 +85,42 @@
     if (i < 0) { const m = B.map((b, k) => k).filter((k) => String(B[k][1]).toLowerCase().includes(t)); if (m.length === 1) i = m[0]; } // potongan nama yang unik
     return i;
   }
+  // ASM, SQO Area, SQO Region: nama & area/region dari [KITO_ASM] (tools/build_asm.py):
+  //   data[kunci area] = {area, nama (ASM), sqoa (SQO Area)} · sqor = [{region, area, nama}]
+  const KUNCI_AREA = 'kito-kpi-area';
+  const kunciArea = (s) => String(s || '').toUpperCase().replace(/^\s*AREA\s+/, '').replace(/[^A-Z0-9]/g, '');
+  const judulArea = (s) => String(s || '').replace(/^AREA\s+/i, '').toLowerCase().replace(/(^|\s)([a-z])/g, (m, a, b) => a + b.toUpperCase());
+  // "REGION II / SUMATERA 2" -> "Region II · Sumatera 2" (angka romawi tetap huruf besar)
+  const judulRegion = (r) => String(r || '').replace(/\s*\/\s*/g, ' · ').toLowerCase()
+    .replace(/[a-z]+/g, (w) => (/^(i|ii|iii|iv|v|vi|vii|viii|ix|x|xi|xii)$/.test(w) ? w.toUpperCase() : w[0].toUpperCase() + w.slice(1)));
+  const LABEL_ORANG = { asm: ['ASM', 'area'], sqoa: ['SQO Area', 'area'], sqor: ['SQO Region', 'region'] };
+  // daftar pilihan per jabatan: [kunci, {nama, label}]
+  function daftarOrang(jab) {
+    const A = window.KITO_ASM || {};
+    const areaList = Object.entries(A.data || {}).sort((x, y) => String(x[1].area).localeCompare(String(y[1].area)));
+    if (jab === 'asm') return areaList.filter(([, x]) => x.nama).map(([k, x]) => [k, { nama: x.nama, label: 'Area ' + judulArea(x.area) }]);
+    if (jab === 'sqoa') return areaList.filter(([, x]) => x.sqoa).map(([k, x]) => [k, { nama: x.sqoa, label: 'Area ' + judulArea(x.area) }]);
+    if (jab === 'sqor') return (A.sqor || []).filter((x) => x.nama).map((x) => [kunciArea(x.region), { nama: x.nama, label: judulRegion(x.region) }]);
+    return [];
+  }
+  const dataOrang = (jab, k) => (daftarOrang(jab).find((x) => x[0] === k) || [])[1] || null;
+  function pilihArea(k) {
+    if (typeof st === 'undefined') return;
+    const i = daftarCabang().findIndex((b) => kunciArea(b[2]) === k);
+    if (i < 0) return;
+    if (kunciArea(D.B[st.b]?.[2]) !== k) st.b = i;   // cabang pertama di area ASM
+    st.a = D.B[st.b][2];
+    if (typeof fill === 'function') fill();
+  }
   // nama pengguna (hanya tampilan, tidak bisa diubah): BOM-BOS = nama BOM/BOS cabang dari [KITO_PIMPINAN];
   // jabatan lain = nama jabatan lengkap dari [KITO_KPI] (data nama orang per jabatan regional/area belum ada)
-  function namaPengguna(jab, teksCab) {
+  function namaPengguna(jab, teksCab, areaKey) {
     const k = String(jab || '').toUpperCase();
     if (!k) return '';
+    if (JAB_ORANG.includes(k.toLowerCase()) && areaKey !== undefined) {
+      const x = dataOrang(k.toLowerCase(), areaKey);
+      return x ? x.nama : '';
+    }
     if (k.toLowerCase() === KODE_CABANG) {
       const i = cariCabang(teksCab);
       if (i < 0) return '';
@@ -126,6 +161,9 @@
           <input id="${p}-c" list="${p}-cl" type="text" autocomplete="off" placeholder="Ketik kode atau nama cabang" />
           <datalist id="${p}-cl"></datalist>
         </label>
+        <label class="kl-asm" hidden><span class="kl-asm-t">Nama / area</span>
+          <span class="kl-sel"><select id="${p}-a"></select></span>
+        </label>
         <label class="kl-nama">Nama pengguna
           <input id="${p}-n" type="text" disabled placeholder="Terisi otomatis" aria-live="polite" />
         </label>
@@ -144,19 +182,38 @@
     // BOM-BOS: login berdasarkan pilihan kode/nama cabang
     const cabWrap = form.querySelector('.kl-cab'), cab = cabWrap.querySelector('input'), cabList = cabWrap.querySelector('datalist');
     const nama = form.querySelector('.kl-nama input');
-    const isiNama = () => { nama.value = namaPengguna(u.value, cab.value); };
+    // ASM / SQO Area / SQO Region: pilih nama pengguna & area/region
+    const asmWrap = form.querySelector('.kl-asm'), asm = asmWrap.querySelector('select');
+    let asmJab = '';
+    const isiNama = () => {
+      const j = u.value.toLowerCase();
+      nama.value = JAB_ORANG.includes(j) ? namaPengguna(j, '', asm.value) : namaPengguna(u.value, cab.value);
+    };
+    asm.addEventListener('change', () => { isiNama(); if (asm.value) p.focus(); });
     cab.addEventListener('input', isiNama);
     cab.addEventListener('change', isiNama);
     u.addEventListener('change', () => {
-      const bom = u.value.toLowerCase() === KODE_CABANG;
+      const j = u.value.toLowerCase(), bom = j === KODE_CABANG, isAsm = JAB_ORANG.includes(j) && daftarOrang(j).length > 0;
       cabWrap.hidden = !bom;
+      asmWrap.hidden = !isAsm;
+      if (isAsm && asmJab !== j) {
+        asmJab = j;
+        const [jl, apa] = LABEL_ORANG[j];
+        asmWrap.querySelector('.kl-asm-t').textContent = `Nama ${jl} / ${apa}`;
+        const opsi = daftarOrang(j);
+        asm.innerHTML = `<option value="" selected disabled>— Pilih nama &amp; ${apa} —</option>` +
+          opsi.map(([k, x]) => `<option value="${esc(k)}">${esc(x.nama)} — ${esc(x.label)}</option>`).join('');
+        // bawaan: area yang sedang dipilih di header; region cukup satu pilihan
+        const k = j === 'sqor' ? (opsi.length === 1 ? opsi[0][0] : '') : kunciArea(typeof st !== 'undefined' && (st.a || D.B[st.b]?.[2]));
+        if (dataOrang(j, k)) asm.value = k;
+      }
       if (bom && !cabList.options.length) {
         cabList.innerHTML = daftarCabang().map((b) => `<option value="${esc(teksCabang(b))}"></option>`).join('');
         const kini = typeof st !== 'undefined' && D.B[st.b];
         if (kini && !cab.value) cab.value = teksCabang(kini);
       }
       isiNama();
-      (bom ? cab : p).focus();
+      (bom ? cab : isAsm ? asm : p).focus();
     });
     form.querySelector('[data-kl-lihat]').addEventListener('click', (e) => {
       const lihat = p.type === 'password';
@@ -174,10 +231,15 @@
         iCab = cariCabang(cab.value);
         if (iCab < 0) { err.textContent = cab.value.trim() ? 'Cabang tidak ditemukan. Pilih dari daftar.' : 'Pilih kode / nama cabang.'; cab.focus(); return; }
       }
+      let area = '';
+      if (JAB_ORANG.includes(kode) && daftarOrang(kode).length) {
+        area = asm.value;
+        if (!dataOrang(kode, area)) { const [jl, apa] = LABEL_ORANG[kode]; err.textContent = `Pilih nama ${jl} dan ${apa}nya.`; asm.focus(); return; }
+      }
       const h = await sha256(kode + ':' + p.value);
       const btn = form.querySelector('.kl-btn');
       btn.disabled = true; btn.textContent = 'Memeriksa…';
-      const v = await verifikasi(kode, iCab >= 0 ? String(D.B[iCab][0]) : '', h);
+      const v = await verifikasi(kode, iCab >= 0 ? String(D.B[iCab][0]) : area, h);
       btn.disabled = false; btn.textContent = 'Masuk';
       if (!v.ok) {
         err.textContent = v.pesan || 'Jabatan atau password salah.';
@@ -192,7 +254,9 @@
       simpanAkses(kode);
       try { sessionStorage.setItem('kito-kpi-jabatan', kode); } catch (e2) {}   // dibaca pantau.js (pemantauan perangkat)
       try { if (iCab >= 0) sessionStorage.setItem(KUNCI_CABANG, String(D.B[iCab][0])); else sessionStorage.removeItem(KUNCI_CABANG); } catch (e2) {}
+      try { if (area) sessionStorage.setItem(KUNCI_AREA, area); else sessionStorage.removeItem(KUNCI_AREA); } catch (e2) {}
       if (iCab >= 0) pilihCabang(iCab);
+      if (area && kode !== 'sqor') pilihArea(area);
       (berhasil || render)();
       perbaruiProfil();
     });
@@ -283,7 +347,7 @@
 
   // Keluar: kembali ke Cabang dan tampilkan gerbang login lagi
   keluar = () => {
-    try { [KUNCI, KUNCI_AKSES, KUNCI_LEWATI, KUNCI_CABANG, 'kito-kpi-jabatan'].forEach((k) => sessionStorage.removeItem(k)); } catch (e) {}
+    try { [KUNCI, KUNCI_AKSES, KUNCI_LEWATI, KUNCI_CABANG, KUNCI_AREA, 'kito-kpi-jabatan'].forEach((k) => sessionStorage.removeItem(k)); } catch (e) {}
     tutupProfil(); tampil = 'cabang'; render(); perbaruiProfil(); bukaGerbang();
   };
 
@@ -292,18 +356,24 @@
   const SVG_ORANG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-7 8-7s8 3 8 7"/></svg>';
   function akunKini() {
     if (!sudahMasuk()) return null;
-    let jab = '', cab = '', h = '';
-    try { jab = sessionStorage.getItem('kito-kpi-jabatan') || ''; cab = sessionStorage.getItem(KUNCI_CABANG) || ''; h = sessionStorage.getItem(KUNCI) || ''; } catch (e) {}
-    const kunci = kunciAkun(jab, cab);
+    let jab = '', cab = '', area = '', h = '';
+    try {
+      jab = sessionStorage.getItem('kito-kpi-jabatan') || ''; cab = sessionStorage.getItem(KUNCI_CABANG) || '';
+      area = sessionStorage.getItem(KUNCI_AREA) || ''; h = sessionStorage.getItem(KUNCI) || '';
+    } catch (e) {}
+    const sub = jab === 'bom' ? cab : JAB_ORANG.includes(jab) ? area : '';
+    const kunci = kunciAkun(jab, sub);
+    const xa = JAB_ORANG.includes(jab) && area ? dataOrang(jab, area) : null;
     const profil = lsBaca('kito-profil:' + kunci, {}) || {};
     const b = cab ? daftarCabang().find((x) => String(x[0]) === cab) : null;
     const label = (JABATAN.find((x) => x[0].toLowerCase() === jab) || [, jab.toUpperCase()])[1];
-    const namaBawaan = jab === KODE_CABANG ? (b ? namaPengguna('bom', teksCabang(b)) : 'BOM-BOS') : namaPengguna(jab, '');
+    const namaBawaan = jab === KODE_CABANG ? (b ? namaPengguna('bom', teksCabang(b)) : 'BOM-BOS') : xa ? xa.nama : namaPengguna(jab, '');
     const jabKpi = (window.KITO_KPI?.jabatan || []).find((x) => x.key === jab.toUpperCase());
     return {
-      jab, cab, h, kunci, profil,
+      jab, cab, area, sub, h, kunci, profil, kred: kredAkun(jab, sub, h),
+      orang: !!(b || xa),   // akun per orang (BOM-BOS per cabang / ASM & SQO Area per area / SQO Region per region)
       nama: profil.nama || namaBawaan, namaBawaan,
-      jabatan: jab === KODE_CABANG && b ? `${label} · ${b[0]} ${b[1]}` : (jabKpi?.nama || label),
+      jabatan: jab === KODE_CABANG && b ? `${label} · ${b[0]} ${b[1]}` : xa ? `${label} · ${xa.label}` : (jabKpi?.nama || label),
     };
   }
   const inisial = (n) => String(n || '').replace(/\(.*?\)|—.*$/g, '').trim().split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0]).join('').toUpperCase() || '?';
@@ -430,7 +500,7 @@
       e.preventDefault(); err.textContent = '';
       const nama = inNama.value.trim() || null;
       sibukForm(f, true, 'Menyimpan…');
-      const r = await apiAkun('profil', { jabatan: a.jab, cabang: a.cab || undefined, hash: a.h, nama, foto });
+      const r = await apiAkun('profil', { ...a.kred, nama, foto });
       sibukForm(f, false);
       if (!r.offline && !(r.status === 200 && r.ok)) {
         err.textContent = r.status === 401 ? 'Sesi login tidak berlaku lagi (password sudah diganti). Silakan logout lalu login ulang.' : (r.error || 'Gagal menyimpan.');
@@ -451,7 +521,7 @@
       ${kolom('kpf-lama', 'Password saat ini', 'current-password')}
       ${kolom('kpf-baru', 'Password baru (min. 6 karakter)', 'new-password')}
       ${kolom('kpf-ulang', 'Ulangi password baru', 'new-password')}
-      <p class="kpf-note">${a.jab === KODE_CABANG ? 'Password baru hanya berlaku untuk BOM-BOS cabang ini.' : 'Password baru berlaku untuk semua pengguna jabatan ini.'} Berlaku di semua perangkat setelah disimpan.</p>`);
+      <p class="kpf-note">${a.jab === KODE_CABANG && a.sub ? 'Password baru hanya berlaku untuk BOM-BOS cabang ini.' : a.orang && a.sub ? `Password baru hanya berlaku untuk akun Anda (${esc(a.nama)}).` : 'Password baru berlaku untuk semua pengguna jabatan ini.'} Berlaku di semua perangkat setelah disimpan.</p>`);
     const err = f.querySelector('.kpf-err');
     f.addEventListener('click', (e) => {
       const b = e.target.closest('[data-kpf-lihat]'); if (!b) return;
@@ -469,7 +539,7 @@
       if (!window.crypto || !crypto.subtle) { err.textContent = 'Browser tidak mendukung (butuh HTTPS).'; return; }
       const hLama = await sha256(a.jab + ':' + lama), hBaru = await sha256(a.jab + ':' + baru);
       sibukForm(f, true, 'Menyimpan…');
-      const r = await apiAkun('password', { jabatan: a.jab, cabang: a.cab || undefined, hash: hLama, baru: hBaru });
+      const r = await apiAkun('password', { ...a.kred, hash: hLama, baru: hBaru });
       sibukForm(f, false);
       if (r.offline) { err.textContent = 'Server tidak terhubung. Reset password butuh koneksi internet.'; return; }
       if (!(r.status === 200 && r.ok)) { err.textContent = r.status === 401 ? 'Password saat ini salah.' : (r.error || 'Gagal menyimpan password.'); return; }
@@ -496,6 +566,9 @@
     let kc = null; try { kc = sessionStorage.getItem(KUNCI_CABANG); } catch (e) {}
     const i = kc ? daftarCabang().findIndex((b) => String(b[0]) === kc) : -1;
     if (i >= 0 && i !== st.b) { pilihCabang(i); render(); }
+    let ka = null; try { ka = sessionStorage.getItem(KUNCI_AREA); } catch (e) {}
+    let kj = ''; try { kj = sessionStorage.getItem('kito-kpi-jabatan') || ''; } catch (e) {}
+    if (ka && (kj === 'asm' || kj === 'sqoa') && dataOrang(kj, ka) && kunciArea(st.a) !== ka) { pilihArea(ka); render(); }
   }
   tandaiNav();
   if (!sudahMasuk() && !sudahLewati()) bukaGerbang();

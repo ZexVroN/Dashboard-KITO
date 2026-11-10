@@ -31,7 +31,10 @@ const cabangHeader=j=>{const b=typeof st!=='undefined'&&D.B[st.b];return b?j.uni
 function cabangLogin(){try{return sessionStorage.getItem('kito-kpi-jabatan')==='bom'?sessionStorage.getItem('kito-kpi-cabang'):null;}catch(e){return null;}}
 const unitLogin=j=>{const k=CABANG(j)&&cabangLogin();return k?j.unit.find(u=>String(u.k)===String(k))||null:null;};
 const kunciCabang=j=>CABANG(j)&&!!cabangLogin();
-const unitAktif=j=>(kunciCabang(j)&&unitLogin(j))||j.unit.find(u=>key(u)===ui.unit)||(CABANG(j)&&cabangHeader(j))||j.unit.find(u=>isR2(j,u))||j.unit[0];
+// login ASM / SQO Area per area, SQO Region per region (kpi-login.js): papan jabatan itu bawaannya membuka unit milik pengguna login
+const unitAsm=j=>{let k=null;try{if(['ASM','SQOA','SQOR'].includes(j.key)&&sessionStorage.getItem('kito-kpi-jabatan')===j.key.toLowerCase())k=sessionStorage.getItem('kito-kpi-area');}catch(e){}
+  return k?j.unit.find(u=>String(u.n).toUpperCase().replace(/^\s*AREA\s+/,'').replace(/[^A-Z0-9]/g,'')===k)||null:null;};
+const unitAktif=j=>(kunciCabang(j)&&unitLogin(j))||j.unit.find(u=>key(u)===ui.unit)||unitAsm(j)||(CABANG(j)&&cabangHeader(j))||j.unit.find(u=>isR2(j,u))||j.unit[0];
 const areaPapan=j=>ui.area||unitAktif(j).a||'';
 
 /* bobot (poin maksimum 100%) tiap perspektif untuk jabatan j: dari rincian KPI regional atau butir KPI area */

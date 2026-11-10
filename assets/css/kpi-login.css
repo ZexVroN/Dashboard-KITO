@@ -41,7 +41,7 @@ body.mode-gerbang{overflow:hidden}
 /* Mode tamu (lanjut tanpa login): tab selain Cabang terkunci */
 #nav button.kl-kunci{opacity:.45;position:relative}
 #nav button.kl-kunci::after{content:'🔒';position:absolute;top:3px;left:calc(50% + 6px);font-size:10px;line-height:1}
-.kl-card label.kl-cab[hidden]{display:none}
+.kl-card label.kl-cab[hidden],.kl-card label.kl-asm[hidden]{display:none}
 .kl-card .kl-nama input:disabled{background:rgba(255,255,255,.55);color:#14213d;-webkit-text-fill-color:#14213d;opacity:1;cursor:not-allowed;font-weight:600}
 /* ===== Profil: ikon paling kanan atas + kotak profil + dialog ===== */
 .bar-atas .kpf-btn{margin-left:8px;padding:0;display:inline-flex;align-items:center;justify-content:center;overflow:hidden}

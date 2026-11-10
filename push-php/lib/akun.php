@@ -1,6 +1,6 @@
 <?php
 /* Akun login dashboard (profil & password), dipakai ikon Profil di dashboard (assets/js/kpi-login.js).
-   Akun = jabatan (roh, toh, sqor, asm, sqoa, atom) atau BOM-BOS per cabang ("bom:<kode cabang>").
+   Akun = jabatan (roh, toh, atom), ASM & SQO Area per area ("asm:<kunci area>", "sqoa:<kunci area>"), SQO Region per region ("sqor:<kunci region>") atau BOM-BOS per cabang ("bom:<kode cabang>").
    Klien tidak pernah mengirim password asli: yang dikirim SHA-256("jabatan:password") seperti login KPI selama ini.
    Server menyimpan password baru sebagai password_hash() dari nilai itu. Akun yang belum pernah ganti password
    memakai hash bawaan (KP_AKUN_BAWAAN, harus sama dengan KPI_AKUN di kpi-login.js).
@@ -33,6 +33,11 @@ function kp_akun_db(): PDO {
 function kp_akun_kunci(array $b): ?array {
     $jab = strtolower(trim((string)($b['jabatan'] ?? '')));
     if (!isset(KP_AKUN_BAWAAN[$jab])) return null;
+    if (in_array($jab, ['asm', 'sqoa', 'sqor'], true)) {   // per area / region (kunci KITO_ASM, mis. PALEMBANGARIEF); tanpa area = akun jabatan
+        $area = strtoupper(trim((string)($b['area'] ?? '')));
+        if ($area === '') return [$jab, $jab];
+        return preg_match('/^[A-Z0-9]{2,40}$/', $area) ? [$jab . ':' . $area, $jab] : null;
+    }
     if ($jab !== 'bom') return [$jab, $jab];
     $kode = trim((string)($b['cabang'] ?? ''));
     if (!preg_match('/^\d{3,6}$/', $kode)) return null;

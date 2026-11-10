@@ -92,7 +92,7 @@ Ikon profil di pojok kanan atas dashboard menampilkan foto, nama pengguna, dan j
 - `POST /api/akun/login`: cek password `{jabatan, cabang?, hash}`. `hash` = SHA-256 dari `"jabatan:password"`, sehingga password asli tidak pernah dikirim.
 - `POST /api/akun/password`: ganti password `{jabatan, cabang?, hash, baru}`.
 - `POST /api/akun/profil`: simpan nama dan foto `{jabatan, cabang?, hash, nama, foto}`. Foto berupa data URL JPEG/PNG/WebP, maksimal ±44 KB; dashboard otomatis memperkecilnya ke 160×160.
-- Akun yang dipakai: `roh`, `toh`, `sqor`, `asm`, `sqoa`, `atom`, serta BOM-BOS per cabang (`bom:<kode cabang>`).
+- Akun yang dipakai: `roh`, `toh`, `sqor`, `sqoa`, `atom`, ASM per area (`asm:<kunci area>`, mis. `asm:PALEMBANGARIEF`), serta BOM-BOS per cabang (`bom:<kode cabang>`).
 - Data disimpan di tabel `akun` (`data/push.sqlite`). Akun yang belum pernah ganti password memakai hash bawaan `KP_AKUN_BAWAAN` di `lib/akun.php`, yang harus sama dengan `KPI_AKUN` di `assets/js/kpi-login.js`.
 - Mengembalikan satu akun ke password bawaan: hapus kolom `hash` akun tersebut (`UPDATE akun SET hash = NULL WHERE kunci = 'bom:11325'`).
 

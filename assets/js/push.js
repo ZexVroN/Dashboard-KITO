@@ -176,7 +176,7 @@
     if (!t.value.trim()) { t.focus(); return; }
     kel.kirim = true; kel.err = ''; gambar();
     try {
-      await api('POST', `/api/feedback/${id}/balas`, { jabatan: a.jab, cabang: a.cab || undefined, hash: a.h, nama: a.profil?.nama || null, pesan: kel.pesanBalas.trim(), status: s?.value || null });
+      await api('POST', `/api/feedback/${id}/balas`, { ...a.kred, nama: a.profil?.nama || (a.orang ? a.nama : null), pesan: kel.pesanBalas.trim(), status: s?.value || null });
       kel.buka = null; kel.pesanBalas = '';
       await muatKeluhan(true);
     } catch (e) {

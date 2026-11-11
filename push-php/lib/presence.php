@@ -29,6 +29,9 @@ function kp_presence_db(): PDO {
       CREATE TABLE IF NOT EXISTS ip_geo (ip TEXT PRIMARY KEY, ok INTEGER NOT NULL DEFAULT 0, country TEXT, country_code TEXT, region TEXT, city TEXT,
         isp TEXT, lat REAL, lon REAL, fetched_at TEXT NOT NULL DEFAULT (datetime('now')));
     ");
+    // nama pengguna otomatis dari akun login dashboard (pantau.js); label = nama yang diisi admin (lebih diutamakan)
+    $ada = $db->query('PRAGMA table_info(devices)')->fetchAll(PDO::FETCH_COLUMN, 1);
+    if (!in_array('pengguna', $ada, true)) $db->exec('ALTER TABLE devices ADD COLUMN pengguna TEXT');
     $siap = true;
     return $db;
 }
@@ -48,22 +51,22 @@ function kp_presence_ping(array $b): array {
     $app = in_array($b['app'] ?? '', ['web', 'pwa', 'apk'], true) ? $b['app'] : 'web';
     $ip = kp_ip();
     $f = ['jabatan' => kp_str($b['jabatan'] ?? null, 20), 'area' => kp_str($b['area'] ?? null, 80), 'kode' => kp_str($b['kode'] ?? null, 20),
-          'cabang' => kp_str($b['cabang'] ?? null, 120), 'page' => kp_str($b['page'] ?? null, 40)];
+          'cabang' => kp_str($b['cabang'] ?? null, 120), 'page' => kp_str($b['page'] ?? null, 40), 'pengguna' => kp_str($b['nama'] ?? null, 80)];
     if ($f['jabatan'] !== null) $f['jabatan'] = strtoupper($f['jabatan']);
     $db = kp_presence_db(); $now = kp_now();
     $db->beginTransaction();
     try {
         $q = $db->prepare('SELECT id, page, ended FROM visits WHERE id = ? AND device_id = ?'); $q->execute([$ses, $dev]); $v = $q->fetch();
         $sesiBaru = !$v;
-        $db->prepare("INSERT INTO devices (id, platform, browser, app, user_agent, screen, lang, tz, jabatan, area, kode, cabang, page, ip, first_seen, last_seen, visits)
-            VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+        $db->prepare("INSERT INTO devices (id, platform, browser, app, user_agent, screen, lang, tz, jabatan, area, kode, cabang, page, ip, first_seen, last_seen, visits, pengguna)
+            VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
           ON CONFLICT(id) DO UPDATE SET platform=excluded.platform, browser=excluded.browser, app=excluded.app, user_agent=excluded.user_agent,
             screen=COALESCE(excluded.screen, devices.screen), lang=COALESCE(excluded.lang, devices.lang), tz=COALESCE(excluded.tz, devices.tz),
             jabatan=COALESCE(excluded.jabatan, devices.jabatan), area=COALESCE(excluded.area, devices.area), kode=COALESCE(excluded.kode, devices.kode),
             cabang=COALESCE(excluded.cabang, devices.cabang), page=COALESCE(excluded.page, devices.page), ip=excluded.ip, last_seen=excluded.last_seen,
-            visits=devices.visits + excluded.visits")
+            visits=devices.visits + excluded.visits, pengguna=COALESCE(excluded.pengguna, devices.pengguna)")
            ->execute([$dev, $pl, $br, $app, $ua, kp_str($b['scr'] ?? null, 20), kp_str($b['lang'] ?? null, 20), kp_str($b['tz'] ?? null, 50),
-                      $f['jabatan'], $f['area'], $f['kode'], $f['cabang'], $f['page'], $ip, $now, $now, $sesiBaru ? 1 : 0]);
+                      $f['jabatan'], $f['area'], $f['kode'], $f['cabang'], $f['page'], $ip, $now, $now, $sesiBaru ? 1 : 0, $f['pengguna']]);
         if ($sesiBaru) {
             $db->prepare('INSERT INTO visits (id, device_id, ip, jabatan, area, kode, page, ended, started_at, last_seen) VALUES (?,?,?,?,?,?,?,?,?,?)')
                ->execute([$ses, $dev, $ip, $f['jabatan'], $f['area'], $f['kode'], $f['page'], $ev === 'end' ? 1 : 0, $now, $now]);
@@ -134,7 +137,7 @@ function kp_rows(PDOStatement $q): array {
 
 /** Sesi yang sedang aktif (heartbeat <= KP_AKTIF_SEC detik lalu), dipakai ringkasan dan mode live. */
 function kp_presence_aktif(): array {
-    $q = kp_presence_db()->prepare("SELECT v.device_id, v.id sesi_id, v.page, v.started_at, v.last_seen, v.ip, d.platform, d.browser, d.app, d.label,
+    $q = kp_presence_db()->prepare("SELECT v.device_id, v.id sesi_id, v.page, v.started_at, v.last_seen, v.ip, d.platform, d.browser, d.app, COALESCE(NULLIF(d.label, ''), d.pengguna) label, d.label label_manual, d.pengguna,
             COALESCE(v.jabatan, d.jabatan) jabatan, COALESCE(v.area, d.area) area, COALESCE(v.kode, d.kode) kode, d.cabang,
             g.city, g.region, g.country, g.isp, CAST(strftime('%s', v.last_seen) - strftime('%s', v.started_at) AS INTEGER) detik
         FROM visits v JOIN devices d ON d.id = v.device_id LEFT JOIN ip_geo g ON g.ip = v.ip
@@ -262,7 +265,7 @@ function kp_presence_devices(array $g, string $cari, int $limit): array {
     $db = kp_presence_db();
     $R = kp_rentang($g); $pv = [$R['mulai'], $R['akhir']];
     $ir = 'v.device_id = d.id AND ' . KP_IRISAN;
-    $sql = "SELECT d.id, d.platform, d.browser, d.app, d.label, d.jabatan, d.area, d.kode, d.cabang, d.page, d.ip, d.screen, d.lang, d.tz, d.user_agent,
+    $sql = "SELECT d.id, d.platform, d.browser, d.app, COALESCE(NULLIF(d.label, ''), d.pengguna) label, d.label label_manual, d.pengguna, d.jabatan, d.area, d.kode, d.cabang, d.page, d.ip, d.screen, d.lang, d.tz, d.user_agent,
             d.first_seen, d.last_seen, g.city, g.region, g.country, g.isp,
             (SELECT COUNT(DISTINCT v.ip) FROM visits v WHERE $ir) jumlah_ip,
             (SELECT COUNT(*) FROM visits v WHERE $ir) sesi,
@@ -271,7 +274,7 @@ function kp_presence_devices(array $g, string $cari, int $limit): array {
         FROM devices d LEFT JOIN ip_geo g ON g.ip = d.ip WHERE EXISTS (SELECT 1 FROM visits v WHERE $ir)";
     $p = array_merge($pv, $pv, $pv, [gmdate('Y-m-d H:i:s', time() - KP_AKTIF_SEC)], $pv);
     if ($cari !== '') {
-        $sql .= " AND (d.id LIKE ? OR d.label LIKE ? OR d.jabatan LIKE ? OR d.area LIKE ? OR d.kode LIKE ? OR d.cabang LIKE ? OR d.ip LIKE ? OR g.city LIKE ? OR g.region LIKE ? OR d.platform LIKE ?)";
+        $sql .= " AND (d.id LIKE ? OR COALESCE(d.label, d.pengguna) LIKE ? OR d.jabatan LIKE ? OR d.area LIKE ? OR d.kode LIKE ? OR d.cabang LIKE ? OR d.ip LIKE ? OR g.city LIKE ? OR g.region LIKE ? OR d.platform LIKE ?)";
         $like = '%' . str_replace(['%', '_'], ['\%', '\_'], $cari) . '%';
         $sql = str_replace(' LIKE ?', " LIKE ? ESCAPE '\\'", $sql);
         array_push($p, ...array_fill(0, 10, $like));
@@ -302,11 +305,11 @@ function kp_presence_export(string $jenis, array $g): array {
     $nama = $jenis . '-' . $R['dari'] . ($R['sampai'] !== $R['dari'] ? '_sd_' . $R['sampai'] : '') . '.csv';
     $HARI = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
     if ($jenis === 'sesi') {
-        $q = $db->prepare("SELECT v.id, v.device_id, d.label, d.platform, d.browser, d.app, v.jabatan, v.area, v.kode, d.cabang, v.page, v.pages, v.ip,
+        $q = $db->prepare("SELECT v.id, v.device_id, COALESCE(NULLIF(d.label, ''), d.pengguna) label, d.platform, d.browser, d.app, v.jabatan, v.area, v.kode, d.cabang, v.page, v.pages, v.ip,
                 g.city, g.region, g.country, g.isp, v.started_at, v.last_seen, CAST(strftime('%s', v.last_seen) - strftime('%s', v.started_at) AS INTEGER) detik, v.ended
             FROM visits v JOIN devices d ON d.id = v.device_id LEFT JOIN ip_geo g ON g.ip = v.ip WHERE " . KP_IRISAN . " ORDER BY v.started_at DESC");
         $q->execute($pv);
-        $rows = [['Tanggal (WIB)', 'ID sesi', 'ID perangkat', 'Label', 'OS', 'Browser', 'Aplikasi', 'Jabatan', 'Area', 'Kode cabang', 'Cabang', 'Halaman terakhir', 'Jumlah pindah halaman',
+        $rows = [['Tanggal (WIB)', 'ID sesi', 'ID perangkat', 'Nama pengguna', 'OS', 'Browser', 'Aplikasi', 'Jabatan', 'Area', 'Kode cabang', 'Cabang', 'Halaman terakhir', 'Jumlah pindah halaman',
                   'IP', 'Kota', 'Provinsi', 'Negara', 'ISP', 'Mulai (WIB)', 'Terakhir (WIB)', 'Durasi (menit)', 'Status']];
         foreach ($q->fetchAll() as $r) $rows[] = [substr($wib($r['started_at']), 0, 10), $r['id'], $r['device_id'], $r['label'], $r['platform'], $r['browser'], $r['app'], $r['jabatan'], $r['area'], $r['kode'], $r['cabang'],
             $r['page'], (int)$r['pages'], $r['ip'], $r['city'], $r['region'], $r['country'], $r['isp'], $wib($r['started_at']), $wib($r['last_seen']),
@@ -360,7 +363,7 @@ function kp_presence_export(string $jenis, array $g): array {
         return [$nama, $rows];
     }
     // perangkat
-    $rows = [['ID perangkat', 'Label', 'Status', 'OS', 'Browser', 'Aplikasi', 'Jabatan', 'Area', 'Kode cabang', 'Cabang', 'Halaman terakhir', 'IP terakhir', 'Jumlah IP (periode)',
+    $rows = [['ID perangkat', 'Nama pengguna', 'Status', 'OS', 'Browser', 'Aplikasi', 'Jabatan', 'Area', 'Kode cabang', 'Cabang', 'Halaman terakhir', 'IP terakhir', 'Jumlah IP (periode)',
               'Kota', 'Provinsi', 'Negara', 'ISP', 'Layar', 'Bahasa', 'Zona waktu', 'Jumlah sesi (periode)', 'Total waktu periode (menit)', 'Pertama (WIB)', 'Terakhir (WIB)', 'User agent']];
     foreach (kp_presence_devices($g, '', 2000) as $r) $rows[] = [$r['id'], $r['label'], $r['aktif'] ? 'aktif' : '', $r['platform'], $r['browser'], $r['app'], $r['jabatan'],
         $r['area'], $r['kode'], $r['cabang'], $r['page'], $r['ip'], $r['jumlah_ip'], $r['city'], $r['region'], $r['country'], $r['isp'], $r['screen'], $r['lang'], $r['tz'],

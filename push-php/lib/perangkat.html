@@ -129,8 +129,8 @@
     </section>
 
     <section class="cd">
-      <h2><span>Semua perangkat<b class="tot" id="totDev"></b></span><span class="bar-tools"><input id="cari" type="search" placeholder="cari jabatan, cabang, kota, IP…" /></span></h2>
-      <div class="tw"><table><thead><tr><th></th><th>Perangkat</th><th>Nama/label</th><th>Jabatan</th><th>Area / Cabang</th><th>Lokasi terakhir</th><th>IP</th><th>Sesi</th><th>Total waktu</th><th>Pertama</th><th>Terakhir</th><th></th></tr></thead><tbody id="dev"></tbody></table></div>
+      <h2><span>Semua perangkat<b class="tot" id="totDev"></b></span><span class="bar-tools"><input id="cari" type="search" placeholder="cari nama pengguna, jabatan, cabang, kota, IP…" /></span></h2>
+      <div class="tw"><table><thead><tr><th></th><th>Perangkat</th><th>Nama pengguna</th><th>Jabatan</th><th>Area / Cabang</th><th>Lokasi terakhir</th><th>IP</th><th>Sesi</th><th>Total waktu</th><th>Pertama</th><th>Terakhir</th><th></th></tr></thead><tbody id="dev"></tbody></table></div>
       <p class="mu" id="devInfo"></p>
     </section>
   </div>
@@ -304,7 +304,7 @@
     const { perangkat: list } = await api('GET', `/api/presence/devices?${rentangQS()}&q=${encodeURIComponent(q)}`);
     $('#dev').innerHTML = list.map((d) => `<tr><td>${d.aktif ? '<span class="pill on">aktif</span>' : ''}</td>
       <td title="${esc(d.user_agent)}">${perangkat(d)}<br><span class="mu">${esc(d.screen || '')} · ${esc(d.id.slice(0, 8))}</span></td>
-      <td>${esc(d.label || '')} <button class="sec" data-label="${esc(d.id)}" data-now="${esc(d.label || '')}">✎</button></td>
+      <td>${d.label ? `<b>${esc(d.label)}</b>` : '<span class="mu">–</span>'}${d.label_manual ? ' <span class="mu" title="Diisi admin">(admin)</span>' : ''} <button class="sec" data-label="${esc(d.id)}" data-now="${esc(d.label_manual || d.pengguna || '')}" title="Ubah nama pengguna">✎</button></td>
       <td>${esc(d.jabatan || '–')}</td><td>${tempat(d)}</td><td>${lokasi(d)}</td>
       <td class="n">${esc(d.ip || '')}${d.jumlah_ip > 1 ? `<br><span class="mu">${d.jumlah_ip} IP berbeda</span>` : ''}</td>
       <td class="n">${nf(d.sesi)}</td><td class="n">${durasi(d.detik)}</td><td class="n">${waktu(d.first_seen)}</td><td class="n">${laluEl(d.last_seen)}</td>
@@ -330,7 +330,7 @@
     const u = e.target.closest('[data-unduh]'); if (u) return unduh(u);
     const l = e.target.closest('[data-label]'), d = e.target.closest('[data-del]');
     try {
-      if (l) { const v = prompt('Nama/label perangkat (mis. "PC Teller KCP X"):', l.dataset.now); if (v === null) return; await api('PUT', '/api/presence/devices/' + l.dataset.label, { label: v }); await muatDev(); }
+      if (l) { const v = prompt('Nama pengguna perangkat ini, format "kode cabang-nama pengguna" (kosongkan untuk memakai nama dari akun login):', l.dataset.now); if (v === null) return; await api('PUT', '/api/presence/devices/' + l.dataset.label, { label: v }); await muatDev(); }
       if (d && confirm('Hapus perangkat ini beserta riwayat sesinya?')) { await api('DELETE', '/api/presence/devices/' + d.dataset.del); await muat(); }
     } catch (er) { alert('Gagal: ' + er.message); }
   });

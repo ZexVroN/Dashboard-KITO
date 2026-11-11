@@ -142,15 +142,15 @@
   };
 
   const halamanLogin = (p = 'kl', gerbang = false) => `
-    <section class="kl${gerbang ? ' kl-gerbang' : ''}" id="${p}-wrap" aria-label="Login KPI"${gerbang ? ' role="dialog" aria-modal="true"' : ''}>
+    <section class="kl${gerbang ? ' kl-gerbang' : ''}" id="${p}-wrap" aria-label="Login Aplikasi"${gerbang ? ' role="dialog" aria-modal="true"' : ''}>
       <picture class="kl-bg" aria-hidden="true">
         <source media="(orientation: portrait)" srcset="assets/images/splash-portrait.png" />
         <source media="(min-width: 1600px)" srcset="assets/images/splash-widescreen.png" />
         <img src="assets/images/splash-landscape.png" alt="" decoding="async" />
       </picture>
       <form class="kl-card" id="${p}-form" novalidate>
-        <h2>Login KPI</h2>
-        <p>${gerbang ? 'Masuk dengan jabatan untuk membuka halaman KPI, atau lanjut tanpa login untuk halaman lainnya.' : 'Pilih jabatan lalu masukkan password untuk melihat halaman KPI.'}</p>
+        <h2>Login Aplikasi</h2>
+        <p>${gerbang ? 'Masuk dengan akun Anda untuk membuka semua halaman aplikasi, atau lanjut tanpa login untuk halaman Cabang.' : 'Login aplikasi untuk membuka halaman KPI: pilih jabatan lalu masukkan password.'}</p>
         <label>Jabatan
           <span class="kl-sel"><select id="${p}-u" autocomplete="username" required>
             <option value="" selected disabled>— Pilih jabatan —</option>
@@ -411,7 +411,7 @@
         <button type="button" data-kpf="keluar" class="kpf-out"><span aria-hidden="true">⎋</span>Logout</button>
       </div>` : `
       <div class="kpf-head">${avatar(null, 'kpf-av kpf-av-b')}<div class="kpf-id"><b>Tamu</b><small>Belum login · hanya halaman Cabang</small></div></div>
-      <div class="kpf-menu"><button type="button" data-kpf="login"><span aria-hidden="true">🔐</span>Login</button></div>`;
+      <div class="kpf-menu"><button type="button" data-kpf="login"><span aria-hidden="true">🔐</span>Login Aplikasi</button></div>`;
   }
   function bukaProfil() {
     kotak = document.createElement('div');

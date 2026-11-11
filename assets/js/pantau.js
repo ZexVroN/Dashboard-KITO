@@ -33,8 +33,15 @@
       if (b) { kode = String(b[0]); cabang = b[1]; }
     } catch (e) {}
     try { jabatan = sessionStorage.getItem('kito-kpi-jabatan'); } catch (e) {}
+    // nama pengguna akun login (kpi-login.js) -> kolom "Nama pengguna" di backend Perangkat, format "kode cabang-nama pengguna"
+    // (BOM-BOS: kode cabang akunnya; jabatan lain: kode cabang yang sedang dipilih)
+    let nama = null;
+    try {
+      const a = window.KITO_AKUN?.kini();
+      if (a?.nama) { const kc = a.cab || kode; nama = kc ? `${kc}-${a.nama}` : a.nama; }
+    } catch (e) {}
     const tab = document.querySelector('#nav button.on');
-    return { area, kode, cabang, jabatan, page: tab?.dataset.v || tab?.textContent.trim() || null };
+    return { area, kode, cabang, jabatan, nama, page: tab?.dataset.v || tab?.textContent.trim() || null };
   };
 
   let mulai = false;

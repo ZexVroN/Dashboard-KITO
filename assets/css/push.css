@@ -94,3 +94,40 @@ body.knp-open { overflow: hidden; }
 .knp-cu small { display: block; font-size: 11.5px; color: var(--mu, #66728c); line-height: 1.4; }
 .knp-cu-t { flex: none; font-size: 10.5px; font-weight: 700; border-radius: 999px; padding: 2px 8px; background: #eef2f8; color: #475569; }
 .knp-cu-t.on { background: #ccfbf1; color: #115e59; }
+
+/* kartu "Rencana Pegawai Tidak Masuk" di halaman Cabang: bentuk sama dengan kartu Lapor Masalah (masukan.css .kmk-notif), warna hijau tosca, tanpa kedip */
+.kmk-notif.knp-cuk { border-color: #5eead4; background: linear-gradient(135deg, #0f766e 0%, #134e4a 100%); box-shadow: 0 6px 20px rgba(19, 78, 74, .3); animation: none; }
+.kmk-notif.knp-cuk::after { background: #5eead4; }
+.knp-cuk .kmk-n-ik { border-color: #99f6e4; color: #ccfbf1; }
+.knp-cuk .kmk-n-tx small { background: #ccfbf1; color: #134e4a; animation: none; }
+.knp-cuk .kmk-n-tx small::before { content: "📅"; }
+.knp-cuk .kmk-n-tx em { color: #ccfbf1; }
+.knp-cuk-n { font-size: 11.5px; color: #e6fffa; opacity: .9; line-height: 1.35; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+.knp-cuk:focus-visible { outline-color: #5eead4; }
+.knp-cuk-lihat { align-self: flex-start; margin-top: 6px; border: 1px solid rgba(255, 255, 255, .45); background: rgba(255, 255, 255, .12); color: #fff;
+  border-radius: 999px; padding: 3px 10px; font: 700 11.5px/1.3 system-ui, sans-serif; cursor: pointer; }
+.knp-cuk-lihat:hover, .knp-cuk-lihat:focus-visible { background: rgba(255, 255, 255, .24); outline: none; }
+.knp-cuk-lihat[hidden] { display: none; }
+
+/* form pengisian di dalam kartu hijau */
+.kmk-notif.knp-cuk { flex-wrap: wrap; }
+.knp-cuk .kmk-n-go { transition: transform .2s ease; }
+.knp-cuk.buka .kmk-n-go { transform: rotate(90deg); }
+.knp-cuk-form { flex-basis: 100%; margin-top: 10px; padding-top: 10px; border-top: 1px solid rgba(255, 255, 255, .25); cursor: auto; user-select: text; -webkit-user-select: text; }
+.knp-cuk-form[hidden] { display: none; }
+.kcf { display: flex; flex-direction: column; gap: 8px; }
+.kcf-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.kcf label { display: flex; flex-direction: column; gap: 3px; font-size: 11.5px; font-weight: 700; color: #e6fffa; }
+.kcf label small { font-weight: 500; opacity: .8; }
+.kcf input, .kcf select, .kcf textarea { width: 100%; box-sizing: border-box; border: 1px solid rgba(255, 255, 255, .5); border-radius: 9px; padding: 8px 10px;
+  background: #fff; color: #13203d; font: 13px/1.3 system-ui, sans-serif; }
+.kcf textarea { resize: vertical; }
+.kcf input:focus, .kcf select:focus, .kcf textarea:focus { outline: 2px solid #5eead4; outline-offset: 1px; }
+.kcf-lama { font-size: 11.5px; color: #ccfbf1; } .kcf-lama .kmk-err { color: #fecaca; }
+.kcf-err { margin: 0; min-height: 0; font-size: 12px; font-weight: 700; color: #fecaca; } .kcf-err:empty { display: none; }
+.kcf-btn { align-self: flex-start; border: 0; border-radius: 10px; padding: 9px 16px; background: #ccfbf1; color: #134e4a; font: 800 13px system-ui, sans-serif; cursor: pointer; }
+.kcf-btn:disabled { opacity: .6; cursor: wait; }
+.kcf-btn.sec { margin-top: 8px; display: block; background: rgba(255, 255, 255, .15); color: #fff; border: 1px solid rgba(255, 255, 255, .45); }
+.kcf-ok { font-size: 13px; color: #fff; }
+@media (max-width: 380px) { .kcf-row { grid-template-columns: 1fr; } }
+.knp-cuk-n:empty { display: none; }

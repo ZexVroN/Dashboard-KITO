@@ -210,11 +210,13 @@
   function bagianCuti() {
     const a = akun();
     if (!a) return '';
-    const cak = a.jab === 'bom' ? (a.cab ? 'Cabang ' + a.cab : '') : (a.jab === 'asm' || a.jab === 'sqoa') ? (a.sub ? namaCakupan(a) : '') : 'Region II';
-    const judul = `<p class="knp-g">📅 Rencana pegawai tidak masuk${cak ? ' · ' + esc(cak) : ''}</p>`;
-    if (!cak) return judul + '<p class="knp-kosong">Login ulang dengan memilih nama dan area/cabang Anda untuk melihat rencana pegawai tidak masuk.</p>';
+    // penerima: ROH & SQO Region (Region II), ASM & SQO Area (areanya); akun lain hanya melihat rencana yang dikirimnya
+    const penerimaCuti = a.jab === 'roh' || a.jab === 'sqor' || ((a.jab === 'asm' || a.jab === 'sqoa') && !!a.sub);
+    const cak = a.jab === 'roh' || a.jab === 'sqor' ? 'Region II' : penerimaCuti ? namaCakupan(a) : 'yang Anda kirim';
+    const judul = `<p class="knp-g">📅 Rencana pegawai tidak masuk · ${esc(cak)}</p>`;
     if (!cu.list) return judul + '<p class="knp-note">Memuat…</p>';
-    if (!cu.list.length) return judul + (cu.err ? `<p class="knp-msg">${esc(cu.err)}</p>` : '<p class="knp-kosong">Tidak ada pegawai yang cuti hari ini maupun 60 hari ke depan.</p>');
+    const infoPenerima = penerimaCuti ? '' : `<p class="knp-note knp-as">Rencana tidak masuk hanya terkirim ke ${esc(penerima(areaCabang()).join(', '))}.</p>`;
+    if (!cu.list.length) return judul + (cu.err ? `<p class="knp-msg">${esc(cu.err)}</p>` : `<p class="knp-kosong">${penerimaCuti ? 'Tidak ada pegawai yang cuti hari ini maupun 60 hari ke depan.' : 'Belum ada rencana tidak masuk yang Anda kirim untuk hari ini maupun 60 hari ke depan.'}</p>`) + infoPenerima;
     const hi = cu.hariIni || new Date(Date.now() + 7 * 3600e3).toISOString().slice(0, 10);
     const sedang = cu.list.filter((r) => r.cuti_mulai <= hi), nanti = cu.list.filter((r) => r.cuti_mulai > hi);
     const item = (r) => {
@@ -223,13 +225,79 @@
         : `<span class="knp-cu-t">${sisa === 1 ? 'Mulai besok' : `Mulai ${sisa} hari lagi`}</span>`;
       return `<div class="knp-cu ${jalan ? 'on' : ''}">
         <div class="knp-cu-h"><b>${esc(r.nama || '–')}</b>${tanda}</div>
-        <small>${esc([r.cuti_jabatan, a.jab === 'bom' ? '' : `${r.kode} ${r.cabang || ''}`.trim()].filter(Boolean).join(' · '))}</small>
+        <small>${esc([r.cuti_jabatan, `${r.kode} ${r.cabang || ''}`.trim()].filter(Boolean).join(' · '))}</small>
         <small>${esc(r.kategori || 'Cuti')} · ${esc(tglPendek(r.cuti_mulai))}${r.cuti_selesai !== r.cuti_mulai ? ' – ' + esc(tglPendek(r.cuti_selesai)) : ''}${r.cuti_hari != null ? ` · ${r.cuti_hari} hari kerja` : ''}</small>
         ${r.cuti_pengganti ? `<small>Pengganti: ${esc(r.cuti_pengganti)}</small>` : ''}
       </div>`;
     };
     return judul + `<p class="knp-note knp-as"><b>${sedang.length}</b> pegawai tidak masuk hari ini · <b>${nanti.length}</b> rencana cuti 60 hari ke depan.</p>`
-      + `<div class="knp-cul">${sedang.map(item).join('')}${nanti.map(item).join('')}</div>` + (cu.err ? `<p class="knp-msg">${esc(cu.err)}</p>` : '');
+      + `<div class="knp-cul">${sedang.map(item).join('')}${nanti.map(item).join('')}</div>` + infoPenerima + (cu.err ? `<p class="knp-msg">${esc(cu.err)}</p>` : '');
+  }
+
+  /* kartu "Rencana Pegawai Tidak Masuk" di halaman Cabang (di bawah kartu Lapor Masalah Operasional Cabang), selalu tampil.
+     Ketuk kartu = form input rencana tidak masuk (masukan.js) · "Lihat daftar" = kotak 🔔 (rincian sesuai cakupan akun)
+     × = sembunyikan sampai halaman dimuat ulang. Hanya tampil untuk akun login (tamu tidak); daftar nama sesuai cakupan akun. */
+  const IKON_KAL = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4.5" width="18" height="16" rx="2.5"/><path d="M3 9.5h18M8 2.5v4M16 2.5v4"/><path d="m9 14.5 2 2 4-4"/></svg>';
+  const IKON_KANAN = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg>';
+  const IKON_TUTUP = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>';
+  let kartuCutiTutup = false, kartuCutiEl = null, formCutiBuka = false;
+  function segarKartuCuti() {
+    const app = document.getElementById('app');
+    let el = kartuCutiEl;   // elemen disimpan: isian form tidak hilang saat halaman digambar ulang
+    const p = pilihan(), a = akun();
+    const list = (cu.list || []).filter((r) => String(r.kode) === String(p.kode));
+    // hanya untuk akun login; tamu (tanpa login) tidak melihat kartu ini
+    if (!app || typeof tampil === 'undefined' || tampil !== 'cabang' || kartuCutiTutup || !p.kode || !a) { el?.remove(); return; }
+    const hi = cu.hariIni || new Date(Date.now() + 7 * 3600e3).toISOString().slice(0, 10);
+    const sedang = list.filter((r) => r.cuti_mulai <= hi), nanti = list.filter((r) => r.cuti_mulai > hi);
+    if (!el) {
+      el = document.createElement('div');
+      el.id = 'knp-cuk'; el.className = 'kmk-notif knp-cuk'; el.setAttribute('role', 'group'); el.tabIndex = 0; kartuCutiEl = el;
+      el.innerHTML = `<span class="kmk-n-ik">${IKON_KAL}</span>
+        <span class="kmk-n-tx"><small>Rencana tidak masuk</small><b>Rencana Pegawai Tidak Masuk</b><em></em><span class="knp-cuk-n"></span>
+          <button type="button" class="knp-cuk-lihat" data-cuk-lihat hidden>Lihat daftar ›</button></span>
+        <span class="kmk-n-go">${IKON_KANAN}</span>
+        <button type="button" class="kmk-n-x" aria-label="Tutup informasi rencana pegawai tidak masuk">${IKON_TUTUP}</button>
+        <div class="knp-cuk-form" hidden></div>`;
+      el.querySelector('.kmk-n-x').addEventListener('click', (e) => { e.stopPropagation(); kartuCutiTutup = true; el.remove(); });
+      // ketuk kartu = buka / tutup form pengisian di dalam kartu
+      const bukaInput = () => {
+        const fc = el.querySelector('.knp-cuk-form');
+        formCutiBuka = !formCutiBuka;
+        fc.hidden = !formCutiBuka; el.classList.toggle('buka', formCutiBuka);
+        if (formCutiBuka) {
+          if (window.KITO_MASUKAN?.formCuti) { if (!fc.firstChild || fc.dataset.kode !== String(pilihan().kode)) window.KITO_MASUKAN.formCuti(fc); fc.querySelector('input')?.focus({ preventScroll: true }); }
+          else fc.textContent = 'Form belum siap, coba lagi sebentar.';
+        }
+        segarKartuCuti();
+      };
+      el.addEventListener('click', (e) => {
+        if (e.target.closest('.kmk-n-x') || e.target.closest('.knp-cuk-form')) return;
+        if (e.target.closest('[data-cuk-lihat]')) { e.stopPropagation(); buka(); return; }
+        bukaInput();
+      });
+      el.addEventListener('keydown', (e) => { if ((e.key === 'Enter' || e.key === ' ') && e.target === el) { e.preventDefault(); bukaInput(); } });
+    }
+    const nama = (r) => `${r.nama}${r.cuti_jabatan ? ' (' + r.cuti_jabatan + ')' : ''} ${r.cuti_mulai <= hi ? 's.d. ' + tglPendek(r.cuti_selesai) : 'mulai ' + tglPendek(r.cuti_mulai)}`;
+    let sub, isi;
+    if (list.length) {
+      sub = `${p.kode} ${p.cabang || ''} · ${sedang.length} tidak masuk hari ini · ${nanti.length} rencana cuti`;
+      isi = list.slice(0, 3).map(nama).join(' · ') + (list.length > 3 ? ` · +${list.length - 3} lainnya` : '');
+    } else {
+      sub = formCutiBuka ? 'Isi formulir di bawah' : 'Ketuk untuk isi formulir';
+      isi = '';
+    }
+    el.querySelector('em').textContent = sub;
+    el.querySelector('.knp-cuk-n').textContent = isi;
+    el.querySelector('[data-cuk-lihat]').hidden = !list.length;
+    // ganti cabang saat form terbuka: form digambar ulang untuk cabang baru (isian tetap)
+    const fc = el.querySelector('.knp-cuk-form');
+    if (formCutiBuka && fc.dataset.kode && fc.dataset.kode !== String(p.kode) && window.KITO_MASUKAN?.formCuti && fc.querySelector('form')) window.KITO_MASUKAN.formCuti(fc);
+    el.setAttribute('aria-label', `Rencana pegawai tidak masuk ${p.kode} ${p.cabang || ''}${list.length ? `: ${sedang.length} hari ini, ${nanti.length} rencana` : ''}. Ketuk untuk input rencana tidak masuk.`);
+    // posisi: tepat di bawah kartu Lapor Masalah Operasional Cabang (masukan.js), atau paling atas bila kartu itu ditutup
+    const lapor = document.getElementById('kmk-info');
+    if (lapor && lapor.parentNode === app) { if (lapor.nextElementSibling !== el) lapor.after(el); }
+    else if (app.firstElementChild !== el) app.prepend(el);
   }
 
   async function kirimBalasan(id) {
@@ -313,7 +381,7 @@
     sheet.hidden = false; document.body.classList.add('knp-open');
     pesan = ''; body.innerHTML = '<p class="knp-note">Memuat…</p>';
     muatKeluhan(true).then(() => { if (!sheet.hidden) gambar(); });
-    muatCuti(true).then(() => { if (!sheet.hidden) gambar(); });
+    muatCuti(true).then(() => { if (!sheet.hidden) gambar(); segarKartuCuti(); });
     try { if (didukung && !reg) await siapkanSW(); else if (reg) sub = await reg.pushManager.getSubscription(); await segarkanStatus(); }
     catch (e) { pesan = 'Gagal menyiapkan notifikasi: ' + e.message; }
     gambar();
@@ -337,9 +405,18 @@
   // login / logout: perbarui daftar keluhan & angka di lonceng (daftar mengikuti akun, bukan cabang di header)
   window.addEventListener('kito-akun', () => {
     muatKeluhan().then(() => { if (!sheet.hidden) gambar(); });
-    muatCuti().then(() => { if (!sheet.hidden) gambar(); });
+    muatCuti().then(() => { if (!sheet.hidden) gambar(); segarKartuCuti(); });
+    segarKartuCuti();
     if (!sheet.hidden) gambar();
   });
+  // kartu rencana tidak masuk ikut digambar ulang setiap halaman berganti
+  if (typeof render === 'function') {
+    const renderAsli = render;
+    render = function (...x) { const r = renderAsli.apply(this, x); try { segarKartuCuti(); } catch (e) {} return r; };
+  }
+  muatCuti().then(segarKartuCuti);
+  // rencana baru dikirim dari form (masukan.js): muat ulang daftar & kartu
+  window.addEventListener('kito-cuti', () => { muatCuti(true).then(() => { segarKartuCuti(); if (!sheet.hidden) gambar(); }); });
   muatKeluhan();
   document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !sheet.hidden) tutup(); });
 

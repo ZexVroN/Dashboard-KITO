@@ -3,7 +3,7 @@
    - 📝 Keluhan Aplikasi: kategori + uraian, nama/NIP opsional.
    - 🏢 Keluhan Cabang: laporan masalah operasional cabang (mesin antrian, printer tiket, jaringan, antrian menumpuk, dll.)
      dengan urgensi, waktu kejadian, serta nama pelapor + NIP (angka) wajib agar bisa ditindaklanjuti.
-   - 📅 Pegawai Cuti: pegawai cabang yang cuti (nama, NIP, jabatan, jenis cuti, tanggal mulai–selesai, pengganti, keterangan).
+   - 📅 Pegawai Cuti: pegawai cabang yang cuti (nama, NIP, jabatan, alasan tidak masuk, tanggal mulai–selesai, pengganti, keterangan).
    NIP dikirim di field "kontak" (nama kolom database tetap).
    Cabang, area, tanggal data, dan jabatan login yang sedang dilihat ikut terkirim agar keluhan mudah ditindaklanjuti.
    Popup rating juga muncul sendiri sesekali (paling cepat setelah 3 hari pemakaian, lalu tiap 30 hari bila belum menilai).
@@ -212,6 +212,10 @@
   let tab = 'rating', tabTerakhir = 'rating', otomatis = false, fokusSebelum = null;
   const draf = { rating: 0, aspek: [], pesanR: '', kategori: '', pesanK: '', nama: '', kontak: '', katC: '', urgensi: 'sedang', waktu: '', pesanC: '',
     cNama: '', cNip: '', cJab: '', cJenis: '', cMulai: '', cSelesai: '', cGanti: '', cKet: '' };
+  // tab "Pegawai Cuti" di popup Masukan: disembunyikan (ubah ke true untuk menampilkan lagi).
+  // Form cuti dibuka dari kartu "Rencana Pegawai Tidak Masuk" di halaman Cabang (push.js -> KITO_MASUKAN.inputCuti).
+  const TAMPIL_CUTI = false;
+  let izinCuti = false;
   // pegawai cuti (harus sama dengan KP_FB_JENIS_CUTI di push-php/lib/masukan.php)
   const JENIS_CUTI = ['Cuti Tahunan', 'Cuti Sakit', 'Cuti Melahirkan', 'Cuti Alasan Penting', 'Cuti Besar', 'Cuti di Luar Tanggungan', 'Lainnya'];
   const JABATAN_CUTI = ['Branch Operation Manager', 'Branch Operation Supervisor', 'Customer Service Supervisor', 'Customer Service Representative', 'Teller', 'Lainnya'];
@@ -240,11 +244,11 @@
   // nilai input datetime-local untuk waktu sekarang (zona waktu perangkat)
   const sekarangLokal = () => { const d = new Date(); d.setMinutes(d.getMinutes() - d.getTimezoneOffset()); return d.toISOString().slice(0, 16); };
 
-  const tabs = () => `<div class="kmk-tabs" role="tablist">
+  const tabs = () => (tab === 'cuti' && !TAMPIL_CUTI ? '' : `<div class="kmk-tabs${TAMPIL_CUTI ? '' : ' t3'}" role="tablist">
       <button type="button" role="tab" data-kmk-tab="rating" aria-selected="${tab === 'rating'}">⭐ Rating aplikasi</button>
       <button type="button" role="tab" data-kmk-tab="keluhan" aria-selected="${tab === 'keluhan'}">📝 Keluhan Aplikasi</button>
       <button type="button" role="tab" data-kmk-tab="cabang" aria-selected="${tab === 'cabang'}">🏢 Keluhan Cabang</button>
-      <button type="button" role="tab" data-kmk-tab="cuti" aria-selected="${tab === 'cuti'}">📅 Pegawai Cuti</button></div>`;
+      ${TAMPIL_CUTI ? `<button type="button" role="tab" data-kmk-tab="cuti" aria-selected="${tab === 'cuti'}">📅 Pegawai Cuti</button>` : ''}</div>`);
 
   const formRating = () => `${tabs()}
     <form id="kmk-f" novalidate>
@@ -321,8 +325,8 @@
       <label class="kmk-l" for="kmk-cj">Jabatan</label>
       <select id="kmk-cj" required><option value="" disabled ${draf.cJab ? '' : 'selected'}>— Pilih jabatan —</option>
         ${JABATAN_CUTI.map((x) => `<option ${x === draf.cJab ? 'selected' : ''}>${esc(x)}</option>`).join('')}</select>
-      <label class="kmk-l" for="kmk-ct">Jenis cuti</label>
-      <select id="kmk-ct" required><option value="" disabled ${draf.cJenis ? '' : 'selected'}>— Pilih jenis cuti —</option>
+      <label class="kmk-l" for="kmk-ct">Alasan tidak masuk</label>
+      <select id="kmk-ct" required><option value="" disabled ${draf.cJenis ? '' : 'selected'}>— Pilih alasan tidak masuk —</option>
         ${JENIS_CUTI.map((x) => `<option ${x === draf.cJenis ? 'selected' : ''}>${esc(x)}</option>`).join('')}</select>
       <div class="kmk-row">
         <div><label class="kmk-l" for="kmk-cm">Mulai cuti</label><input type="date" id="kmk-cm" required value="${esc(draf.cMulai)}"></div>
@@ -333,7 +337,7 @@
       <input type="text" id="kmk-cg" maxlength="80" list="kmk-cnl" autocomplete="off" value="${esc(draf.cGanti)}" placeholder="Nama pegawai yang menggantikan tugas">
       <label class="kmk-l" for="kmk-ck">Keterangan <small>(opsional)</small></label>
       <textarea id="kmk-ck" maxlength="1000" placeholder="Contoh: cuti tahunan, tugas teller digantikan sementara.">${esc(draf.cKet)}</textarea>
-      <p class="kmk-note">Data cuti dicatat untuk pemantauan ketersediaan pegawai cabang oleh tim Operation Region II.</p>
+      <p class="kmk-note">Rencana tidak masuk hanya terkirim ke ASM &amp; SQO Area area cabang ini, SQO Region, dan ROH.</p>
       <p class="kmk-err" id="kmk-err" role="alert"></p>
       <div class="kmk-act"><button type="submit" class="kmk-btn">Kirim data cuti</button></div>
     </form>`;
@@ -342,7 +346,7 @@
   const TEKS_OK = {
     rating: ['Terima kasih atas penilaian Anda!', 'Masukan Anda membantu kami membuat KITO lebih baik.'],
     keluhan: ['Keluhan aplikasi Anda sudah kami terima', 'Tim Operation Region II akan menindaklanjuti secepatnya.'],
-    cuti: ['Data pegawai cuti sudah tercatat', 'Terima kasih. Data cuti dipakai tim Operation Region II untuk memantau ketersediaan pegawai cabang.'],
+    cuti: ['Rencana pegawai tidak masuk sudah tercatat', 'Rencana ini hanya terkirim ke ASM & SQO Area area cabang ini, SQO Region, dan ROH.'],
     cabang: ['Laporan masalah cabang sudah diterima', 'Tim Operation Region II akan menindaklanjuti laporan ini. Status laporan dicatat atas NIP pelapor.'],
   };
   // keluhan cabang terkirim ke ASM & SQO Area area cabang (KITO_ASM), SQO Region, dan ROH
@@ -360,16 +364,92 @@
 
   function tampilkan() {
     const k = konteks();
+    wrap.querySelector('#kmk-h').textContent = tab === 'cuti' && !TAMPIL_CUTI ? '📅 Rencana Pegawai Tidak Masuk' : 'Masukan untuk KITO';
     wrap.querySelector('#kmk-ctx').textContent = [k.kode && `${k.kode} ${k.cabang || ''}`.trim(), k.area].filter(Boolean).join(' · ');
     body.innerHTML = tab === 'rating' ? formRating() : tab === 'keluhan' ? formKeluhan() : tab === 'cuti' ? formCuti() : formCabang();
   }
   function buka(t, auto = false) {
+    if (t === 'cuti' && !TAMPIL_CUTI && !izinCuti) t = 'rating';
+    izinCuti = false;
     tab = t; otomatis = auto; fokusSebelum = document.activeElement;
     tampilkan(); wrap.hidden = false; document.body.classList.add('kmk-open');
     (body.querySelector('.kmk-stars input:checked, .kmk-stars input, select') || body.querySelector('button'))?.focus({ preventScroll: true });
   }
   // dipakai panel 🔔 Notifikasi Keluhan Cabang (push.js)
-  window.KITO_MASUKAN = { laporCabang: () => { tabTerakhir = 'cabang'; buka('cabang'); } };
+  /* form rencana pegawai tidak masuk di DALAM kartu hijau halaman Cabang (push.js memanggil KITO_MASUKAN.formCuti(container)).
+     Isian disimpan di draf yang sama dengan form popup, jadi tidak hilang saat halaman digambar ulang / ganti cabang. */
+  function formCutiKartu(c) {
+    if (!c) return;
+    const k = konteks(), peg = k.kode ? pegawaiCabang(k.kode) : [];
+    c.dataset.kode = k.kode || '';
+    if (!draf.cMulai) draf.cMulai = tglLokal();
+    if (!draf.cSelesai) draf.cSelesai = draf.cMulai;
+    c.innerHTML = `<form class="kcf" novalidate>
+      <div class="kcf-row">
+        <label>Nama pegawai<input name="cNama" maxlength="80" list="kcf-peg" autocomplete="off" placeholder="Ketik / pilih nama" value="${esc(draf.cNama)}"></label>
+        <label>NIP pegawai<input name="cNip" maxlength="20" inputmode="numeric" autocomplete="off" value="${esc(draf.cNip)}"></label>
+      </div>
+      <datalist id="kcf-peg">${peg.map((r) => `<option value="${esc(r[0])}">${esc(r[2] || '')}</option>`).join('')}</datalist>
+      <div class="kcf-row">
+        <label>Jabatan<select name="cJab"><option value="" ${draf.cJab ? '' : 'selected'} disabled>— Pilih —</option>${JABATAN_CUTI.map((x) => `<option ${x === draf.cJab ? 'selected' : ''}>${esc(x)}</option>`).join('')}</select></label>
+        <label>Alasan tidak masuk<select name="cJenis"><option value="" ${draf.cJenis ? '' : 'selected'} disabled>— Pilih —</option>${JENIS_CUTI.map((x) => `<option ${x === draf.cJenis ? 'selected' : ''}>${esc(x)}</option>`).join('')}</select></label>
+      </div>
+      <div class="kcf-row">
+        <label>Mulai<input type="date" name="cMulai" value="${esc(draf.cMulai)}"></label>
+        <label>Selesai<input type="date" name="cSelesai" value="${esc(draf.cSelesai)}" min="${esc(draf.cMulai)}"></label>
+      </div>
+      <div class="kcf-lama">${teksLama()}</div>
+      <label>Pegawai pengganti <small>(opsional)</small><input name="cGanti" maxlength="80" list="kcf-peg" autocomplete="off" value="${esc(draf.cGanti)}"></label>
+      <label>Keterangan <small>(opsional)</small><textarea name="cKet" maxlength="1000" rows="2">${esc(draf.cKet)}</textarea></label>
+      <p class="kcf-err" role="alert"></p>
+      <button type="submit" class="kcf-btn">Kirim rencana tidak masuk</button>
+    </form>`;
+    const f = c.querySelector('form'), err = f.querySelector('.kcf-err');
+    const segar = () => { f.querySelector('.kcf-lama').innerHTML = teksLama(); };
+    f.addEventListener('input', (e) => {
+      const el = e.target, n = el.name; if (!n) return;
+      if (n === 'cNip') el.value = el.value.replace(/[^0-9]/g, '');
+      draf[n] = el.value;
+      if (n === 'cNama') {   // nama dari daftar pegawai cabang -> jabatan terisi otomatis
+        const p = pegawaiCabang(konteks().kode).find((r) => String(r[0]).toLowerCase() === el.value.trim().toLowerCase());
+        if (p && JABATAN_CUTI.includes(p[2])) { draf.cJab = p[2]; f.cJab.value = p[2]; }
+      }
+      if (n === 'cMulai') { f.cSelesai.min = el.value; if (draf.cSelesai < el.value) { draf.cSelesai = el.value; f.cSelesai.value = el.value; } }
+      if (n === 'cMulai' || n === 'cSelesai') segar();
+    });
+    f.addEventListener('change', (e) => { if (e.target.name) draf[e.target.name] = e.target.value; });
+    f.addEventListener('submit', async (e) => {
+      e.preventDefault(); err.textContent = '';
+      const salah = (t, nm) => { err.textContent = t; f[nm]?.focus(); };
+      if (!konteks().kode) return salah('Pilih cabang dulu lewat pilihan cabang di bagian atas dashboard.', 'cNama');
+      if (!draf.cNama.trim()) return salah('Isi nama pegawai.', 'cNama');
+      if (!/^[0-9]{3,20}$/.test(draf.cNip)) return salah('Isi NIP pegawai (angka).', 'cNip');
+      if (!draf.cJab) return salah('Pilih jabatan.', 'cJab');
+      if (!draf.cJenis) return salah('Pilih alasan tidak masuk.', 'cJenis');
+      if (!draf.cMulai || !draf.cSelesai) return salah('Isi tanggal mulai dan selesai.', 'cMulai');
+      if (draf.cSelesai < draf.cMulai) return salah('Tanggal selesai tidak boleh sebelum tanggal mulai.', 'cSelesai');
+      if (rentangHari() > 366) return salah('Lama cuti maksimal 1 tahun.', 'cSelesai');
+      if (!lamaCuti()) return salah('Rentang tanggal hanya berisi hari libur.', 'cMulai');
+      const btn = f.querySelector('.kcf-btn'); btn.disabled = true; btn.textContent = 'Mengirim…';
+      try {
+        let akun, pengguna;
+        try { const a = window.KITO_AKUN?.kini(); akun = a?.kred || undefined; pengguna = a?.nama || undefined; } catch (x) {}
+        const r = await kirim({ jenis: 'cuti', kategori: draf.cJenis, nama: draf.cNama.trim(), kontak: draf.cNip, cuti_jabatan: draf.cJab,
+          cuti_mulai: draf.cMulai, cuti_selesai: draf.cSelesai, cuti_hari: lamaCuti(), cuti_pengganti: draf.cGanti.trim() || undefined,
+          pesan: draf.cKet.trim() || undefined, ...konteks(), app, akun, pengguna });
+        const nm = draf.cNama.trim();
+        Object.assign(draf, { cNama: '', cNip: '', cJab: '', cJenis: '', cMulai: '', cSelesai: '', cGanti: '', cKet: '' });
+        const kunciA = (x) => String(x || '').toUpperCase().replace(/^\s*AREA\s+/, '').replace(/[^A-Z0-9]/g, '');
+        const A = window.KITO_ASM || {}, xa = A.data?.[kunciA(konteks().area)], sqor = (A.sqor || [])[0]?.nama;
+        const ke = [xa?.nama && `ASM ${xa.nama}`, xa?.sqoa && `SQO Area ${xa.sqoa}`, sqor ? `SQO Region ${sqor}` : 'SQO Region', 'ROH'].filter(Boolean).join(', ');
+        c.innerHTML = `<div class="kcf-ok">✅ <b>Rencana tidak masuk ${esc(nm)} tercatat</b> dan terkirim ke ${esc(ke)}.${r.diantre ? ' Perangkat offline: terkirim otomatis saat online.' : ''}
+          <button type="button" class="kcf-btn sec" data-kcf-lagi>Isi rencana lain</button></div>`;
+        c.querySelector('[data-kcf-lagi]').addEventListener('click', (x) => { x.stopPropagation(); formCutiKartu(c); });
+        try { window.dispatchEvent(new Event('kito-cuti')); } catch (x) {}
+      } catch (er) { err.textContent = 'Gagal mengirim: ' + er.message; btn.disabled = false; btn.textContent = 'Kirim rencana tidak masuk'; }
+    });
+  }
+  window.KITO_MASUKAN = { laporCabang: () => { tabTerakhir = 'cabang'; buka('cabang'); }, inputCuti: () => { izinCuti = true; buka('cuti'); }, formCuti: formCutiKartu };
   function tutup() {
     if (wrap.hidden) return;
     if (otomatis) catatTanya();
@@ -450,7 +530,7 @@
       if (!draf.cNama.trim()) return salah('Isi nama pegawai yang cuti.', '#kmk-cn');
       if (!/^[0-9]{3,20}$/.test(draf.cNip)) return salah('Isi NIP pegawai (angka).', '#kmk-ci');
       if (!draf.cJab) return salah('Pilih jabatan pegawai.', '#kmk-cj');
-      if (!draf.cJenis) return salah('Pilih jenis cuti.', '#kmk-ct');
+      if (!draf.cJenis) return salah('Pilih alasan tidak masuk.', '#kmk-ct');
       if (!draf.cMulai || !draf.cSelesai) return salah('Isi tanggal mulai dan selesai cuti.', '#kmk-cm');
       if (draf.cSelesai < draf.cMulai) return salah('Tanggal selesai tidak boleh sebelum tanggal mulai.', '#kmk-cs');
       if (rentangHari() > 366) return salah('Lama cuti maksimal 1 tahun.', '#kmk-cs');
@@ -493,6 +573,7 @@
       s.tanya = Date.now(); tulis(K_STATE, s);
       otomatis = false;
       body.innerHTML = selesai(tab, r.diantre);
+      if (isi.jenis === 'cuti') { try { window.dispatchEvent(new Event('kito-cuti')); } catch (e3) {} }   // push.js memuat ulang rencana tidak masuk
       body.querySelector('[data-kmk-tutup]')?.focus();
     } catch (er) {
       err.textContent = 'Gagal mengirim: ' + er.message;

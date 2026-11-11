@@ -78,7 +78,7 @@ function kp_fb_simpan(array $b): array {
         if (kp_fb_teks($b['kode'] ?? null, 20) === null) return [400, 'pilih cabang terlebih dahulu'];
         if (kp_fb_teks($b['nama'] ?? null, 80) === null) return [400, 'nama pegawai wajib diisi'];
         if (!preg_match('/^[0-9]{3,20}$/D', (string)($b['kontak'] ?? ''))) return [400, 'NIP pegawai wajib diisi (angka)'];
-        if (!in_array($b['kategori'] ?? '', KP_FB_JENIS_CUTI, true)) return [400, 'pilih jenis cuti'];
+        if (!in_array($b['kategori'] ?? '', KP_FB_JENIS_CUTI, true)) return [400, 'pilih alasan tidak masuk'];
         $kategori = $b['kategori'];
         $tgl = function ($v) { return is_string($v) && preg_match('/^\d{4}-\d{2}-\d{2}$/', $v) && strtotime($v . ' 00:00:00 UTC') !== false ? $v : null; };
         $mulai = $tgl($b['cuti_mulai'] ?? null); $selesai = $tgl($b['cuti_selesai'] ?? null);
@@ -330,19 +330,21 @@ function kp_fb_masuk(array $b): array {
     return ['ok' => true, 'cakupan' => $area ?? 'REGION', 'keluhan' => kp_fb_lengkapi($rows)];
 }
 
-/** rencana pegawai tidak masuk (data Pegawai Cuti) untuk kotak 🔔: cuti yang sedang berjalan / akan datang (60 hari),
-    sesuai cakupan akun: BOM-BOS = cabangnya · ASM & SQO Area = areanya · ROH, TOH, SQO Region, ATOM = seluruh Region II */
+/** rencana pegawai tidak masuk (data Pegawai Cuti): cuti yang sedang berjalan / akan datang (60 hari).
+    Penerima HANYA: ASM & SQO Area area cabang yang bersangkutan, SQO Region, dan ROH.
+    Akun lain (BOM-BOS, TOH, ATOM, atau ASM/SQO Area tanpa pilihan area) hanya melihat rencana yang dikirim akunnya sendiri. */
 function kp_fb_rencana_cuti(array $b): array {
     [$kunci] = kp_akun_cek($b);   // gagal -> 401
     [$jab, $sub] = array_pad(explode(':', $kunci, 2), 2, '');
-    $kode = null; $area = null;
-    if ($jab === 'bom') { if ($sub === '') return ['ok' => true, 'cakupan' => null, 'cuti' => []]; $kode = $sub; }
-    elseif ($jab === 'asm' || $jab === 'sqoa') { if ($sub === '') return ['ok' => true, 'cakupan' => null, 'cuti' => []]; $area = $sub; }
+    $area = null; $milik = null;
+    if ($jab === 'roh' || $jab === 'sqor') { /* seluruh Region II */ }
+    elseif (($jab === 'asm' || $jab === 'sqoa') && $sub !== '') $area = $sub;
+    else $milik = $kunci;   // bukan penerima: hanya rencana yang dikirim akun ini
     $hariIni = gmdate('Y-m-d', time() + 7 * 3600); $batas = gmdate('Y-m-d', time() + 7 * 3600 + 60 * 86400);
     $sql = "SELECT id, kode, cabang, area, nama, cuti_jabatan, kategori, cuti_mulai, cuti_selesai, cuti_hari, cuti_pengganti, status, pesan
-        FROM feedback WHERE jenis = 'cuti' AND status <> 'ditolak' AND cuti_selesai >= ? AND cuti_mulai <= ?" . ($kode ? ' AND kode = ?' : '') . "
+        FROM feedback WHERE jenis = 'cuti' AND status <> 'ditolak' AND cuti_selesai >= ? AND cuti_mulai <= ?" . ($milik ? ' AND akun = ?' : '') . "
         ORDER BY cuti_mulai, cuti_selesai, id LIMIT 1000";
-    $q = kp_fb_db()->prepare($sql); $q->execute($kode ? [$hariIni, $batas, $kode] : [$hariIni, $batas]);
+    $q = kp_fb_db()->prepare($sql); $q->execute($milik ? [$hariIni, $batas, $milik] : [$hariIni, $batas]);
     $rows = [];
     foreach ($q->fetchAll(PDO::FETCH_ASSOC) as $r) {
         if ($area !== null && kp_fb_area_keluhan($r) !== $area) continue;
@@ -350,7 +352,7 @@ function kp_fb_rencana_cuti(array $b): array {
         $rows[] = $r;
         if (count($rows) >= 100) break;
     }
-    return ['ok' => true, 'cakupan' => $kode ?? $area ?? 'REGION', 'hariIni' => $hariIni, 'cuti' => $rows];
+    return ['ok' => true, 'cakupan' => $milik ? 'SAYA' : ($area ?? 'REGION'), 'hariIni' => $hariIni, 'cuti' => $rows];
 }
 
 /** keluhan milik akun login (pelapor) */

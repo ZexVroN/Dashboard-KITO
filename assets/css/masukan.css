@@ -141,3 +141,4 @@ body.kmk-open { overflow: hidden; }
 /* tombol Masukan di semua halaman; disembunyikan saat layar login menutupi aplikasi */
 body.mode-gerbang .kmk-fab, body.mode-kpi-login .kmk-fab { display: none; }
 @media (max-width: 380px) { .kmk-tabs { grid-template-columns: repeat(2, 1fr); } }
+.kmk-tabs.t3 { grid-template-columns: repeat(3, 1fr); }

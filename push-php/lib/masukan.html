@@ -149,7 +149,7 @@
       + bars('Aspek yang dinilai (rata-rata ★)', s.aspek, { st: true }) + bars('Jenis keluhan aplikasi', s.perKategori)
       + bars('Jenis masalah cabang', s.perKategoriCabang) + bars('Urgensi keluhan cabang', s.perUrgensi, { lbl: (x) => `<span class="urg ${esc(x.nama)}">${esc(x.nama || '–')}</span>` })
       + bars('Cabang paling banyak melapor', s.perCabangKeluhan)
-      + (s.cuti ? bars('Jenis cuti pegawai', s.cuti.perJenis) : '')
+      + (s.cuti ? bars('Alasan tidak masuk', s.cuti.perJenis) : '')
       + bars('Per area', s.perArea) + bars('Per cabang', s.perCabang);
   }
 

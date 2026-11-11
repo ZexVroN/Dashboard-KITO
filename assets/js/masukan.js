@@ -277,7 +277,7 @@
         <div><label class="kmk-l" for="kmk-nm">Nama <small>(opsional)</small></label><input type="text" id="kmk-nm" maxlength="80" autocomplete="name" value="${esc(draf.nama)}"></div>
         <div><label class="kmk-l" for="kmk-kt">NIP <small>(opsional)</small></label><input type="text" id="kmk-kt" maxlength="80" inputmode="numeric" pattern="[0-9]+" autocomplete="off" value="${esc(draf.kontak)}"></div>
       </div>
-      <p class="kmk-note">Cabang, area, dan tanggal data yang sedang Anda lihat ikut terkirim agar keluhan mudah dicek. Isi NIP sebagai identitas pelapor. Keluhan hanya dapat dibaca akun login Anda dan tim tindak lanjut.</p>
+      <p class="kmk-note">Cabang, area, dan tanggal data yang sedang Anda lihat ikut terkirim agar keluhan mudah dicek. Isi NIP sebagai identitas pelapor. Keluhan aplikasi diterima tim pengelola aplikasi KITO (backend).</p>
       <p class="kmk-err" id="kmk-err" role="alert"></p>
       <div class="kmk-act"><button type="submit" class="kmk-btn">Kirim keluhan aplikasi</button></div>
     </form>`;
@@ -345,7 +345,7 @@
 
   const TEKS_OK = {
     rating: ['Terima kasih atas penilaian Anda!', 'Masukan Anda membantu kami membuat KITO lebih baik.'],
-    keluhan: ['Keluhan aplikasi Anda sudah kami terima', 'Tim Operation Region II akan menindaklanjuti secepatnya.'],
+    keluhan: ['Keluhan aplikasi Anda sudah kami terima', 'Keluhan aplikasi diteruskan ke tim pengelola aplikasi KITO dan ditindaklanjuti melalui backend.'],
     cuti: ['Rencana pegawai tidak masuk sudah tercatat', 'Rencana ini hanya terkirim ke ASM & SQO Area area cabang ini, SQO Region, dan ROH.'],
     cabang: ['Laporan masalah cabang sudah diterima', 'Tim Operation Region II akan menindaklanjuti laporan ini. Status laporan dicatat atas NIP pelapor.'],
   };

@@ -155,19 +155,19 @@
   function bagianKeluhan() {
     const p = pilihan(), masuk = modeMasuk();
     const a = akun(), balas = masuk;
-    if (!a) return `<p class="knp-g">Keluhan &amp; feedback</p><p class="knp-kosong">Keluhan hanya dapat dibaca oleh akun pelapor dan tim tindak lanjut. Login untuk melihat keluhan yang Anda kirim beserta balasannya.</p>`
+    if (!a) return `<p class="knp-g">Keluhan cabang</p><p class="knp-kosong">Keluhan cabang hanya dapat dibaca oleh akun pelapor dan tim tindak lanjut. Login untuk melihat keluhan cabang yang Anda kirim beserta balasannya.</p>`
       + (p.kode ? `<p class="knp-note knp-as">Laporan cabang ${esc(p.kode)} diteruskan ke <b>${esc(penerima(areaCabang()).join(', '))}</b>.</p>` : '');
     const nBuka = (kel.list || []).filter(terbuka).length;
     const judul = masuk
-      ? `<p class="knp-g">📥 Keluhan masuk · ${esc(namaCakupan(a))}${nBuka ? ` <span class="knp-nb">${nBuka} belum selesai</span>` : ''}</p>`
-      : `<p class="knp-g">Keluhan saya · ${esc(a.nama)}</p>`;
+      ? `<p class="knp-g">📥 Keluhan cabang masuk · ${esc(namaCakupan(a))}${nBuka ? ` <span class="knp-nb">${nBuka} belum selesai</span>` : ''}</p>`
+      : `<p class="knp-g">Keluhan cabang saya · ${esc(a.nama)}</p>`;
     if (kel.muat && !kel.list) return judul + '<p class="knp-note">Memuat keluhan…</p>';
     const list = kel.list || [];
     let info;
     if (masuk) info = `<p class="knp-note knp-as">Anda login sebagai <b>${esc(a.jabatan)}</b>. Keluhan cabang di ${esc(namaCakupan(a))} masuk ke sini dan dapat Anda balas.</p>`;
     else if (a && PEMBALAS.includes(a.jab)) info = `<p class="knp-msg">Untuk membalas, logout lalu login ulang sebagai ${esc(a.jab === 'asm' ? 'ASM' : 'SQO Area')} dengan memilih nama dan area Anda.</p>`;
     else info = `<p class="knp-note knp-as">Hanya akun Anda yang dapat membaca keluhan ini. Laporan diteruskan ke <b>${esc(penerima(areaCabang()).join(', '))}</b> untuk ditindaklanjuti.</p>`;
-    if (!list.length) return judul + (kel.err ? `<p class="knp-msg">Keluhan tidak bisa dimuat: ${esc(kel.err)}</p>` : `<p class="knp-kosong">${masuk ? 'Belum ada keluhan masuk' : 'Belum ada keluhan yang Anda kirim'} dalam 120 hari terakhir.</p>`) + info;
+    if (!list.length) return judul + (kel.err ? `<p class="knp-msg">Keluhan tidak bisa dimuat: ${esc(kel.err)}</p>` : `<p class="knp-kosong">${masuk ? 'Belum ada keluhan cabang masuk' : 'Belum ada keluhan cabang yang Anda kirim'} dalam 120 hari terakhir.</p>`) + info;
     const item = (r) => {
       const jenis = r.jenis === 'cabang' ? 'Keluhan cabang' : 'Keluhan aplikasi';
       const bls = (r.balasan || []).map((b) => `<div class="knp-bl"><div class="knp-blh"><b>${esc(b.jabatan)}${b.nama ? ' · ' + esc(b.nama) : ''}</b><small>${esc(wib(b.created_at))}</small></div><p>${esc(b.pesan)}</p>${b.status ? `<span class="knp-st st-${esc(b.status)}">→ ${esc(NM_STATUS[b.status] || b.status)}</span>` : ''}</div>`).join('');

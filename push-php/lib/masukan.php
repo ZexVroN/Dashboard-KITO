@@ -249,6 +249,7 @@ function kp_fb_export(array $g): array {
 }
 
 /* ---------- tindak lanjut di kotak 🔔 dashboard ----------
+   Hanya KELUHAN CABANG yang masuk ke kotak 🔔 (kotak masuk pembalas & "Keluhan saya"); keluhan aplikasi hanya di backend admin.
    Privasi: keluhan hanya dapat dibaca akun pelapor (kolom akun, mis. BOM-BOS "bom:<kode>") dan pembalas sesuai cakupan.
    Login  : POST /api/feedback/saya {jabatan, cabang?, area?, hash} -> keluhan yang dikirim akun ini + balasannya
             (NIP pelapor, IP, dan data perangkat tidak ditampilkan)
@@ -319,7 +320,7 @@ const KP_FB_KOLOM_PUBLIK = 'id, jenis, kategori, urgensi, waktu_kejadian, pesan,
 /** kotak masuk pembalas: keluhan cabang & aplikasi 120 hari terakhir dalam cakupan, yang belum selesai di atas */
 function kp_fb_masuk(array $b): array {
     [$jab, $area] = kp_fb_cakupan($b);
-    $q = kp_fb_balasan_db()->query("SELECT " . KP_FB_KOLOM_PUBLIK . " FROM feedback WHERE jenis IN ('cabang', 'keluhan')
+    $q = kp_fb_balasan_db()->query("SELECT " . KP_FB_KOLOM_PUBLIK . " FROM feedback WHERE jenis = 'cabang'
         AND created_at >= datetime('now', '-120 days') ORDER BY (status IN ('baru', 'diproses')) DESC, id DESC LIMIT 2000");
     $rows = [];
     foreach ($q->fetchAll(PDO::FETCH_ASSOC) as $r) {
@@ -358,7 +359,7 @@ function kp_fb_rencana_cuti(array $b): array {
 /** keluhan milik akun login (pelapor) */
 function kp_fb_saya(array $b): array {
     [$kunci] = kp_akun_cek($b);   // gagal -> 401
-    $q = kp_fb_balasan_db()->prepare("SELECT " . KP_FB_KOLOM_PUBLIK . " FROM feedback WHERE akun = ? AND jenis IN ('cabang', 'keluhan')
+    $q = kp_fb_balasan_db()->prepare("SELECT " . KP_FB_KOLOM_PUBLIK . " FROM feedback WHERE akun = ? AND jenis = 'cabang'
         AND created_at >= datetime('now', '-120 days') ORDER BY id DESC LIMIT 40");
     $q->execute([$kunci]);
     return ['ok' => true, 'keluhan' => kp_fb_lengkapi($q->fetchAll(PDO::FETCH_ASSOC))];
@@ -371,7 +372,7 @@ function kp_fb_balas(int $id, array $b): array {
     $status = $b['status'] ?? null;
     if ($status !== null && $status !== '' && !in_array($status, ['diproses', 'selesai', 'ditolak'], true)) kp_fail(400, 'status tidak valid');
     $db = kp_fb_balasan_db();
-    $ada = $db->prepare("SELECT status, area, kode FROM feedback WHERE id = ? AND jenis IN ('cabang', 'keluhan')"); $ada->execute([$id]);
+    $ada = $db->prepare("SELECT status, area, kode FROM feedback WHERE id = ? AND jenis = 'cabang'"); $ada->execute([$id]);
     $fb = $ada->fetch(PDO::FETCH_ASSOC);
     if (!$fb) kp_fail(404, 'keluhan tidak ditemukan');
     if ($area !== null && kp_fb_area_keluhan($fb) !== $area) kp_fail(403, 'keluhan ini dari area lain; hanya ' . KP_FB_PEMBALAS[$jab] . ' area tersebut yang dapat membalas');

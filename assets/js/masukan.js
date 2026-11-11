@@ -282,10 +282,17 @@
     keluhan: ['Keluhan Anda sudah kami terima', 'Tim Operation Region II akan menindaklanjuti secepatnya.'],
     cabang: ['Laporan masalah cabang sudah diterima', 'Tim Operation Region II akan menindaklanjuti laporan ini. Status laporan dicatat atas NIP pelapor.'],
   };
+  // keluhan cabang terkirim ke ASM & SQO Area area cabang (KITO_ASM), SQO Region, dan ROH
+  function teksPenerima() {
+    const kunci = (x) => String(x || '').toUpperCase().replace(/^\s*AREA\s+/, '').replace(/[^A-Z0-9]/g, '');
+    const A = window.KITO_ASM || {}, k = konteks(), x = A.data?.[kunci(k.area)], sqor = (A.sqor || [])[0]?.nama;
+    const ke = [x?.nama && `ASM ${x.nama}`, x?.sqoa && `SQO Area ${x.sqoa}`, sqor ? `SQO Region ${sqor}` : 'SQO Region', 'ROH'].filter(Boolean);
+    return `Laporan terkirim ke ${esc(ke.join(', '))}. Balasan tindak lanjut dapat dilihat di ikon 🔔.`;
+  }
   const selesai = (jenis, diantre) => `<div class="kmk-ok">
       <b aria-hidden="true">${jenis === 'rating' ? (draf.rating >= 4 ? '🎉' : '🙏') : '✅'}</b>
       <h3>${TEKS_OK[jenis][0]}</h3>
-      <p>${diantre ? 'Perangkat sedang offline. Masukan disimpan dan akan terkirim otomatis saat kembali online.' : TEKS_OK[jenis][1]}</p>
+      <p>${diantre ? 'Perangkat sedang offline. Masukan disimpan dan akan terkirim otomatis saat kembali online.' : jenis === 'cabang' ? teksPenerima() : TEKS_OK[jenis][1]}</p>
       <button type="button" class="kmk-btn" data-kmk-tutup>Tutup</button></div>`;
 
   function tampilkan() {

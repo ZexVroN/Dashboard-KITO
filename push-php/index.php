@@ -273,6 +273,11 @@ try {
         header('Cache-Control: no-store');
         kp_json(200, ['ok' => true, 'keluhan' => kp_fb_cabang((string)($_GET['kode'] ?? ''), (int)($_GET['limit'] ?? 20)), 'pembalas' => array_keys(KP_FB_PEMBALAS)]);
     }
+    if ($method === 'POST' && $route === '/api/feedback/masuk') {
+        if (!kp_rate('fbm:' . kp_ip(), 60)) kp_fail(429, 'terlalu banyak permintaan');
+        header('Cache-Control: no-store');
+        kp_json(200, kp_fb_masuk(kp_body()));
+    }
     if ($method === 'POST' && preg_match('#^/api/feedback/(\d+)/balas$#', $route, $m)) {
         if (!kp_rate('fbb:' . kp_ip(), 20)) kp_fail(429, 'terlalu banyak balasan, coba lagi sebentar lagi');
         kp_json(200, kp_fb_balas((int)$m[1], kp_body()));

@@ -8,7 +8,12 @@
 (()=>{'use strict';
 if(typeof URUTAN==='undefined'||typeof D==='undefined'||typeof render!=='function')return;
 const app=document.getElementById('app');if(!app)return;
-const kartu=()=>window.KITO_SALES_CARDS||[];   // diisi infografis.js & pegawai.js
+const kartu=()=>window.KITO_SALES_CARDS||[];   // diisi infografis.js & pegawai.js (akuisisi) dan emas.js (fn.tab='emas')
+// tombol halaman: "Akuisisi Cabang & Pegawai" | "Program Emas" (pilihan diingat selama sesi tab)
+const TAB=[['akuisisi','📊','Akuisisi Cabang & Pegawai','Informasi Sales Akuisisi Cabang & Sales Pegawai per cabang terpilih.'],
+           ['emas','🪙','Program Emas','Tabungan Emas & Cetak Emas di ATM per cabang dan pegawai.']];
+let tab='akuisisi';try{const t=sessionStorage.getItem('kito-sales-tab');if(TAB.some(x=>x[0]===t))tab=t;}catch(e){}
+const tabKartu=fn=>fn.tab||'akuisisi';
 
 // Satu label periode seragam untuk kedua kartu (menggantikan tanggal berbeda di tiap judul kartu).
 function periode(){
@@ -22,11 +27,21 @@ function periode(){
 
 function page(){
   // cabang & periode dipilih lewat dropdown header (ditampilkan di mode-sales via sales.css)
-  const kartuHtml=kartu().map(fn=>{try{return fn()||'';}catch(e){return '';}}).join('');
+  const ada=TAB.filter(t=>kartu().some(fn=>tabKartu(fn)===t[0]));
+  if(!ada.some(t=>t[0]===tab))tab=(ada[0]||TAB[0])[0];
+  const kartuHtml=kartu().filter(fn=>tabKartu(fn)===tab).map(fn=>{try{return fn()||'';}catch(e){return '';}}).join('');
+  const aktif=TAB.find(t=>t[0]===tab);
+  // kartu identitas cabang (nama, area, kelas, Branch Manager & BOM/BOS) seperti di halaman Cabang
+  const fnHero=window.KITO_KARTU_CABANG||(typeof kartuCabang==='function'?kartuCabang:null);
+  let heroCabang='';try{heroCabang=D.B[st.b]&&fnHero?fnHero():'';}catch(e){heroCabang='';}
+  const tombol=ada.length>1?`<div class="sl-tabs" role="tablist" aria-label="Halaman Informasi Sales">${ada.map(t=>
+    `<button type="button" role="tab" data-sl-tab="${t[0]}" aria-selected="${t[0]===tab}" class="${t[0]===tab?'on':''}"><span aria-hidden="true">${t[1]}</span>${t[2]}</button>`).join('')}</div>`:'';
   return `<section class="sl-head"><button type="button" class="sl-back" data-v="cabang">‹ Kembali ke Cabang</button>
     <h2>📈 Informasi Sales</h2>
-    <p>Informasi Sales Akuisisi Cabang &amp; Sales Pegawai per cabang terpilih.</p>
-    <p class="sl-per">📅 ${periode()}</p></section>
+    <p>${aktif[3].replace(/&/g,'&amp;')}</p>
+    ${tombol}
+    ${tab==='akuisisi'?`<p class="sl-per">📅 ${periode()}</p>`:''}</section>
+    ${heroCabang}
     ${kartuHtml||'<p class="sl-note">Data sales tidak tersedia untuk cabang ini.</p>'}`;
 }
 
@@ -50,5 +65,11 @@ render=function(){
   document.querySelector('#nav button[data-v="cabang"]')?.classList.add('on');
   app.innerHTML=page();
 };
+app.addEventListener('click',e=>{
+  const b=tampil==='sales'&&e.target.closest('[data-sl-tab]');if(!b||b.dataset.slTab===tab)return;
+  tab=b.dataset.slTab;try{sessionStorage.setItem('kito-sales-tab',tab);}catch(x){}
+  render();
+  document.querySelector(`[data-sl-tab="${tab}"]`)?.focus({preventScroll:true});
+});
 if(tampil==='sales')render();
 })();

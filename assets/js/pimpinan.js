@@ -15,5 +15,6 @@ function kartuCabangPimpinan(){
   return j<0?html:html.slice(0,j)+blok+html.slice(j);
 }
 URUTAN[i]=kartuCabangPimpinan;
+window.KITO_KARTU_CABANG=kartuCabangPimpinan;   // dipakai juga di halaman Informasi Sales cabang (sales.js)
 render();
 })();

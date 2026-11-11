@@ -62,6 +62,7 @@ function isiCabang(){
     <p class="pg-desc em-note">Tercapai = Tab. Emas dan Cetak Emas ≥ target · Berjalan = sudah ada input · Belum input = belum ada transaksi dihitung. Angka cabang mengikuti sheet Detail Cabang (per kode cabang input); angka pegawai dihitung per NIP. Sumber: ${esc(E.sumber)}, posisi ${tgL(E.tanggal)}. NIP disamarkan.</p>`;
 }
 function kartuCabang(){if(!D.B[st.b])return '';return `<section class="cd em-card" id="emas-cabang">${isiCabang()}</section>`;}
+kartuCabang.tab='emas';   // tampil di tombol "Program Emas" halaman Informasi Sales (sales.js)
 (window.KITO_SALES_CARDS=window.KITO_SALES_CARDS||[]).push(kartuCabang);
 
 /* ================= infografis Area / Region II (halaman Informasi Sales Area) ================= */
@@ -79,8 +80,12 @@ function heroArea(sc){
   const R2=E.regions.find(r=>r.kode==='R02');
   const s=jumlah(E.cabang.filter(c=>sc.kodes.has(c.kode)));
   const rk=sc.isRegion&&R2?`<div class="em-rank"><span>Peringkat Region II</span><b>#${nf(R2.rank.tab)}</b><small>dari ${E.regions.length} region (Tab. Emas)</small></div>`:'';
-  return `<section class="cd em-hero"><span class="wt-eyebrow">PROGRAM EMAS · ${esc(sc.nama.toUpperCase())}</span>
-    <h3>Tabungan Emas &amp; Cetak Emas di ATM</h3><p class="wt-sub">MTD ${periode} · ${nf(s.cab)} cabang · ${nf(s.peg)} pegawai in-branch · sumber ${esc(E.sumber)}</p>
+  // kartu judul seperti Informasi Sales Area (nama ASM disisipkan asm.js ke .wt-hero)
+  const judul=`<section class="cd wt-hero em-judul"><span class="wt-eyebrow">PROGRAM EMAS · ${sc.isRegion?'REGION II':'AREA'}</span><h3>${esc(sc.isRegion?'Seluruh Area Region II':String(st.a).replace(/^area\s+/i,''))}</h3>
+    <p class="wt-sub">${nf(s.peg)} pegawai inbranch · ${nf(s.cab)} cabang · MTD ${periode} (data s.d. ${tgL(E.tanggal)})</p>
+    <p class="wt-sub">Tabungan Emas &amp; Cetak Emas di ATM · target per orang/bulan: Tab. Emas ${nf(E.target.tabBom)} (BOM/BOS/CS) · ${nf(E.target.tabTeller)} (Teller) · Cetak Emas ${nf(E.target.cetak)}. Sumber ${esc(E.sumber)}.</p></section>`;
+  return judul+`<section class="cd em-hero"><span class="wt-eyebrow">PENCAPAIAN MTD · ${esc(sc.nama.toUpperCase())}</span>
+    <h3>Tabungan Emas &amp; Cetak Emas di ATM</h3>
     <div class="em-tiles em-tiles-h">${tile('Tabungan Emas',s.tab,s.tabT,s.tabH?`+${nf(s.tabH)} hari ini`:'')}${tile('Cetak Emas di ATM',s.cetak,s.cetakT)}${tile('Partisipasi Pegawai',s.inp,s.peg,'','pegawai sudah input')}${rk}</div></section>`;
 }
 function regionRank(){
@@ -115,10 +120,17 @@ function halamanArea(){
 }
 const views=window.KITO_AREA_VIEWS;
 const vSales=views&&views.find(v=>v.key==='sales');
-if(vSales){const lama=vSales.html;vSales.html=function(){return lama.apply(this,arguments)+halamanArea();};}
+// tombol halaman Informasi Sales Area: "Akuisisi Cabang & Pegawai" (area-sales.js) | "Program Emas" (halamanArea)
+const TAB_AREA=[['akuisisi','📊','Akuisisi Cabang & Pegawai'],['emas','🪙','Program Emas']];
+let tabArea='akuisisi';try{if(sessionStorage.getItem('kito-area-sales-tab')==='emas')tabArea='emas';}catch(e){}
+const tombolArea=()=>`<div class="sl-tabs as-tabs" role="tablist" aria-label="Halaman Informasi Sales Area">${TAB_AREA.map(t=>
+  `<button type="button" role="tab" data-em-tab="${t[0]}" aria-selected="${t[0]===tabArea}" class="${t[0]===tabArea?'on':''}"><span aria-hidden="true">${t[1]}</span>${t[2]}</button>`).join('')}</div>`;
+if(vSales){const lama=vSales.html;vSales.html=function(){return tombolArea()+(tabArea==='emas'?halamanArea():lama.apply(this,arguments));};}
 
 /* ================= interaksi ================= */
 document.getElementById('app')?.addEventListener('click',e=>{
+  const t=e.target.closest('[data-em-tab]');
+  if(t){if(t.dataset.emTab!==tabArea){tabArea=t.dataset.emTab;try{sessionStorage.setItem('kito-area-sales-tab',tabArea);}catch(x){}render();document.querySelector(`[data-em-tab="${tabArea}"]`)?.focus({preventScroll:true});}return;}
   const s=e.target.closest('#emas-cabang [data-em-st]');
   if(s){ui.st=s.dataset.emSt;ui.lim=12;document.getElementById('emas-cabang').innerHTML=isiCabang();return;}
   const m=e.target.closest('#emas-cabang [data-em-more]');

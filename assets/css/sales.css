@@ -46,3 +46,13 @@ body.mode-sales header .geser .slide:first-child{display:block!important;width:1
 }
 
 @media print{.sl-back,.sales-open,.menu-geser{display:none}}
+
+/* tombol halaman Informasi Sales: Akuisisi Cabang & Pegawai | Program Emas */
+.sl-tabs{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin:10px 0 0;padding:4px;border:1px solid var(--ln);border-radius:14px;background:var(--cd)}
+.sl-tabs button{display:flex;align-items:center;justify-content:center;gap:6px;min-height:40px;padding:8px 10px;border:0;border-radius:10px;background:transparent;color:var(--tx);font:700 13px/1.2 Inter,system-ui,sans-serif;text-align:center;cursor:pointer}
+.sl-tabs button:hover{background:rgba(0,87,174,.07)}
+.sl-tabs button.on{background:var(--nv,#002060);color:#fff;box-shadow:0 3px 10px rgba(0,32,96,.25)}
+.sl-tabs button:focus-visible{outline:2px solid #f6bd28;outline-offset:1px}
+@media (max-width:380px){.sl-tabs button{font-size:12px;padding:8px 6px}}
+@media print{.sl-tabs{display:none}}
+.as-tabs{margin:0 0 12px}

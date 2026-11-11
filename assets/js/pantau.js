@@ -2,7 +2,7 @@
    perangkat yang sedang aktif, halaman yang dibuka, dan sebaran lokasi akses (perkiraan dari IP, tanpa GPS).
    - ID perangkat acak disimpan di localStorage (tidak berisi data pribadi); ID sesi per tab di sessionStorage.
    - Heartbeat tiap 60 detik hanya saat tab terlihat; saat tab disembunyikan/ditutup dikirim tanda selesai.
-   - Ikut dikirim: jabatan login KPI, area/cabang yang dipilih, tab yang dibuka, jenis aplikasi (web/PWA/APK).
+   - Ikut dikirim: jabatan & nama pengguna akun login, area/cabang yang dipilih, tab yang dibuka, jenis aplikasi (web/PWA/APK).
    Alamat backend sama dengan notifikasi: window.KITO_PUSH.api (assets/js/push-config.js).
    Admin: <api>/admin/perangkat */
 (() => {
@@ -32,10 +32,15 @@
       area = typeof st !== 'undefined' && st.a && st.a !== 'Semua Area Region II' ? st.a : (b?.[2] || null);
       if (b) { kode = String(b[0]); cabang = b[1]; }
     } catch (e) {}
-    try { jabatan = sessionStorage.getItem('kito-kpi-jabatan'); } catch (e) {}
-    // nama pengguna akun login (kpi-login.js) -> kolom "Nama pengguna" di backend Perangkat (nama saja)
+    // jabatan & nama pengguna akun login (kpi-login.js) -> kolom "Jabatan" dan "Nama pengguna" di backend Perangkat.
+    // Keduanya selalu dikirim bersama: login = keduanya terisi, tanpa login = keduanya kosong.
     let nama = null;
-    try { nama = window.KITO_AKUN?.kini()?.nama || null; } catch (e) {}
+    try {
+      const a = window.KITO_AKUN?.kini();
+      if (a) { jabatan = a.jab || null; nama = a.nama || null; }
+      else if (!window.KITO_AKUN) jabatan = sessionStorage.getItem('kito-kpi-jabatan');   // kpi-login.js belum termuat
+    } catch (e) {}
+    if (jabatan && !nama) nama = String(jabatan).toUpperCase();
     const tab = document.querySelector('#nav button.on');
     return { area, kode, cabang, jabatan, nama, page: tab?.dataset.v || tab?.textContent.trim() || null };
   };
@@ -69,6 +74,9 @@
     clearTimeout(tunda); tunda = setTimeout(() => kirim('ping'), 1500);
   });
   document.addEventListener('change', () => { clearTimeout(tunda); tunda = setTimeout(() => kirim('ping'), 1500); });
+
+  // login / logout / ganti profil: langsung kabari server agar nama pengguna di backend segera berubah
+  addEventListener('kito-akun', () => { clearTimeout(tunda); tunda = setTimeout(() => { if (mulai) kirim('ping'); }, 800); });
 
   const awal = () => { if (document.visibilityState === 'visible') jalan(); };
   document.readyState === 'complete' ? setTimeout(awal, 1500) : addEventListener('load', () => setTimeout(awal, 1500));

@@ -64,7 +64,7 @@ function kp_presence_ping(array $b): array {
             VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
           ON CONFLICT(id) DO UPDATE SET platform=excluded.platform, browser=excluded.browser, app=excluded.app, user_agent=excluded.user_agent,
             screen=COALESCE(excluded.screen, devices.screen), lang=COALESCE(excluded.lang, devices.lang), tz=COALESCE(excluded.tz, devices.tz),
-            jabatan=COALESCE(excluded.jabatan, devices.jabatan), area=COALESCE(excluded.area, devices.area), kode=COALESCE(excluded.kode, devices.kode),
+            jabatan=excluded.jabatan, area=COALESCE(excluded.area, devices.area), kode=COALESCE(excluded.kode, devices.kode),
             cabang=COALESCE(excluded.cabang, devices.cabang), page=COALESCE(excluded.page, devices.page), ip=excluded.ip, last_seen=excluded.last_seen,
             visits=devices.visits + excluded.visits, pengguna=excluded.pengguna")
            ->execute([$dev, $pl, $br, $app, $ua, kp_str($b['scr'] ?? null, 20), kp_str($b['lang'] ?? null, 20), kp_str($b['tz'] ?? null, 50),
@@ -139,8 +139,8 @@ function kp_rows(PDOStatement $q): array {
 
 /** Sesi yang sedang aktif (heartbeat <= KP_AKTIF_SEC detik lalu), dipakai ringkasan dan mode live. */
 function kp_presence_aktif(): array {
-    $q = kp_presence_db()->prepare("SELECT v.device_id, v.id sesi_id, v.page, v.started_at, v.last_seen, v.ip, d.platform, d.browser, d.app, COALESCE(NULLIF(d.label, ''), d.pengguna, 'Tanpa login') label, d.label label_manual, d.pengguna,
-            COALESCE(v.jabatan, d.jabatan) jabatan, COALESCE(v.area, d.area) area, COALESCE(v.kode, d.kode) kode, d.cabang,
+    $q = kp_presence_db()->prepare("SELECT v.device_id, v.id sesi_id, v.page, v.started_at, v.last_seen, v.ip, d.platform, d.browser, d.app, COALESCE(NULLIF(d.label, ''), d.pengguna, d.jabatan, 'Tanpa login') label, d.label label_manual, d.pengguna,
+            d.jabatan, COALESCE(v.area, d.area) area, COALESCE(v.kode, d.kode) kode, d.cabang,
             g.city, g.region, g.country, g.isp, CAST(strftime('%s', v.last_seen) - strftime('%s', v.started_at) AS INTEGER) detik
         FROM visits v JOIN devices d ON d.id = v.device_id LEFT JOIN ip_geo g ON g.ip = v.ip
         WHERE v.ended = 0 AND v.last_seen >= ? ORDER BY v.started_at DESC LIMIT 500");
@@ -267,7 +267,7 @@ function kp_presence_devices(array $g, string $cari, int $limit): array {
     $db = kp_presence_db();
     $R = kp_rentang($g); $pv = [$R['mulai'], $R['akhir']];
     $ir = 'v.device_id = d.id AND ' . KP_IRISAN;
-    $sql = "SELECT d.id, d.platform, d.browser, d.app, COALESCE(NULLIF(d.label, ''), d.pengguna, 'Tanpa login') label, d.label label_manual, d.pengguna, d.jabatan, d.area, d.kode, d.cabang, d.page, d.ip, d.screen, d.lang, d.tz, d.user_agent,
+    $sql = "SELECT d.id, d.platform, d.browser, d.app, COALESCE(NULLIF(d.label, ''), d.pengguna, d.jabatan, 'Tanpa login') label, d.label label_manual, d.pengguna, d.jabatan, d.area, d.kode, d.cabang, d.page, d.ip, d.screen, d.lang, d.tz, d.user_agent,
             d.first_seen, d.last_seen, g.city, g.region, g.country, g.isp,
             (SELECT COUNT(DISTINCT v.ip) FROM visits v WHERE $ir) jumlah_ip,
             (SELECT COUNT(*) FROM visits v WHERE $ir) sesi,
@@ -307,7 +307,7 @@ function kp_presence_export(string $jenis, array $g): array {
     $nama = $jenis . '-' . $R['dari'] . ($R['sampai'] !== $R['dari'] ? '_sd_' . $R['sampai'] : '') . '.csv';
     $HARI = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
     if ($jenis === 'sesi') {
-        $q = $db->prepare("SELECT v.id, v.device_id, COALESCE(NULLIF(d.label, ''), d.pengguna, 'Tanpa login') label, d.platform, d.browser, d.app, v.jabatan, v.area, v.kode, d.cabang, v.page, v.pages, v.ip,
+        $q = $db->prepare("SELECT v.id, v.device_id, COALESCE(NULLIF(d.label, ''), d.pengguna, d.jabatan, 'Tanpa login') label, d.platform, d.browser, d.app, v.jabatan, v.area, v.kode, d.cabang, v.page, v.pages, v.ip,
                 g.city, g.region, g.country, g.isp, v.started_at, v.last_seen, CAST(strftime('%s', v.last_seen) - strftime('%s', v.started_at) AS INTEGER) detik, v.ended
             FROM visits v JOIN devices d ON d.id = v.device_id LEFT JOIN ip_geo g ON g.ip = v.ip WHERE " . KP_IRISAN . " ORDER BY v.started_at DESC");
         $q->execute($pv);

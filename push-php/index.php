@@ -270,6 +270,11 @@ try {
         if (is_string($hasil)) kp_fail($kode, $hasil);
         kp_json($kode, $hasil);
     }
+    if ($method === 'POST' && $route === '/api/feedback/cuti') {   // rencana pegawai tidak masuk sesuai cakupan akun login
+        if (!kp_rate('fbcu:' . kp_ip(), 60)) kp_fail(429, 'terlalu banyak permintaan');
+        header('Cache-Control: no-store');
+        kp_json(200, kp_fb_rencana_cuti(kp_body()));
+    }
     if ($method === 'POST' && $route === '/api/feedback/saya') {   // keluhan milik akun login (daftar publik per cabang sudah dihapus)
         if (!kp_rate('fbs:' . kp_ip(), 60)) kp_fail(429, 'terlalu banyak permintaan');
         header('Cache-Control: no-store');

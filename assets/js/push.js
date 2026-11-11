@@ -193,6 +193,45 @@
     return judul + info + `<div class="knp-kl">${list.map(item).join('')}</div>` + (kel.err ? `<p class="knp-msg">${esc(kel.err)}</p>` : '');
   }
 
+  /* ---------- rencana pegawai tidak masuk (data form Pegawai Cuti) ----------
+     BOM-BOS = cabangnya · ASM & SQO Area = areanya · ROH, TOH, SQO Region, ATOM = Region II; tamu tidak melihat daftar. */
+  const cu = { kunci: null, list: null, err: '', hariIni: null };
+  const tglPendek = (t) => (t ? new Date(t + 'T00:00').toLocaleDateString('id-ID', { weekday: 'short', day: 'numeric', month: 'short' }) : '');
+  const selisihHari = (a, b) => Math.round((new Date(b + 'T00:00') - new Date(a + 'T00:00')) / 864e5);
+  async function muatCuti(paksa) {
+    const a = akun();
+    if (!a) { cu.kunci = null; cu.list = null; return; }
+    if (!paksa && cu.kunci === a.kunci && cu.list) return;
+    if (cu.kunci !== a.kunci) cu.list = null;
+    cu.kunci = a.kunci; cu.err = '';
+    try { const r = await api('POST', '/api/feedback/cuti', a.kred); if (cu.kunci === a.kunci) { cu.list = r.cuti || []; cu.hariIni = r.hariIni; cu.cakupan = r.cakupan; } }
+    catch (e) { if (cu.kunci === a.kunci) { cu.err = /password salah/i.test(e.message) ? 'Sesi login tidak berlaku lagi. Silakan logout lalu login ulang.' : e.message; cu.list = cu.list || []; } }
+  }
+  function bagianCuti() {
+    const a = akun();
+    if (!a) return '';
+    const cak = a.jab === 'bom' ? (a.cab ? 'Cabang ' + a.cab : '') : (a.jab === 'asm' || a.jab === 'sqoa') ? (a.sub ? namaCakupan(a) : '') : 'Region II';
+    const judul = `<p class="knp-g">📅 Rencana pegawai tidak masuk${cak ? ' · ' + esc(cak) : ''}</p>`;
+    if (!cak) return judul + '<p class="knp-kosong">Login ulang dengan memilih nama dan area/cabang Anda untuk melihat rencana pegawai tidak masuk.</p>';
+    if (!cu.list) return judul + '<p class="knp-note">Memuat…</p>';
+    if (!cu.list.length) return judul + (cu.err ? `<p class="knp-msg">${esc(cu.err)}</p>` : '<p class="knp-kosong">Tidak ada pegawai yang cuti hari ini maupun 60 hari ke depan.</p>');
+    const hi = cu.hariIni || new Date(Date.now() + 7 * 3600e3).toISOString().slice(0, 10);
+    const sedang = cu.list.filter((r) => r.cuti_mulai <= hi), nanti = cu.list.filter((r) => r.cuti_mulai > hi);
+    const item = (r) => {
+      const jalan = r.cuti_mulai <= hi, sisa = selisihHari(hi, r.cuti_mulai);
+      const tanda = jalan ? `<span class="knp-cu-t on">Tidak masuk${r.cuti_selesai > hi ? ' s.d. ' + esc(tglPendek(r.cuti_selesai)) : ' hari ini'}</span>`
+        : `<span class="knp-cu-t">${sisa === 1 ? 'Mulai besok' : `Mulai ${sisa} hari lagi`}</span>`;
+      return `<div class="knp-cu ${jalan ? 'on' : ''}">
+        <div class="knp-cu-h"><b>${esc(r.nama || '–')}</b>${tanda}</div>
+        <small>${esc([r.cuti_jabatan, a.jab === 'bom' ? '' : `${r.kode} ${r.cabang || ''}`.trim()].filter(Boolean).join(' · '))}</small>
+        <small>${esc(r.kategori || 'Cuti')} · ${esc(tglPendek(r.cuti_mulai))}${r.cuti_selesai !== r.cuti_mulai ? ' – ' + esc(tglPendek(r.cuti_selesai)) : ''}${r.cuti_hari != null ? ` · ${r.cuti_hari} hari kerja` : ''}</small>
+        ${r.cuti_pengganti ? `<small>Pengganti: ${esc(r.cuti_pengganti)}</small>` : ''}
+      </div>`;
+    };
+    return judul + `<p class="knp-note knp-as"><b>${sedang.length}</b> pegawai tidak masuk hari ini · <b>${nanti.length}</b> rencana cuti 60 hari ke depan.</p>`
+      + `<div class="knp-cul">${sedang.map(item).join('')}${nanti.map(item).join('')}</div>` + (cu.err ? `<p class="knp-msg">${esc(cu.err)}</p>` : '');
+  }
+
   async function kirimBalasan(id) {
     const a = akun(), t = body.querySelector('#knp-bt'), s = body.querySelector('#knp-bs');
     if (!a || !t) return;
@@ -213,7 +252,7 @@
     let h = '';
     if (!didukung) {
       h = `<p class="knp-status">○ Notifikasi push belum didukung di ${isTWA ? 'versi aplikasi ini' : 'browser ini'}</p><p class="knp-note">${isIOS ? 'Di iPhone/iPad, tambahkan KITO ke Layar Utama lalu buka dari sana.' : 'Perbarui aplikasi KITO atau Google Chrome ke versi terbaru untuk menerima notifikasi.'}</p>`;
-      body.innerHTML = bagianLapor() + bagianKeluhan() + '<p class="knp-g knp-sep">Pengaturan notifikasi push</p>' + h + (pesan ? `<p class="knp-msg">${esc(pesan)}</p>` : '');
+      body.innerHTML = bagianLapor() + bagianCuti() + bagianKeluhan() + '<p class="knp-g knp-sep">Pengaturan notifikasi push</p>' + h + (pesan ? `<p class="knp-msg">${esc(pesan)}</p>` : '');
       return;
     }
     const izin = Notification.permission;
@@ -228,7 +267,7 @@
           : '<button type="button" class="knp-btn" data-knp="aktifkan">Aktifkan notifikasi</button>'}</div>
         <p class="knp-note">Pilihan area dan cabang mengikuti filter di atas. Notifikasi tetap masuk walau dashboard ditutup${isIOS ? ' (selama aplikasi KITO masih terpasang)' : ''}.</p>`;
     }
-    body.innerHTML = bagianLapor() + bagianKeluhan() + '<p class="knp-g knp-sep">Pengaturan notifikasi push</p>' + h + (pesan ? `<p class="knp-msg">${esc(pesan)}</p>` : '');
+    body.innerHTML = bagianLapor() + bagianCuti() + bagianKeluhan() + '<p class="knp-g knp-sep">Pengaturan notifikasi push</p>' + h + (pesan ? `<p class="knp-msg">${esc(pesan)}</p>` : '');
     body.querySelectorAll('.knp-btn').forEach((b) => { b.disabled = sibuk; });
     tandaiBell();
   }
@@ -274,6 +313,7 @@
     sheet.hidden = false; document.body.classList.add('knp-open');
     pesan = ''; body.innerHTML = '<p class="knp-note">Memuat…</p>';
     muatKeluhan(true).then(() => { if (!sheet.hidden) gambar(); });
+    muatCuti(true).then(() => { if (!sheet.hidden) gambar(); });
     try { if (didukung && !reg) await siapkanSW(); else if (reg) sub = await reg.pushManager.getSubscription(); await segarkanStatus(); }
     catch (e) { pesan = 'Gagal menyiapkan notifikasi: ' + e.message; }
     gambar();
@@ -295,7 +335,11 @@
     const b = e.target.closest('[data-knp]'); if (b) aksi(b.dataset.knp);
   });
   // login / logout: perbarui daftar keluhan & angka di lonceng (daftar mengikuti akun, bukan cabang di header)
-  window.addEventListener('kito-akun', () => { muatKeluhan().then(() => { if (!sheet.hidden) gambar(); }); if (!sheet.hidden) gambar(); });
+  window.addEventListener('kito-akun', () => {
+    muatKeluhan().then(() => { if (!sheet.hidden) gambar(); });
+    muatCuti().then(() => { if (!sheet.hidden) gambar(); });
+    if (!sheet.hidden) gambar();
+  });
   muatKeluhan();
   document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !sheet.hidden) tutup(); });
 

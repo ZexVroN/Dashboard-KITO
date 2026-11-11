@@ -33,7 +33,7 @@ body.kmk-open { overflow: hidden; }
 .kmk-ctx { margin: 2px 0 0; font-size: 12.5px; color: var(--mu, #667085); }
 .kmk-x { border: 0; background: transparent; color: var(--mu, #667085); font-size: 28px; line-height: 1; cursor: pointer; padding: 0 4px; }
 
-.kmk-tabs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; margin: 14px 0; padding: 4px; border-radius: 12px; background: var(--bg, #f2f4f8); }
+.kmk-tabs { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; margin: 14px 0; padding: 4px; border-radius: 12px; background: var(--bg, #f2f4f8); }
 .kmk-tabs button { border: 0; border-radius: 9px; padding: 8px 4px; background: transparent; color: var(--mu, #667085); font: 700 12.5px/1.25 inherit; cursor: pointer; }
 .kmk-tabs button[aria-selected="true"] { background: var(--cd, #fff); color: var(--tx, #14213d); box-shadow: 0 1px 4px rgba(0, 0, 0, .1); }
 
@@ -138,3 +138,6 @@ body.kmk-open { overflow: hidden; }
 .kmk-toast button:focus-visible { outline: 2px solid #8fb4ff; }
 @media (prefers-reduced-motion: reduce) { .kmk-fab.menahan { transition: none; } .kmk-toast { animation: none; } }
 @media print { .kmk-toast { display: none !important; } }
+/* tombol Masukan di semua halaman; disembunyikan saat layar login menutupi aplikasi */
+body.mode-gerbang .kmk-fab, body.mode-kpi-login .kmk-fab { display: none; }
+@media (max-width: 380px) { .kmk-tabs { grid-template-columns: repeat(2, 1fr); } }

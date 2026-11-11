@@ -1,8 +1,9 @@
-/* Masukan pengguna di halaman Cabang: tombol "💬 Masukan" + popup tiga tab.
+/* Masukan pengguna: tombol "💬 Masukan" di semua halaman + popup tiga tab.
    - ⭐ Rating aplikasi: 1–5 bintang, aspek yang dinilai, komentar (opsional).
-   - 📝 Keluhan: kategori + uraian, nama/NIP opsional.
+   - 📝 Keluhan Aplikasi: kategori + uraian, nama/NIP opsional.
    - 🏢 Keluhan Cabang: laporan masalah operasional cabang (mesin antrian, printer tiket, jaringan, antrian menumpuk, dll.)
      dengan urgensi, waktu kejadian, serta nama pelapor + NIP (angka) wajib agar bisa ditindaklanjuti.
+   - 📅 Pegawai Cuti: pegawai cabang yang cuti (nama, NIP, jabatan, jenis cuti, tanggal mulai–selesai, pengganti, keterangan).
    NIP dikirim di field "kontak" (nama kolom database tetap).
    Cabang, area, tanggal data, dan jabatan login yang sedang dilihat ikut terkirim agar keluhan mudah ditindaklanjuti.
    Popup rating juga muncul sendiri sesekali (paling cepat setelah 3 hari pemakaian, lalu tiap 30 hari bila belum menilai).
@@ -76,7 +77,7 @@
   /* tekan-tahan ±0,6 detik = sembunyikan tombol hingga halaman dimuat ulang (ada "Batalkan").
      Form tetap bisa dibuka lewat kartu Keluhan Cabang di atas halaman. */
   let fabSembunyi = false, tahanTimer = null, baruDitahan = false;
-  const segarFab = () => { fab.hidden = !diCabang() || fabSembunyi; };
+  const segarFab = () => { fab.hidden = fabSembunyi; };   // tombol Masukan tampil di semua halaman (kecuali disembunyikan lewat tekan-tahan)
   const batalTahan = () => { clearTimeout(tahanTimer); tahanTimer = null; fab.classList.remove('menahan'); };
   fab.addEventListener('pointerdown', (e) => {
     if (e.pointerType === 'mouse' && e.button !== 0) return;
@@ -209,14 +210,41 @@
   document.body.appendChild(wrap);
   const body = wrap.querySelector('.kmk-body');
   let tab = 'rating', tabTerakhir = 'rating', otomatis = false, fokusSebelum = null;
-  const draf = { rating: 0, aspek: [], pesanR: '', kategori: '', pesanK: '', nama: '', kontak: '', katC: '', urgensi: 'sedang', waktu: '', pesanC: '' };
+  const draf = { rating: 0, aspek: [], pesanR: '', kategori: '', pesanK: '', nama: '', kontak: '', katC: '', urgensi: 'sedang', waktu: '', pesanC: '',
+    cNama: '', cNip: '', cJab: '', cJenis: '', cMulai: '', cSelesai: '', cGanti: '', cKet: '' };
+  // pegawai cuti (harus sama dengan KP_FB_JENIS_CUTI di push-php/lib/masukan.php)
+  const JENIS_CUTI = ['Cuti Tahunan', 'Cuti Sakit', 'Cuti Melahirkan', 'Cuti Alasan Penting', 'Cuti Besar', 'Cuti di Luar Tanggungan', 'Lainnya'];
+  const JABATAN_CUTI = ['Branch Operation Manager', 'Branch Operation Supervisor', 'Customer Service Supervisor', 'Customer Service Representative', 'Teller', 'Lainnya'];
+  const tglLokal = (d = new Date()) => { const x = new Date(d); x.setMinutes(x.getMinutes() - x.getTimezoneOffset()); return x.toISOString().slice(0, 10); };
+  // lama cuti = hari kerja: tanpa Sabtu, Minggu, dan tanggal merah (harus sama dengan KP_FB_LIBUR di push-php/lib/masukan.php)
+  const LIBUR = ['01-01', '05-01', '06-01', '08-17', '12-25'];   // "MM-DD" tiap tahun, atau "YYYY-MM-DD" untuk libur nasional/cuti bersama tahun tertentu
+  const hariLibur = (iso, hari) => hari === 0 || hari === 6 || LIBUR.includes(iso.slice(5)) || LIBUR.includes(iso);
+  const hariKerja = (mulai, selesai) => {
+    if (!mulai || !selesai || selesai < mulai) return 0;
+    let n = 0;
+    for (let d = new Date(mulai + 'T00:00:00Z'), akhir = new Date(selesai + 'T00:00:00Z'), i = 0; d <= akhir && i < 400; d.setUTCDate(d.getUTCDate() + 1), i++) {
+      if (!hariLibur(d.toISOString().slice(0, 10), d.getUTCDay())) n++;
+    }
+    return n;
+  };
+  const rentangHari = () => (draf.cMulai && draf.cSelesai ? Math.round((new Date(draf.cSelesai) - new Date(draf.cMulai)) / 864e5) + 1 : 0);
+  const lamaCuti = () => hariKerja(draf.cMulai, draf.cSelesai);
+  const teksLama = () => {
+    if (!draf.cMulai || !draf.cSelesai) return '';
+    const n = lamaCuti(), r = rentangHari();
+    return n ? `Lama cuti: <b>${n} hari kerja</b> (tidak termasuk Sabtu, Minggu, dan hari libur${r > n ? ` · ${r - n} hari libur tidak dihitung` : ''})`
+      : '<span class="kmk-err">Rentang tanggal ini hanya berisi hari libur.</span>';
+  };
+  // daftar pegawai cabang terpilih (data Informasi Sales Pegawai) untuk saran nama & jabatan
+  const pegawaiCabang = (kode) => { try { return (window.KITO_SALES_PEGAWAI?.rows || []).filter((r) => String(r[4]) === String(kode)); } catch (e) { return []; } };
   // nilai input datetime-local untuk waktu sekarang (zona waktu perangkat)
   const sekarangLokal = () => { const d = new Date(); d.setMinutes(d.getMinutes() - d.getTimezoneOffset()); return d.toISOString().slice(0, 16); };
 
   const tabs = () => `<div class="kmk-tabs" role="tablist">
       <button type="button" role="tab" data-kmk-tab="rating" aria-selected="${tab === 'rating'}">⭐ Rating aplikasi</button>
       <button type="button" role="tab" data-kmk-tab="keluhan" aria-selected="${tab === 'keluhan'}">📝 Keluhan Aplikasi</button>
-      <button type="button" role="tab" data-kmk-tab="cabang" aria-selected="${tab === 'cabang'}">🏢 Keluhan Cabang</button></div>`;
+      <button type="button" role="tab" data-kmk-tab="cabang" aria-selected="${tab === 'cabang'}">🏢 Keluhan Cabang</button>
+      <button type="button" role="tab" data-kmk-tab="cuti" aria-selected="${tab === 'cuti'}">📅 Pegawai Cuti</button></div>`;
 
   const formRating = () => `${tabs()}
     <form id="kmk-f" novalidate>
@@ -277,9 +305,44 @@
     </form>`;
   };
 
+  const formCuti = () => {
+    const k = konteks(), peg = k.kode ? pegawaiCabang(k.kode) : [];
+    if (!draf.cMulai) draf.cMulai = tglLokal();
+    if (!draf.cSelesai) draf.cSelesai = draf.cMulai;
+    return `${tabs()}
+    <form id="kmk-f" novalidate>
+      <div class="kmk-cab">${k.kode ? `<b>🏢 ${esc(k.kode)} · ${esc(k.cabang || '')}</b><span>${esc(k.area || '')}</span>`
+        : '<b>Belum ada cabang yang dipilih</b>'}<small>Pegawai cuti di cabang ini. Ganti cabang lewat pilihan cabang di bagian atas dashboard.</small></div>
+      <div class="kmk-row">
+        <div><label class="kmk-l" for="kmk-cn">Nama pegawai</label><input type="text" id="kmk-cn" maxlength="80" list="kmk-cnl" autocomplete="off" required value="${esc(draf.cNama)}" placeholder="Ketik / pilih nama">
+          <datalist id="kmk-cnl">${peg.map((r) => `<option value="${esc(r[0])}">${esc(r[2] || '')}</option>`).join('')}</datalist></div>
+        <div><label class="kmk-l" for="kmk-ci">NIP pegawai</label><input type="text" id="kmk-ci" maxlength="20" inputmode="numeric" pattern="[0-9]+" autocomplete="off" required value="${esc(draf.cNip)}"></div>
+      </div>
+      <label class="kmk-l" for="kmk-cj">Jabatan</label>
+      <select id="kmk-cj" required><option value="" disabled ${draf.cJab ? '' : 'selected'}>— Pilih jabatan —</option>
+        ${JABATAN_CUTI.map((x) => `<option ${x === draf.cJab ? 'selected' : ''}>${esc(x)}</option>`).join('')}</select>
+      <label class="kmk-l" for="kmk-ct">Jenis cuti</label>
+      <select id="kmk-ct" required><option value="" disabled ${draf.cJenis ? '' : 'selected'}>— Pilih jenis cuti —</option>
+        ${JENIS_CUTI.map((x) => `<option ${x === draf.cJenis ? 'selected' : ''}>${esc(x)}</option>`).join('')}</select>
+      <div class="kmk-row">
+        <div><label class="kmk-l" for="kmk-cm">Mulai cuti</label><input type="date" id="kmk-cm" required value="${esc(draf.cMulai)}"></div>
+        <div><label class="kmk-l" for="kmk-cs">Selesai cuti</label><input type="date" id="kmk-cs" required value="${esc(draf.cSelesai)}" min="${esc(draf.cMulai)}"></div>
+      </div>
+      <div class="kmk-hit" id="kmk-cl">${teksLama()}</div>
+      <label class="kmk-l" for="kmk-cg">Pegawai pengganti <small>(opsional)</small></label>
+      <input type="text" id="kmk-cg" maxlength="80" list="kmk-cnl" autocomplete="off" value="${esc(draf.cGanti)}" placeholder="Nama pegawai yang menggantikan tugas">
+      <label class="kmk-l" for="kmk-ck">Keterangan <small>(opsional)</small></label>
+      <textarea id="kmk-ck" maxlength="1000" placeholder="Contoh: cuti tahunan, tugas teller digantikan sementara.">${esc(draf.cKet)}</textarea>
+      <p class="kmk-note">Data cuti dicatat untuk pemantauan ketersediaan pegawai cabang oleh tim Operation Region II.</p>
+      <p class="kmk-err" id="kmk-err" role="alert"></p>
+      <div class="kmk-act"><button type="submit" class="kmk-btn">Kirim data cuti</button></div>
+    </form>`;
+  };
+
   const TEKS_OK = {
     rating: ['Terima kasih atas penilaian Anda!', 'Masukan Anda membantu kami membuat KITO lebih baik.'],
     keluhan: ['Keluhan aplikasi Anda sudah kami terima', 'Tim Operation Region II akan menindaklanjuti secepatnya.'],
+    cuti: ['Data pegawai cuti sudah tercatat', 'Terima kasih. Data cuti dipakai tim Operation Region II untuk memantau ketersediaan pegawai cabang.'],
     cabang: ['Laporan masalah cabang sudah diterima', 'Tim Operation Region II akan menindaklanjuti laporan ini. Status laporan dicatat atas NIP pelapor.'],
   };
   // keluhan cabang terkirim ke ASM & SQO Area area cabang (KITO_ASM), SQO Region, dan ROH
@@ -298,7 +361,7 @@
   function tampilkan() {
     const k = konteks();
     wrap.querySelector('#kmk-ctx').textContent = [k.kode && `${k.kode} ${k.cabang || ''}`.trim(), k.area].filter(Boolean).join(' · ');
-    body.innerHTML = tab === 'rating' ? formRating() : tab === 'keluhan' ? formKeluhan() : formCabang();
+    body.innerHTML = tab === 'rating' ? formRating() : tab === 'keluhan' ? formKeluhan() : tab === 'cuti' ? formCuti() : formCabang();
   }
   function buka(t, auto = false) {
     tab = t; otomatis = auto; fokusSebelum = document.activeElement;
@@ -335,11 +398,27 @@
     else if (el.name === 'u') draf.urgensi = el.value;
     else if (el.id === 'kmk-wk') draf.waktu = el.value;
     else if (el.id === 'kmk-pc') { draf.pesanC = el.value; body.querySelector('#kmk-nc').textContent = el.value.length; }
+    else if (el.id === 'kmk-cn') {
+      draf.cNama = el.value;
+      // nama dari daftar pegawai cabang -> jabatan terisi otomatis
+      const p = pegawaiCabang(konteks().kode).find((r) => String(r[0]).toLowerCase() === el.value.trim().toLowerCase());
+      if (p && JABATAN_CUTI.includes(p[2])) { draf.cJab = p[2]; const s = body.querySelector('#kmk-cj'); if (s) s.value = p[2]; }
+    }
+    else if (el.id === 'kmk-ci') { el.value = el.value.replace(/[^0-9]/g, ''); draf.cNip = el.value; }
+    else if (el.id === 'kmk-cg') draf.cGanti = el.value;
+    else if (el.id === 'kmk-ck') draf.cKet = el.value;
+    else if (el.id === 'kmk-cm' || el.id === 'kmk-cs') {
+      if (el.id === 'kmk-cm') { draf.cMulai = el.value; const s = body.querySelector('#kmk-cs'); s.min = el.value; if (draf.cSelesai < el.value) { draf.cSelesai = el.value; s.value = el.value; } }
+      else draf.cSelesai = el.value;
+      body.querySelector('#kmk-cl').innerHTML = teksLama();
+    }
   });
   wrap.addEventListener('change', (e) => {
     if (e.target.id === 'kmk-kat') draf.kategori = e.target.value;
     if (e.target.id === 'kmk-kc') draf.katC = e.target.value;
     if (e.target.id === 'kmk-wk') draf.waktu = e.target.value;
+    if (e.target.id === 'kmk-cj') draf.cJab = e.target.value;
+    if (e.target.id === 'kmk-ct') draf.cJenis = e.target.value;
   });
   document.addEventListener('keydown', (e) => {
     if (wrap.hidden) return;
@@ -356,7 +435,7 @@
     e.preventDefault();
     const err = body.querySelector('#kmk-err'), btn = body.querySelector('button[type=submit]');
     err.textContent = '';
-    if (tab !== 'rating' && draf.kontak && !/^[0-9]+$/.test(draf.kontak)) { err.textContent = 'NIP hanya boleh berisi angka.'; body.querySelector('#kmk-kt').focus(); return; }
+    if (tab !== 'rating' && tab !== 'cuti' && draf.kontak && !/^[0-9]+$/.test(draf.kontak)) { err.textContent = 'NIP hanya boleh berisi angka.'; body.querySelector('#kmk-kt').focus(); return; }
     let isi;
     if (tab === 'rating') {
       if (!draf.rating) { err.textContent = 'Pilih jumlah bintang dulu.'; body.querySelector('.kmk-stars input')?.focus(); return; }
@@ -365,6 +444,19 @@
       if (!draf.kategori) { err.textContent = 'Pilih jenis keluhan.'; body.querySelector('#kmk-kat').focus(); return; }
       if (draf.pesanK.trim().length < 5) { err.textContent = 'Tuliskan uraian keluhan (minimal 5 karakter).'; body.querySelector('#kmk-pk').focus(); return; }
       isi = { jenis: 'keluhan', kategori: draf.kategori, pesan: draf.pesanK.trim(), nama: draf.nama.trim() || undefined, kontak: draf.kontak.trim() || undefined };
+    } else if (tab === 'cuti') {
+      const salah = (pesan, sel) => { err.textContent = pesan; body.querySelector(sel)?.focus(); };
+      if (!konteks().kode) return salah('Pilih cabang dulu lewat pilihan cabang di bagian atas dashboard.', '#kmk-cn');
+      if (!draf.cNama.trim()) return salah('Isi nama pegawai yang cuti.', '#kmk-cn');
+      if (!/^[0-9]{3,20}$/.test(draf.cNip)) return salah('Isi NIP pegawai (angka).', '#kmk-ci');
+      if (!draf.cJab) return salah('Pilih jabatan pegawai.', '#kmk-cj');
+      if (!draf.cJenis) return salah('Pilih jenis cuti.', '#kmk-ct');
+      if (!draf.cMulai || !draf.cSelesai) return salah('Isi tanggal mulai dan selesai cuti.', '#kmk-cm');
+      if (draf.cSelesai < draf.cMulai) return salah('Tanggal selesai tidak boleh sebelum tanggal mulai.', '#kmk-cs');
+      if (rentangHari() > 366) return salah('Lama cuti maksimal 1 tahun.', '#kmk-cs');
+      if (!lamaCuti()) return salah('Rentang tanggal cuti hanya berisi hari libur. Periksa tanggal mulai dan selesai.', '#kmk-cm');
+      isi = { jenis: 'cuti', kategori: draf.cJenis, nama: draf.cNama.trim(), kontak: draf.cNip, cuti_jabatan: draf.cJab,
+        cuti_mulai: draf.cMulai, cuti_selesai: draf.cSelesai, cuti_hari: lamaCuti(), cuti_pengganti: draf.cGanti.trim() || undefined, pesan: draf.cKet.trim() || undefined };
     } else {
       const salah = (pesan, sel) => { err.textContent = pesan; body.querySelector(sel)?.focus(); };
       if (!konteks().kode) return salah('Pilih cabang dulu lewat pilihan cabang di bagian atas dashboard.', '#kmk-kc');
@@ -381,11 +473,22 @@
     btn.disabled = true; btn.textContent = 'Mengirim…';
     try {
       // akun login pelapor: keluhan hanya dapat dibaca akun ini (dan ASM/SQO Area/SQO Region/ROH yang menindaklanjuti)
-      let akun; try { if (isi.jenis !== 'rating') akun = window.KITO_AKUN?.kini()?.kred || undefined; } catch (e2) { akun = undefined; }
-      const r = await kirim({ ...isi, ...konteks(), app, akun });
+      let akun, pengguna, ctx = konteks();
+      try {
+        const a = window.KITO_AKUN?.kini();
+        if (isi.jenis !== 'rating') akun = a?.kred || undefined;
+        pengguna = a?.nama || undefined;   // nama pengguna akun login -> kolom Pelapor di backend
+        // rating dari BOM-BOS: cabang penginput = cabang akunnya
+        if (isi.jenis === 'rating' && a?.cab) {
+          const b = D.B.find((x) => String(x[0]) === String(a.cab));
+          if (b) ctx = { ...ctx, kode: String(b[0]), cabang: b[1], area: b[2] };
+        }
+      } catch (e2) { akun = undefined; }
+      const r = await kirim({ ...isi, ...ctx, app, akun, pengguna });
       const s = baca(K_STATE, {});
       if (tab === 'rating') { s.rating = Date.now(); s.nilai = draf.rating; draf.pesanR = ''; draf.aspek = []; }
       else if (tab === 'keluhan') { draf.pesanK = ''; draf.kategori = ''; }
+      else if (tab === 'cuti') { Object.assign(draf, { cNama: '', cNip: '', cJab: '', cJenis: '', cMulai: '', cSelesai: '', cGanti: '', cKet: '' }); }
       else { draf.pesanC = ''; draf.katC = ''; draf.urgensi = 'sedang'; draf.waktu = ''; }
       s.tanya = Date.now(); tulis(K_STATE, s);
       otomatis = false;
@@ -393,7 +496,7 @@
       body.querySelector('[data-kmk-tutup]')?.focus();
     } catch (er) {
       err.textContent = 'Gagal mengirim: ' + er.message;
-      btn.disabled = false; btn.textContent = { rating: 'Kirim rating', keluhan: 'Kirim keluhan aplikasi', cabang: 'Kirim keluhan cabang' }[tab];
+      btn.disabled = false; btn.textContent = { rating: 'Kirim rating', keluhan: 'Kirim keluhan aplikasi', cabang: 'Kirim keluhan cabang', cuti: 'Kirim data cuti' }[tab];
     }
   });
 

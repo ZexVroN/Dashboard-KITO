@@ -11,7 +11,12 @@ const KP_FB_STATUS = ['baru', 'diproses', 'selesai', 'ditolak'];
 // keluhan cabang (harus sama dengan KATEGORI_CABANG di assets/js/masukan.js)
 const KP_FB_KATEGORI_CABANG = ['Waktu Tunggu Antrian', 'Utilisasi O2O', 'Utilisasi NBDS', 'Aspek Fisik Cabang', 'Akuisisi Inbranch', 'Lainnya'];
 const KP_FB_URGENSI = ['rendah', 'sedang', 'tinggi', 'kritis'];
-const KP_FB_JENIS = ['rating', 'keluhan', 'cabang'];
+const KP_FB_JENIS = ['rating', 'keluhan', 'cabang', 'cuti'];
+// pegawai cuti (harus sama dengan JENIS_CUTI di assets/js/masukan.js)
+// hari libur untuk menghitung lama cuti (hari kerja = tanpa Sabtu, Minggu, dan tanggal ini; sama dengan LIBUR di assets/js/masukan.js)
+// "MM-DD" berlaku tiap tahun; tambahkan "YYYY-MM-DD" untuk libur nasional / cuti bersama tahun tertentu
+const KP_FB_LIBUR = ['01-01', '05-01', '06-01', '08-17', '12-25'];
+const KP_FB_JENIS_CUTI = ['Cuti Tahunan', 'Cuti Sakit', 'Cuti Melahirkan', 'Cuti Alasan Penting', 'Cuti Besar', 'Cuti di Luar Tanggungan', 'Lainnya'];
 
 function kp_fb_db(): PDO {
     static $siap = false;
@@ -27,9 +32,25 @@ function kp_fb_db(): PDO {
     ");
     // kolom tambahan untuk keluhan cabang (database lama ditambah otomatis)
     $ada = $db->query('PRAGMA table_info(feedback)')->fetchAll(PDO::FETCH_COLUMN, 1);
-    foreach (['urgensi' => 'TEXT', 'waktu_kejadian' => 'TEXT', 'akun' => 'TEXT'] as $kol => $tipe) if (!in_array($kol, $ada, true)) $db->exec("ALTER TABLE feedback ADD COLUMN $kol $tipe");
+    foreach (['urgensi' => 'TEXT', 'waktu_kejadian' => 'TEXT', 'akun' => 'TEXT', 'pengguna' => 'TEXT',
+        'cuti_jabatan' => 'TEXT', 'cuti_mulai' => 'TEXT', 'cuti_selesai' => 'TEXT', 'cuti_pengganti' => 'TEXT', 'cuti_hari' => 'INTEGER'] as $kol => $tipe) if (!in_array($kol, $ada, true)) $db->exec("ALTER TABLE feedback ADD COLUMN $kol $tipe");
+    // lama cuti hari kerja untuk data cuti yang belum punya cuti_hari
+    $lama = $db->query("SELECT id, cuti_mulai, cuti_selesai FROM feedback WHERE jenis = 'cuti' AND cuti_hari IS NULL AND cuti_mulai IS NOT NULL LIMIT 500")->fetchAll(PDO::FETCH_ASSOC);
+    foreach ($lama as $r) $db->prepare('UPDATE feedback SET cuti_hari = ? WHERE id = ?')->execute([kp_fb_hari_kerja($r['cuti_mulai'], $r['cuti_selesai']), $r['id']]);
     $siap = true;
     return $db;
+}
+
+/** jumlah hari kerja dari mulai s.d. selesai (YYYY-MM-DD), tanpa Sabtu, Minggu, dan KP_FB_LIBUR */
+function kp_fb_hari_kerja(?string $mulai, ?string $selesai): int {
+    if (!$mulai || !$selesai || $selesai < $mulai) return 0;
+    $n = 0; $t = strtotime($mulai . ' 00:00:00 UTC'); $akhir = strtotime($selesai . ' 00:00:00 UTC');
+    for ($i = 0; $t <= $akhir && $i < 400; $t += 86400, $i++) {
+        $iso = gmdate('Y-m-d', $t); $h = (int)gmdate('w', $t);
+        if ($h === 0 || $h === 6 || in_array(substr($iso, 5), KP_FB_LIBUR, true) || in_array($iso, KP_FB_LIBUR, true)) continue;
+        $n++;
+    }
+    return $n;
 }
 
 function kp_fb_teks($v, int $max): ?string {
@@ -40,11 +61,11 @@ function kp_fb_teks($v, int $max): ?string {
 
 function kp_fb_simpan(array $b): array {
     $jenis = $b['jenis'] ?? '';
-    if (!in_array($jenis, KP_FB_JENIS, true)) return [400, 'jenis harus rating, keluhan, atau cabang'];
+    if (!in_array($jenis, KP_FB_JENIS, true)) return [400, 'jenis harus rating, keluhan, cabang, atau cuti'];
     if ($jenis !== 'rating' && isset($b['kontak']) && $b['kontak'] !== '') {
         if (!is_string($b['kontak']) || !preg_match('/^[0-9]{1,80}$/D', $b['kontak'])) return [400, 'NIP hanya boleh berisi angka (maksimal 80 digit)'];
     }
-    $rating = null; $kategori = null; $aspek = null; $urgensi = null; $waktuKejadian = null;
+    $rating = null; $kategori = null; $aspek = null; $urgensi = null; $waktuKejadian = null; $cuti = [null, null, null, null, null];
     $pesan = kp_fb_teks($b['pesan'] ?? null, 2000);
     if ($jenis === 'rating') {
         $rating = (int)($b['rating'] ?? 0);
@@ -53,6 +74,20 @@ function kp_fb_simpan(array $b): array {
     } elseif ($jenis === 'keluhan') {
         $kategori = in_array($b['kategori'] ?? '', KP_FB_KATEGORI, true) ? $b['kategori'] : 'Lainnya';
         if ($pesan === null || mb_strlen($pesan) < 5) return [400, 'tuliskan keluhan minimal 5 karakter'];
+    } elseif ($jenis === 'cuti') {   // pegawai cuti
+        if (kp_fb_teks($b['kode'] ?? null, 20) === null) return [400, 'pilih cabang terlebih dahulu'];
+        if (kp_fb_teks($b['nama'] ?? null, 80) === null) return [400, 'nama pegawai wajib diisi'];
+        if (!preg_match('/^[0-9]{3,20}$/D', (string)($b['kontak'] ?? ''))) return [400, 'NIP pegawai wajib diisi (angka)'];
+        if (!in_array($b['kategori'] ?? '', KP_FB_JENIS_CUTI, true)) return [400, 'pilih jenis cuti'];
+        $kategori = $b['kategori'];
+        $tgl = function ($v) { return is_string($v) && preg_match('/^\d{4}-\d{2}-\d{2}$/', $v) && strtotime($v . ' 00:00:00 UTC') !== false ? $v : null; };
+        $mulai = $tgl($b['cuti_mulai'] ?? null); $selesai = $tgl($b['cuti_selesai'] ?? null);
+        if (!$mulai || !$selesai) return [400, 'tanggal mulai dan selesai cuti wajib diisi'];
+        if ($selesai < $mulai) return [400, 'tanggal selesai tidak boleh sebelum tanggal mulai'];
+        if ((strtotime($selesai) - strtotime($mulai)) / 86400 > 366) return [400, 'lama cuti maksimal 1 tahun'];
+        $hariKerja = kp_fb_hari_kerja($mulai, $selesai);   // dihitung ulang di server (tidak memakai angka dari perangkat)
+        if ($hariKerja < 1) return [400, 'rentang tanggal cuti hanya berisi hari libur'];
+        $cuti = [kp_fb_teks($b['cuti_jabatan'] ?? null, 60), $mulai, $selesai, kp_fb_teks($b['cuti_pengganti'] ?? null, 80), $hariKerja];
     } else {   // keluhan cabang
         if (kp_fb_teks($b['kode'] ?? null, 20) === null) return [400, 'pilih cabang terlebih dahulu'];
         $kategori = in_array($b['kategori'] ?? '', KP_FB_KATEGORI_CABANG, true) ? $b['kategori'] : 'Lainnya';
@@ -72,18 +107,21 @@ function kp_fb_simpan(array $b): array {
         kp_fb_teks($b['cabang'] ?? null, 120), kp_fb_teks($b['tanggal'] ?? null, 10),
         in_array($b['app'] ?? '', ['web', 'pwa', 'apk'], true) ? $b['app'] : 'web', $pl, $br, kp_fb_teks($b['versi'] ?? null, 40), kp_ip(), $urgensi, $waktuKejadian,
         // akun login pelapor (mis. "bom:11325"): keluhan hanya dapat dibaca akun ini + pembalas sesuai cakupan
-        $jenis !== 'rating' && function_exists('kp_akun_valid') ? kp_akun_valid($b['akun'] ?? null) : null];
+        $jenis !== 'rating' && function_exists('kp_akun_valid') ? kp_akun_valid($b['akun'] ?? null) : null,
+        kp_fb_teks($b['pengguna'] ?? null, 80),   // nama pengguna akun login yang menginput (null = tanpa login)
+        $cuti[0], $cuti[1], $cuti[2], $cuti[3], $cuti[4]];
     if ($jenis === 'rating' && $dev) {
         $q = $db->prepare("SELECT id FROM feedback WHERE jenis = 'rating' AND device_id = ? AND date(created_at, '+7 hours') = date('now', '+7 hours')");
         $q->execute([$dev]);
         if ($id = $q->fetchColumn()) {
-            $db->prepare("UPDATE feedback SET rating = ?, aspek = ?, pesan = ?, nama = COALESCE(?, nama), kontak = COALESCE(?, kontak), updated_at = datetime('now') WHERE id = ?")
-               ->execute([$rating, $aspek, $pesan, $nilai[5], $nilai[6], $id]);
+            $db->prepare("UPDATE feedback SET rating = ?, aspek = ?, pesan = ?, nama = COALESCE(?, nama), kontak = COALESCE(?, kontak), pengguna = COALESCE(?, pengguna),
+                kode = COALESCE(?, kode), cabang = COALESCE(?, cabang), area = COALESCE(?, area), updated_at = datetime('now') WHERE id = ?")
+               ->execute([$rating, $aspek, $pesan, $nilai[5], $nilai[6], $nilai[21], $nilai[10], $nilai[11], $nilai[9], $id]);
             return [200, ['ok' => true, 'id' => (int)$id, 'diperbarui' => true]];
         }
     }
-    $db->prepare('INSERT INTO feedback (jenis, rating, kategori, aspek, pesan, nama, kontak, device_id, jabatan, area, kode, cabang, tanggal_data, app, platform, browser, versi, ip, urgensi, waktu_kejadian, akun)
-        VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)')->execute($nilai);
+    $db->prepare('INSERT INTO feedback (jenis, rating, kategori, aspek, pesan, nama, kontak, device_id, jabatan, area, kode, cabang, tanggal_data, app, platform, browser, versi, ip, urgensi, waktu_kejadian, akun, pengguna,
+        cuti_jabatan, cuti_mulai, cuti_selesai, cuti_pengganti, cuti_hari) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)')->execute($nilai);
     return [201, ['ok' => true, 'id' => (int)$db->lastInsertId()]];
 }
 
@@ -140,11 +178,17 @@ function kp_fb_summary($g): array {
     usort($aspek, function ($a, $b) { return $b['n'] <=> $a['n']; });
     $c = $satu("SELECT COUNT(*) n, SUM(status = 'baru') baru, SUM(status = 'diproses') diproses, SUM(status = 'selesai') selesai,
         SUM(urgensi IN ('tinggi', 'kritis') AND status IN ('baru', 'diproses')) mendesak FROM feedback WHERE jenis = 'cabang' AND created_at >= datetime('now', ?)");
+    $cu = $satu("SELECT COUNT(*) n, COUNT(DISTINCT kontak) pegawai, SUM(cuti_hari) hari FROM feedback WHERE jenis = 'cuti' AND created_at >= datetime('now', ?)");
+    $hariIni = gmdate('Y-m-d', time() + 7 * 3600);
+    $qc = $db->prepare("SELECT COUNT(DISTINCT COALESCE(kontak, id)) FROM feedback WHERE jenis = 'cuti' AND status <> 'ditolak' AND cuti_mulai <= ? AND cuti_selesai >= ?");
+    $qc->execute([$hariIni, $hariIni]);
     $n = (int)$r['n'];
     return [
         'hari' => $hari, 'dari' => $dari, 'sampai' => $sampai,
         'rating' => ['n' => $n, 'rata' => $n ? round((float)$r['rata'], 2) : null, 'puasPersen' => $n ? round($r['puas'] / $n * 100) : null, 'kecewaPersen' => $n ? round($r['kecewa'] / $n * 100) : null],
         'keluhan' => ['n' => (int)$k['n'], 'baru' => (int)$k['baru'], 'diproses' => (int)$k['diproses'], 'selesai' => (int)$k['selesai']],
+        'cuti' => ['n' => (int)$cu['n'], 'pegawai' => (int)$cu['pegawai'], 'hari' => (int)$cu['hari'], 'hariIni' => (int)$qc->fetchColumn(),
+            'perJenis' => $banyak("SELECT kategori nama, COUNT(*) n FROM feedback WHERE jenis = 'cuti' AND created_at >= datetime('now', ?) GROUP BY 1 ORDER BY 2 DESC")],
         'cabang' => ['n' => (int)$c['n'], 'baru' => (int)$c['baru'], 'diproses' => (int)$c['diproses'], 'selesai' => (int)$c['selesai'], 'mendesak' => (int)$c['mendesak']],
         'perKategoriCabang' => $banyak("SELECT kategori nama, COUNT(*) n FROM feedback WHERE jenis = 'cabang' AND created_at >= datetime('now', ?) GROUP BY 1 ORDER BY 2 DESC"),
         'perUrgensi' => $banyak("SELECT urgensi nama, COUNT(*) n FROM feedback WHERE jenis = 'cabang' AND created_at >= datetime('now', ?) GROUP BY 1
@@ -187,9 +231,10 @@ function kp_fb_update(int $id, array $b): bool {
 
 function kp_fb_export(array $g): array {
     $wib = function ($s) { return $s ? gmdate('Y-m-d H:i:s', strtotime($s . ' UTC') + 7 * 3600) : ''; };
-    $nmJenis = ['rating' => 'Rating', 'keluhan' => 'Keluhan aplikasi', 'cabang' => 'Keluhan cabang'];
+    $nmJenis = ['rating' => 'Rating', 'keluhan' => 'Keluhan aplikasi', 'cabang' => 'Keluhan cabang', 'cuti' => 'Pegawai cuti'];
     $rows = [['No', 'Waktu lapor (WIB)', 'Jenis', 'Rating', 'Kategori keluhan', 'Urgensi', 'Waktu kejadian (WIB)', 'Aspek dinilai', 'Pesan', 'Nama pelapor', 'NIP', 'Jabatan', 'Area', 'Kode cabang', 'Cabang',
-              'Tanggal data dilihat', 'Aplikasi', 'OS', 'Browser', 'Status', 'Catatan admin', 'Diperbarui (WIB)', 'Jumlah balasan', 'Balasan tindak lanjut']];
+              'Tanggal data dilihat', 'Aplikasi', 'OS', 'Browser', 'Status', 'Catatan admin', 'Diperbarui (WIB)', 'Jumlah balasan', 'Balasan tindak lanjut', 'Nama pengguna (akun login)',
+              'Jabatan pegawai cuti', 'Mulai cuti', 'Selesai cuti', 'Lama cuti (hari kerja)', 'Pegawai pengganti']];
     $teksBalasan = function (array $bs) use ($wib) {
         return implode("\n", array_map(function ($b) use ($wib) {
             return '[' . $wib($b['created_at']) . '] ' . $b['jabatan'] . ($b['nama'] ? ' · ' . $b['nama'] : '') . ($b['status'] ? ' (-> ' . $b['status'] . ')' : '') . ': ' . $b['pesan'];
@@ -197,7 +242,9 @@ function kp_fb_export(array $g): array {
     };
     foreach (kp_fb_lengkapi(kp_fb_list($g + ['limit' => 5000])) as $r) $rows[] = [$r['id'], $wib($r['created_at']), $nmJenis[$r['jenis']] ?? $r['jenis'], $r['rating'], $r['kategori'],
         $r['urgensi'], $wib($r['waktu_kejadian']), $r['aspek'], $r['pesan'],
-        $r['nama'], $r['kontak'], $r['jabatan'], $r['area'], $r['kode'], $r['cabang'], $r['tanggal_data'], $r['app'], $r['platform'], $r['browser'], $r['status'], $r['catatan'], $wib($r['updated_at']), count($r['balasan']), $teksBalasan($r['balasan'])];
+        $r['nama'], $r['kontak'], $r['jabatan'], $r['area'], $r['kode'], $r['cabang'], $r['tanggal_data'], $r['app'], $r['platform'], $r['browser'], $r['status'], $r['catatan'], $wib($r['updated_at']), count($r['balasan']), $teksBalasan($r['balasan']), $r['pengguna'] ?? ($r['jenis'] === 'rating' ? 'Tanpa login' : ''),
+        $r['cuti_jabatan'] ?? '', $r['cuti_mulai'] ?? '', $r['cuti_selesai'] ?? '',
+        !empty($r['cuti_mulai']) ? ($r['cuti_hari'] !== null ? (int)$r['cuti_hari'] : kp_fb_hari_kerja($r['cuti_mulai'], $r['cuti_selesai'])) : '', $r['cuti_pengganti'] ?? ''];
     return ['masukan-' . ($g['jenis'] ?? 'semua') . '-' . gmdate('Ymd-Hi', time() + 7 * 3600) . '.csv', $rows];
 }
 
@@ -281,6 +328,29 @@ function kp_fb_masuk(array $b): array {
         if (count($rows) >= 60) break;
     }
     return ['ok' => true, 'cakupan' => $area ?? 'REGION', 'keluhan' => kp_fb_lengkapi($rows)];
+}
+
+/** rencana pegawai tidak masuk (data Pegawai Cuti) untuk kotak 🔔: cuti yang sedang berjalan / akan datang (60 hari),
+    sesuai cakupan akun: BOM-BOS = cabangnya · ASM & SQO Area = areanya · ROH, TOH, SQO Region, ATOM = seluruh Region II */
+function kp_fb_rencana_cuti(array $b): array {
+    [$kunci] = kp_akun_cek($b);   // gagal -> 401
+    [$jab, $sub] = array_pad(explode(':', $kunci, 2), 2, '');
+    $kode = null; $area = null;
+    if ($jab === 'bom') { if ($sub === '') return ['ok' => true, 'cakupan' => null, 'cuti' => []]; $kode = $sub; }
+    elseif ($jab === 'asm' || $jab === 'sqoa') { if ($sub === '') return ['ok' => true, 'cakupan' => null, 'cuti' => []]; $area = $sub; }
+    $hariIni = gmdate('Y-m-d', time() + 7 * 3600); $batas = gmdate('Y-m-d', time() + 7 * 3600 + 60 * 86400);
+    $sql = "SELECT id, kode, cabang, area, nama, cuti_jabatan, kategori, cuti_mulai, cuti_selesai, cuti_hari, cuti_pengganti, status, pesan
+        FROM feedback WHERE jenis = 'cuti' AND status <> 'ditolak' AND cuti_selesai >= ? AND cuti_mulai <= ?" . ($kode ? ' AND kode = ?' : '') . "
+        ORDER BY cuti_mulai, cuti_selesai, id LIMIT 1000";
+    $q = kp_fb_db()->prepare($sql); $q->execute($kode ? [$hariIni, $batas, $kode] : [$hariIni, $batas]);
+    $rows = [];
+    foreach ($q->fetchAll(PDO::FETCH_ASSOC) as $r) {
+        if ($area !== null && kp_fb_area_keluhan($r) !== $area) continue;
+        $r['id'] = (int)$r['id']; $r['cuti_hari'] = $r['cuti_hari'] === null ? null : (int)$r['cuti_hari'];
+        $rows[] = $r;
+        if (count($rows) >= 100) break;
+    }
+    return ['ok' => true, 'cakupan' => $kode ?? $area ?? 'REGION', 'hariIni' => $hariIni, 'cuti' => $rows];
 }
 
 /** keluhan milik akun login (pelapor) */

@@ -117,3 +117,11 @@ Ikon profil di pojok kanan atas dashboard menampilkan foto, nama pengguna, dan j
 - **Periode**: hari ini, 7/30/90 hari, 1 tahun, semua, atau rentang tanggal. Parameter `dari` dan `sampai` (YYYY-MM-DD WIB), atau `days`, berlaku untuk `GET /api/feedback`, `/api/feedback/summary`, dan `/api/feedback/export`.
 - **Urutan tabel**: `urut=baru` (tanggal terbaru dulu, bawaan) atau `urut=lama`. Urutan ini juga dipakai di CSV.
 - **Hapus**: `DELETE /api/feedback/<id>`, atau `POST /api/feedback/hapus {ids: [...]}` untuk banyak sekaligus (maksimal 1000). Balasan tindak lanjut ikut terhapus. Membutuhkan token admin.
+
+## Pegawai Cuti (tab di popup Masukan)
+
+- `POST /api/feedback` dengan `jenis: "cuti"`. Isinya: `kode`, `nama` (nama pegawai), `kontak` (NIP, angka), `kategori` (jenis cuti, lihat `KP_FB_JENIS_CUTI`), `cuti_jabatan`, `cuti_mulai`, `cuti_selesai` (YYYY-MM-DD, maksimal 1 tahun), `cuti_pengganti?`, dan `pesan?` (keterangan).
+- Disimpan di tabel `feedback`, dengan kolom `cuti_jabatan`, `cuti_mulai`, `cuti_selesai`, dan `cuti_pengganti` yang ditambahkan otomatis.
+- Halaman admin Masukan menampilkan filter jenis "Pegawai cuti", detail periode dan lama cuti, penanda "sedang cuti", ringkasan (jumlah data, sedang cuti hari ini, total hari cuti, jenis cuti), serta kolom cuti di CSV. Status (baru/diproses/selesai/ditolak) bisa diatur admin; cuti berstatus "ditolak" tidak dihitung sebagai sedang cuti.
+- Lama cuti dihitung dalam **hari kerja**: tanpa Sabtu, Minggu, dan tanggal di `KP_FB_LIBUR` (`lib/masukan.php`), yang harus sama dengan `LIBUR` di `assets/js/masukan.js`. Server menghitung ulang dan menyimpannya di kolom `cuti_hari`. Libur nasional atau cuti bersama yang tanggalnya berubah tiap tahun ditambahkan dengan format `"YYYY-MM-DD"` di kedua daftar.
+- `POST /api/feedback/cuti` `{jabatan, cabang?, area?, hash}`: rencana pegawai tidak masuk untuk kotak 🔔, yaitu cuti yang sedang berjalan atau dimulai dalam 60 hari ke depan (status selain "ditolak"). Cakupan mengikuti akun: BOM-BOS = cabangnya, ASM dan SQO Area = areanya, ROH/TOH/SQO Region/ATOM = seluruh Region II. Tamu tidak mendapat data.

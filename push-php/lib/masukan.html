@@ -46,7 +46,8 @@
   .mu { color:var(--mu); font-size:12px; } .hidden { display:none !important; }
   .bintang { color:var(--st); letter-spacing:1px; white-space:nowrap; }
   .pill { font-size:11px; font-weight:700; padding:2px 8px; border-radius:999px; border:1px solid var(--ln); white-space:nowrap; }
-  .pill.rating { color:var(--st); } .pill.keluhan { color:var(--bd); } .pill.cabang { color:var(--br); }
+  .pill.rating { color:var(--st); } .pill.keluhan { color:var(--bd); } .pill.cabang { color:var(--br); } .pill.cuti { color:#0f766e; }
+  .cuti-per { display:inline-block; margin:2px 0; padding:1px 8px; border-radius:999px; background:#ccfbf1; color:#115e59; font-size:11.5px; font-weight:700; }
   .urg { display:inline-block; margin-top:4px; font-size:11px; font-weight:800; padding:1px 7px; border-radius:6px; color:#fff; text-transform:uppercase; letter-spacing:.3px; }
   .urg.rendah { background:var(--ok); } .urg.sedang { background:var(--wr); } .urg.tinggi { background:#e8710c; } .urg.kritis { background:var(--bd); }
   .stat.mendesak b { color:var(--bd); }
@@ -85,7 +86,7 @@
     <section class="cd">
       <h2><span>Daftar masukan</span>
         <span class="tools">
-          <select id="fJenis" aria-label="Jenis"><option value="">Semua jenis</option><option value="cabang">Keluhan cabang</option><option value="keluhan">Keluhan aplikasi</option><option value="rating">Rating</option></select>
+          <select id="fJenis" aria-label="Jenis"><option value="">Semua jenis</option><option value="cabang">Keluhan cabang</option><option value="keluhan">Keluhan aplikasi</option><option value="cuti">Pegawai cuti</option><option value="rating">Rating</option></select>
           <select id="fUrgensi" aria-label="Urgensi"><option value="">Semua urgensi</option><option value="kritis">Kritis</option><option value="tinggi">Tinggi</option><option value="sedang">Sedang</option><option value="rendah">Rendah</option></select>
           <select id="fStatus" aria-label="Status"><option value="">Semua status</option><option value="baru">Baru</option><option value="diproses">Diproses</option><option value="selesai">Selesai</option><option value="ditolak">Ditolak</option></select>
           <input id="cari" type="search" placeholder="cari isi, cabang, area, nama, NIP…" />
@@ -141,19 +142,21 @@
       ['Rata-rata rating', r.rata == null ? '–' : '★ ' + nf(r.rata, 2), 'star'], ['Jumlah rating', nf(r.n)], ['Puas (4–5★)', r.puasPersen == null ? '–' : r.puasPersen + '%'],
       ['Kecewa (1–2★)', r.kecewaPersen == null ? '–' : r.kecewaPersen + '%'], ['Keluhan aplikasi', nf(k.n)], ['Kel. aplikasi baru', nf(k.baru), 'baru'], ['Kel. aplikasi diproses', nf(k.diproses)], ['Kel. aplikasi selesai', nf(k.selesai)],
       ['Keluhan cabang', nf(c.n)], ['Cabang: belum ditangani', nf(c.baru), 'baru'], ['Cabang: mendesak terbuka', nf(c.mendesak), 'mendesak'], ['Cabang: selesai', nf(c.selesai)],
+      ...(s.cuti ? [['Pegawai cuti (data)', nf(s.cuti.n)], ['Sedang cuti hari ini', nf(s.cuti.hariIni), 'mendesak'], ['Total hari cuti', nf(s.cuti.hari)]] : []),
     ].map(([a, b, c]) => `<div class="stat ${c || ''}"><small>${a}</small><b>${b}</b></div>`).join('');
     const sebaran = [5, 4, 3, 2, 1].map((b) => ({ nama: b, n: (s.sebaranBintang.find((x) => x.bintang === b) || {}).n || 0 }));
     $('#bagi').innerHTML = bars('Sebaran bintang', sebaran, { st: true, lbl: (x) => `<span class="bintang">${bintang(x.nama)}</span>` })
       + bars('Aspek yang dinilai (rata-rata ★)', s.aspek, { st: true }) + bars('Jenis keluhan aplikasi', s.perKategori)
       + bars('Jenis masalah cabang', s.perKategoriCabang) + bars('Urgensi keluhan cabang', s.perUrgensi, { lbl: (x) => `<span class="urg ${esc(x.nama)}">${esc(x.nama || '–')}</span>` })
       + bars('Cabang paling banyak melapor', s.perCabangKeluhan)
+      + (s.cuti ? bars('Jenis cuti pegawai', s.cuti.perJenis) : '')
       + bars('Per area', s.perArea) + bars('Per cabang', s.perCabang);
   }
 
   // detail balasan tindak lanjut (ROH / SQO Region / SQO Area / ASM) di bawah isi masukan
   const NM_ST = { baru: 'Baru', diproses: 'Diproses', selesai: 'Selesai', ditolak: 'Ditolak' };
   const balasanHtml = (m) => {
-    if (m.jenis === 'rating') return '';
+    if (m.jenis === 'rating' || m.jenis === 'cuti') return '';
     const bs = m.balasan || [];
     if (!bs.length) return '<div class="blk kosong">Belum ada balasan tindak lanjut.</div>';
     return `<details class="blk" ${bs.length <= 2 ? 'open' : ''}><summary>💬 ${bs.length} balasan tindak lanjut</summary>${bs.map((b) => `<div class="bl">
@@ -161,14 +164,28 @@
       <div>${esc(b.pesan)}</div>${b.status ? `<span class="status ${esc(b.status)} bst">→ ${esc(NM_ST[b.status] || b.status)}</span>` : ''}</div>`).join('')}</details>`;
   };
 
+  // detail pegawai cuti: jenis, periode, lama, pengganti, keterangan
+  const tglId = (t) => t ? new Date(t + 'T00:00').toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }) : '';
+  const isiCuti = (m) => {
+    const lama = m.cuti_hari != null ? +m.cuti_hari : null;   // hari kerja (tanpa Sabtu, Minggu, dan hari libur)
+    const hariIni = new Date(Date.now() + 7 * 3600e3).toISOString().slice(0, 10);
+    const sedang = m.cuti_mulai <= hariIni && m.cuti_selesai >= hariIni && m.status !== 'ditolak';
+    return `<b>${esc(m.kategori || 'Cuti')}</b><br><span class="cuti-per">📅 ${esc(tglId(m.cuti_mulai))}${m.cuti_selesai !== m.cuti_mulai ? ' – ' + esc(tglId(m.cuti_selesai)) : ''}${lama != null ? ` · ${lama} hari kerja` : ''}</span>${sedang ? ' <span class="urg kritis">sedang cuti</span>' : ''}`
+      + (m.cuti_pengganti ? `<br><span class="mu">Pengganti: ${esc(m.cuti_pengganti)}</span>` : '') + (m.pesan ? '<br>' + esc(m.pesan) : '');
+  };
+
   async function muatList() {
     const { masukan, status } = await api('GET', '/api/feedback?' + filter());
     $('#list').innerHTML = masukan.map((m) => `<tr data-row="${m.id}">
       <td><input type="checkbox" class="pilih" value="${m.id}" aria-label="Pilih masukan ${m.id}"></td>
       <td class="n">${m.id}</td><td class="n">${waktu(m.created_at)}</td>
-      <td><span class="pill ${m.jenis}">${{ rating: 'Rating', keluhan: 'Keluhan aplikasi', cabang: 'Keluhan cabang' }[m.jenis] || esc(m.jenis)}</span>${m.urgensi ? `<br><span class="urg ${esc(m.urgensi)}">${esc(m.urgensi)}</span>` : ''}</td>
-      <td class="psn">${m.jenis === 'rating' ? `<span class="bintang">${bintang(m.rating)}</span>${m.aspek ? `<br><span class="mu">${esc(m.aspek)}</span>` : ''}` : `<b>${esc(m.kategori)}</b>`}${m.waktu_kejadian ? `<br><span class="mu">Kejadian: ${waktu(m.waktu_kejadian)}</span>` : ''}${m.pesan ? '<br>' + esc(m.pesan) : ''}${balasanHtml(m)}</td>
-      <td>${esc(m.nama || '–')}${m.kontak ? `<br><span class="mu">NIP ${esc(m.kontak)}</span>` : ''}${m.jabatan ? `<br><span class="mu">${esc(m.jabatan)}</span>` : ''}</td>
+      <td><span class="pill ${m.jenis}">${{ rating: 'Rating', keluhan: 'Keluhan aplikasi', cabang: 'Keluhan cabang', cuti: 'Pegawai cuti' }[m.jenis] || esc(m.jenis)}</span>${m.urgensi ? `<br><span class="urg ${esc(m.urgensi)}">${esc(m.urgensi)}</span>` : ''}</td>
+      <td class="psn">${m.jenis === 'cuti' ? isiCuti(m) : m.jenis === 'rating' ? `<span class="bintang">${bintang(m.rating)}</span>${m.aspek ? `<br><span class="mu">${esc(m.aspek)}</span>` : ''}` : `<b>${esc(m.kategori)}</b>`}${m.waktu_kejadian ? `<br><span class="mu">Kejadian: ${waktu(m.waktu_kejadian)}</span>` : ''}${m.pesan ? '<br>' + esc(m.pesan) : ''}${balasanHtml(m)}</td>
+      <td>${m.jenis === 'cuti'
+        ? `<b>${esc(m.nama || '–')}</b>${m.kontak ? `<br><span class="mu">NIP ${esc(m.kontak)}</span>` : ''}${m.cuti_jabatan ? `<br><span class="mu">${esc(m.cuti_jabatan)}</span>` : ''}${m.pengguna ? `<br><span class="mu">Diinput: ${esc(m.pengguna)}</span>` : ''}`
+        : m.jenis === 'rating'
+        ? `${m.pengguna ? `<b>${esc(m.pengguna)}</b>` : '<span class="mu">Tanpa login</span>'}${m.kode ? `<br><span class="mu">🏢 ${esc(m.kode + ' ' + (m.cabang || ''))}</span>` : ''}${m.jabatan ? `<br><span class="mu">${esc(m.jabatan)}</span>` : ''}`
+        : `${esc(m.nama || '–')}${m.kontak ? `<br><span class="mu">NIP ${esc(m.kontak)}</span>` : ''}${m.jabatan ? `<br><span class="mu">${esc(m.jabatan)}</span>` : ''}${m.pengguna ? `<br><span class="mu">Akun: ${esc(m.pengguna)}</span>` : ''}`}</td>
       <td>${m.kode ? esc(m.kode + ' ' + (m.cabang || '')) : '–'}${m.area ? `<br><span class="mu">${esc(m.area)}</span>` : ''}${m.tanggal_data ? `<br><span class="mu">data ${esc(m.tanggal_data)}</span>` : ''}</td>
       <td class="n">${esc(NAMA[m.platform] || m.platform || '')}<br><span class="mu">${esc(NAMA[m.app] || m.app || '')}</span></td>
       <td>${m.jenis !== 'rating' ? `<select class="status ${m.status}" data-id="${m.id}" aria-label="Status">${status.map((x) => `<option ${x === m.status ? 'selected' : ''}>${x}</option>`).join('')}</select>` : '<span class="mu">–</span>'}</td>

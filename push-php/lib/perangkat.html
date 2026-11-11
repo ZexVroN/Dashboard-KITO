@@ -171,7 +171,7 @@
   }
   const rentangQS = () => `dari=${$('#dari').value}&sampai=${$('#sampai').value}`;
   // nama pengguna: nama dari admin / akun login; perangkat yang dipakai tanpa login ditulis "Tanpa login"
-  const namaPengguna = (x) => (!x.label_manual && !x.pengguna) || !x.label || x.label === 'Tanpa login' ? '<span class="mu">Tanpa login</span>' : `<b>${esc(x.label)}</b>`;
+  const namaPengguna = (x) => !x.label || x.label === 'Tanpa login' ? '<span class="mu">Tanpa login</span>' : `<b>${esc(x.label)}</b>`;
   const labelPeriode = () => { const a = $('#dari').value, b = $('#sampai').value; return a === b ? `${namaHari(a)}, ${tglPendek(a)}` : `${tglPendek(a)} – ${tglPendek(b)}`; };
   function setRentang(a, b, preset) {
     if (b < a) [a, b] = [b, a];

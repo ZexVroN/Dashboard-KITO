@@ -85,3 +85,12 @@ body.knp-open { overflow: hidden; }
 /* kotak masuk keluhan (ROH / SQO Region / SQO Area / ASM) */
 .knp-cab { display: block; font-size: 12px; font-weight: 700; color: var(--tx, #13203d); margin: 0 0 2px; }
 .knp-nb { display: inline-block; margin-left: 4px; padding: 1px 7px; border-radius: 999px; background: #fde8e8; color: #b42318; font-size: 10.5px; letter-spacing: 0; text-transform: none; }
+
+/* rencana pegawai tidak masuk (data Pegawai Cuti) */
+.knp-cul { display: flex; flex-direction: column; gap: 6px; max-height: 32vh; overflow: auto; margin-bottom: 12px; padding-right: 2px; }
+.knp-cu { border: 1px solid var(--ln, #e1e6f0); border-radius: 12px; padding: 8px 12px; background: var(--cd, #fff); }
+.knp-cu.on { border-left: 4px solid #0f766e; background: rgba(15, 118, 110, .05); }
+.knp-cu-h { display: flex; justify-content: space-between; align-items: center; gap: 8px; font-size: 13px; }
+.knp-cu small { display: block; font-size: 11.5px; color: var(--mu, #66728c); line-height: 1.4; }
+.knp-cu-t { flex: none; font-size: 10.5px; font-weight: 700; border-radius: 999px; padding: 2px 8px; background: #eef2f8; color: #475569; }
+.knp-cu-t.on { background: #ccfbf1; color: #115e59; }

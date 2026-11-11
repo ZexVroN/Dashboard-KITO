@@ -12,7 +12,7 @@ const KP_AKUN_BAWAAN = [
     'toh'  => 'e0361a47dc818641e4416531b3e93e5dacdda4f2ab5e650e8f83b92e59755016',
     'sqor' => '33351e7dec57007b5994aab663b8b081065ba2960e22b71b37e6af8ec6400505',
     'asm'  => 'b4ebbc99b49ce77bfe4076b26f296e26c5979e6b80c3f90a22c5d22f3e6cd7b0',
-    'sqoa' => '23f3f56febdbbd7ff579b7ddfd577928d1f99fc40856fe8e9eb72ff8683a81da',
+    'sqoa' => 'b7dd7515c6c06163d061e065370f011a0da221e46bcb2fe7b51cebf45f952f9d',
     'atom' => '24194830a2ecb9b2d9b384d0fe184d59c327e175bf59779d34551fb67794d7e0',
     'bom'  => '4e88c3acbfdf57bd8a6634d2d4110a8a51b00b48fe3f0609815fb63a97ac1d50',
 ];
@@ -66,6 +66,17 @@ function kp_akun_cek(array $b): array {
         kp_fail(401, 'password salah');
     }
     return [$kunci, $row ?: []];
+}
+
+/** kunci akun bila kredensial valid, null bila tidak (tanpa kp_fail; dipakai saat menyimpan keluhan) */
+function kp_akun_valid($b): ?string {
+    if (!is_array($b)) return null;
+    $k = kp_akun_kunci($b);
+    if (!$k || !kp_akun_hash_ok($b['hash'] ?? '')) return null;
+    [$kunci, $jab] = $k;
+    $row = kp_akun_baris($kunci);
+    $ok = $row && $row['hash'] ? password_verify($b['hash'], $row['hash']) : hash_equals(KP_AKUN_BAWAAN[$jab], $b['hash']);
+    return $ok ? $kunci : null;
 }
 
 function kp_akun_profil(array $row): array {

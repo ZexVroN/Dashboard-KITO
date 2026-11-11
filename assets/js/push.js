@@ -123,8 +123,9 @@
   const namaCakupan = (a) => (a.jab === 'roh' || a.jab === 'sqor' ? 'Region II' : 'Area ' + judulArea((window.KITO_ASM?.data?.[a.sub] || {}).area || a.sub));
 
   async function muatKeluhan(paksa) {
+    // pembalas: kotak masuk sesuai cakupan · akun lain (mis. BOM-BOS): hanya keluhan yang dikirim akun itu · tamu: tidak ada daftar
     const masuk = modeMasuk(), a = akun();
-    const kode = masuk ? 'masuk:' + a.kunci : pilihan().kode;
+    const kode = a ? (masuk ? 'masuk:' : 'saya:') + a.kunci : null;
     if (!kode) { kel.kode = null; kel.list = []; tandaiJumlah(); return; }
     if (!paksa && kel.kode === kode && kel.list) return;
     kel.muat = true; kel.err = '';
@@ -133,7 +134,7 @@
     try {
       const r = masuk
         ? await api('POST', '/api/feedback/masuk', a.kred)
-        : await api('GET', '/api/feedback/cabang?kode=' + encodeURIComponent(kode));
+        : await api('POST', '/api/feedback/saya', a.kred);
       if (kel.kode === kode) kel.list = r.keluhan || [];
     } catch (e) {
       if (kel.kode === kode) { kel.err = /password salah/i.test(e.message) ? 'Sesi login tidak berlaku lagi. Silakan logout lalu login ulang.' : e.message; kel.list = kel.list || []; }
@@ -153,19 +154,20 @@
 
   function bagianKeluhan() {
     const p = pilihan(), masuk = modeMasuk();
-    if (!p.kode && !masuk) return '';
     const a = akun(), balas = masuk;
+    if (!a) return `<p class="knp-g">Keluhan &amp; feedback</p><p class="knp-kosong">Keluhan hanya dapat dibaca oleh akun pelapor dan tim tindak lanjut. Login untuk melihat keluhan yang Anda kirim beserta balasannya.</p>`
+      + (p.kode ? `<p class="knp-note knp-as">Laporan cabang ${esc(p.kode)} diteruskan ke <b>${esc(penerima(areaCabang()).join(', '))}</b>.</p>` : '');
     const nBuka = (kel.list || []).filter(terbuka).length;
     const judul = masuk
       ? `<p class="knp-g">📥 Keluhan masuk · ${esc(namaCakupan(a))}${nBuka ? ` <span class="knp-nb">${nBuka} belum selesai</span>` : ''}</p>`
-      : `<p class="knp-g">Keluhan &amp; feedback · ${esc(p.kode + ' ' + (p.cabang || ''))}</p>`;
+      : `<p class="knp-g">Keluhan saya · ${esc(a.nama)}</p>`;
     if (kel.muat && !kel.list) return judul + '<p class="knp-note">Memuat keluhan…</p>';
     const list = kel.list || [];
     let info;
     if (masuk) info = `<p class="knp-note knp-as">Anda login sebagai <b>${esc(a.jabatan)}</b>. Keluhan cabang di ${esc(namaCakupan(a))} masuk ke sini dan dapat Anda balas.</p>`;
     else if (a && PEMBALAS.includes(a.jab)) info = `<p class="knp-msg">Untuk membalas, logout lalu login ulang sebagai ${esc(a.jab === 'asm' ? 'ASM' : 'SQO Area')} dengan memilih nama dan area Anda.</p>`;
-    else info = `<p class="knp-note knp-as">Laporan cabang ini terkirim ke <b>${esc(penerima(areaCabang()).join(', '))}</b> untuk ditindaklanjuti.</p>`;
-    if (!list.length) return judul + (kel.err ? `<p class="knp-msg">Keluhan tidak bisa dimuat: ${esc(kel.err)}</p>` : `<p class="knp-kosong">${masuk ? 'Belum ada keluhan masuk' : 'Belum ada keluhan untuk cabang ini'} dalam 120 hari terakhir.</p>`) + info;
+    else info = `<p class="knp-note knp-as">Hanya akun Anda yang dapat membaca keluhan ini. Laporan diteruskan ke <b>${esc(penerima(areaCabang()).join(', '))}</b> untuk ditindaklanjuti.</p>`;
+    if (!list.length) return judul + (kel.err ? `<p class="knp-msg">Keluhan tidak bisa dimuat: ${esc(kel.err)}</p>` : `<p class="knp-kosong">${masuk ? 'Belum ada keluhan masuk' : 'Belum ada keluhan yang Anda kirim'} dalam 120 hari terakhir.</p>`) + info;
     const item = (r) => {
       const jenis = r.jenis === 'cabang' ? 'Keluhan cabang' : 'Keluhan aplikasi';
       const bls = (r.balasan || []).map((b) => `<div class="knp-bl"><div class="knp-blh"><b>${esc(b.jabatan)}${b.nama ? ' · ' + esc(b.nama) : ''}</b><small>${esc(wib(b.created_at))}</small></div><p>${esc(b.pesan)}</p>${b.status ? `<span class="knp-st st-${esc(b.status)}">→ ${esc(NM_STATUS[b.status] || b.status)}</span>` : ''}</div>`).join('');
@@ -180,7 +182,7 @@
         </div>` : '';
       return `<article class="knp-k ${terbuka(r) ? 'buka' : ''}">
         <div class="knp-kh"><span class="knp-jn">${esc(jenis)}</span>${r.urgensi ? `<span class="knp-ur ur-${esc(r.urgensi)}">${esc(r.urgensi)}</span>` : ''}<span class="knp-st st-${esc(r.status)}">${esc(NM_STATUS[r.status] || r.status)}</span></div>
-        ${masuk && r.kode ? `<span class="knp-cab">🏢 ${esc(r.kode + ' ' + (r.cabang || ''))}</span>` : ''}
+        ${r.kode ? `<span class="knp-cab">🏢 ${esc(r.kode + ' ' + (r.cabang || ''))}</span>` : ''}
         ${r.kategori ? `<b class="knp-kat">${esc(r.kategori)}</b>` : ''}
         <p class="knp-ps">${esc(r.pesan || '')}</p>
         <small class="knp-mt">${esc(wib(r.created_at))}${r.nama ? ' · ' + esc(r.nama) : ''}${r.waktu_kejadian ? ' · kejadian ' + esc(String(r.waktu_kejadian).replace('T', ' ')) : ''}</small>
@@ -292,12 +294,8 @@
     const kr = e.target.closest('[data-knp-kirim]'); if (kr) return kirimBalasan(+kr.dataset.knpKirim);
     const b = e.target.closest('[data-knp]'); if (b) aksi(b.dataset.knp);
   });
-  // login / logout / ganti cabang: perbarui daftar keluhan & angka di lonceng
+  // login / logout: perbarui daftar keluhan & angka di lonceng (daftar mengikuti akun, bukan cabang di header)
   window.addEventListener('kito-akun', () => { muatKeluhan().then(() => { if (!sheet.hidden) gambar(); }); if (!sheet.hidden) gambar(); });
-  if (typeof render === 'function') {
-    const renderAsli = render;
-    render = function (...a) { const r = renderAsli.apply(this, a); if (!modeMasuk() && pilihan().kode !== kel.kode) muatKeluhan().then(() => { if (!sheet.hidden) gambar(); }); return r; };
-  }
   muatKeluhan();
   document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !sheet.hidden) tutup(); });
 

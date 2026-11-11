@@ -98,8 +98,22 @@ Ikon profil di pojok kanan atas dashboard menampilkan foto, nama pengguna, dan j
 
 ## Keluhan & tindak lanjut di kotak 🔔 dashboard
 
-- `GET /api/feedback/cabang?kode=<kode cabang>`: keluhan cabang dan keluhan aplikasi dari cabang itu dalam 120 hari terakhir (maksimal 20), beserta balasannya. NIP pelapor, IP, dan data perangkat tidak ditampilkan.
+- **Privasi:** keluhan yang dikirim saat login dicatat dengan akun pelapornya (kolom `akun`, mis. `bom:11325`). Keluhan hanya dapat dibaca akun itu dan pembalas sesuai cakupannya. Tidak ada lagi daftar keluhan publik per cabang.
+- `POST /api/feedback/saya` `{jabatan, cabang?, area?, hash}`: keluhan cabang dan keluhan aplikasi yang dikirim akun ini dalam 120 hari terakhir (maksimal 40), beserta balasannya. NIP pelapor, IP, dan data perangkat tidak ditampilkan.
 - `POST /api/feedback/<id>/balas` `{jabatan, hash, pesan, status?, nama?}`: balasan tindak lanjut. Hanya untuk akun **ROH, SQO Region, SQO Area, dan ASM** (`KP_FB_PEMBALAS`), dan password dicek lewat akun login (`lib/akun.php`). Balasan pertama otomatis mengubah status keluhan "baru" menjadi "diproses". Status bisa diubah ke diproses, selesai, atau ditolak.
 - Balasan disimpan di tabel `feedback_balasan`.
 - `POST /api/feedback/masuk` `{jabatan, area?, hash}`: kotak masuk keluhan untuk pembalas yang login. ROH dan SQO Region menerima semua keluhan Region II. ASM dan SQO Area hanya menerima keluhan dari cabang di areanya; area ditentukan dari kode cabang di `data/kito.json`.
 - Balasan juga dibatasi: ASM dan SQO Area hanya bisa membalas keluhan dari areanya sendiri (403 bila dari area lain).
+
+## Halaman admin Pengguna (`/admin/pengguna`)
+
+- Menampilkan semua akun login dashboard: ROH, TOH, ATOM (per jabatan), SQO Region (per region), ASM dan SQO Area (per area), serta BOM-BOS (per cabang). Tiap akun ditampilkan dengan status password: bawaan, atau diganti beserta tanggalnya.
+- **✏️ Edit**: `PUT /api/pengguna` `{kunci, nama}` mengubah nama pengguna yang tampil di profil dashboard. Nama kosong berarti kembali ke nama bawaan.
+- **🔑 Reset password**: `POST /api/pengguna/password` `{kunci, baru?}`. Tanpa `baru`, password kembali ke password bawaan jabatan. Dengan `baru` (SHA-256 `"jabatan:password"`, dihitung di browser admin), password baru disimpan.
+- Semua aksi membutuhkan token admin.
+
+## Halaman admin Masukan: periode, urutan, hapus
+
+- **Periode**: hari ini, 7/30/90 hari, 1 tahun, semua, atau rentang tanggal. Parameter `dari` dan `sampai` (YYYY-MM-DD WIB), atau `days`, berlaku untuk `GET /api/feedback`, `/api/feedback/summary`, dan `/api/feedback/export`.
+- **Urutan tabel**: `urut=baru` (tanggal terbaru dulu, bawaan) atau `urut=lama`. Urutan ini juga dipakai di CSV.
+- **Hapus**: `DELETE /api/feedback/<id>`, atau `POST /api/feedback/hapus {ids: [...]}` untuk banyak sekaligus (maksimal 1000). Balasan tindak lanjut ikut terhapus. Membutuhkan token admin.

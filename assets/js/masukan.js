@@ -215,7 +215,7 @@
 
   const tabs = () => `<div class="kmk-tabs" role="tablist">
       <button type="button" role="tab" data-kmk-tab="rating" aria-selected="${tab === 'rating'}">⭐ Rating aplikasi</button>
-      <button type="button" role="tab" data-kmk-tab="keluhan" aria-selected="${tab === 'keluhan'}">📝 Keluhan</button>
+      <button type="button" role="tab" data-kmk-tab="keluhan" aria-selected="${tab === 'keluhan'}">📝 Keluhan Aplikasi</button>
       <button type="button" role="tab" data-kmk-tab="cabang" aria-selected="${tab === 'cabang'}">🏢 Keluhan Cabang</button></div>`;
 
   const formRating = () => `${tabs()}
@@ -235,7 +235,7 @@
 
   const formKeluhan = () => `${tabs()}
     <form id="kmk-f" novalidate>
-      <label class="kmk-l" for="kmk-kat">Jenis keluhan</label>
+      <label class="kmk-l" for="kmk-kat">Jenis keluhan aplikasi</label>
       <select id="kmk-kat" required><option value="" disabled ${draf.kategori ? '' : 'selected'}>— Pilih jenis keluhan —</option>
         ${KATEGORI.map((k) => `<option ${k === draf.kategori ? 'selected' : ''}>${esc(k)}</option>`).join('')}</select>
       <label class="kmk-l" for="kmk-pk">Uraian keluhan</label>
@@ -245,9 +245,9 @@
         <div><label class="kmk-l" for="kmk-nm">Nama <small>(opsional)</small></label><input type="text" id="kmk-nm" maxlength="80" autocomplete="name" value="${esc(draf.nama)}"></div>
         <div><label class="kmk-l" for="kmk-kt">NIP <small>(opsional)</small></label><input type="text" id="kmk-kt" maxlength="80" inputmode="numeric" pattern="[0-9]+" autocomplete="off" value="${esc(draf.kontak)}"></div>
       </div>
-      <p class="kmk-note">Cabang, area, dan tanggal data yang sedang Anda lihat ikut terkirim agar keluhan mudah dicek. Isi NIP sebagai identitas pelapor.</p>
+      <p class="kmk-note">Cabang, area, dan tanggal data yang sedang Anda lihat ikut terkirim agar keluhan mudah dicek. Isi NIP sebagai identitas pelapor. Keluhan hanya dapat dibaca akun login Anda dan tim tindak lanjut.</p>
       <p class="kmk-err" id="kmk-err" role="alert"></p>
-      <div class="kmk-act"><button type="submit" class="kmk-btn">Kirim keluhan</button></div>
+      <div class="kmk-act"><button type="submit" class="kmk-btn">Kirim keluhan aplikasi</button></div>
     </form>`;
 
   const formCabang = () => {
@@ -271,7 +271,7 @@
         <div><label class="kmk-l" for="kmk-nm">Nama pelapor</label><input type="text" id="kmk-nm" maxlength="80" autocomplete="name" required value="${esc(draf.nama)}"></div>
         <div><label class="kmk-l" for="kmk-kt">NIP</label><input type="text" id="kmk-kt" maxlength="80" inputmode="numeric" pattern="[0-9]+" autocomplete="off" required value="${esc(draf.kontak)}"></div>
       </div>
-      <p class="kmk-note">Urgensi <b>Kritis</b>: layanan cabang terhenti. <b>Tinggi</b>: layanan terganggu dan nasabah terdampak.</p>
+      <p class="kmk-note">Urgensi <b>Kritis</b>: layanan cabang terhenti. <b>Tinggi</b>: layanan terganggu dan nasabah terdampak. Laporan hanya dapat dibaca akun login Anda serta ASM, SQO Area, SQO Region, dan ROH.</p>
       <p class="kmk-err" id="kmk-err" role="alert"></p>
       <div class="kmk-act"><button type="submit" class="kmk-btn">Kirim keluhan cabang</button></div>
     </form>`;
@@ -279,7 +279,7 @@
 
   const TEKS_OK = {
     rating: ['Terima kasih atas penilaian Anda!', 'Masukan Anda membantu kami membuat KITO lebih baik.'],
-    keluhan: ['Keluhan Anda sudah kami terima', 'Tim Operation Region II akan menindaklanjuti secepatnya.'],
+    keluhan: ['Keluhan aplikasi Anda sudah kami terima', 'Tim Operation Region II akan menindaklanjuti secepatnya.'],
     cabang: ['Laporan masalah cabang sudah diterima', 'Tim Operation Region II akan menindaklanjuti laporan ini. Status laporan dicatat atas NIP pelapor.'],
   };
   // keluhan cabang terkirim ke ASM & SQO Area area cabang (KITO_ASM), SQO Region, dan ROH
@@ -380,7 +380,9 @@
     }
     btn.disabled = true; btn.textContent = 'Mengirim…';
     try {
-      const r = await kirim({ ...isi, ...konteks(), app });
+      // akun login pelapor: keluhan hanya dapat dibaca akun ini (dan ASM/SQO Area/SQO Region/ROH yang menindaklanjuti)
+      let akun; try { if (isi.jenis !== 'rating') akun = window.KITO_AKUN?.kini()?.kred || undefined; } catch (e2) { akun = undefined; }
+      const r = await kirim({ ...isi, ...konteks(), app, akun });
       const s = baca(K_STATE, {});
       if (tab === 'rating') { s.rating = Date.now(); s.nilai = draf.rating; draf.pesanR = ''; draf.aspek = []; }
       else if (tab === 'keluhan') { draf.pesanK = ''; draf.kategori = ''; }
@@ -391,7 +393,7 @@
       body.querySelector('[data-kmk-tutup]')?.focus();
     } catch (er) {
       err.textContent = 'Gagal mengirim: ' + er.message;
-      btn.disabled = false; btn.textContent = { rating: 'Kirim rating', keluhan: 'Kirim keluhan', cabang: 'Kirim keluhan cabang' }[tab];
+      btn.disabled = false; btn.textContent = { rating: 'Kirim rating', keluhan: 'Kirim keluhan aplikasi', cabang: 'Kirim keluhan cabang' }[tab];
     }
   });
 

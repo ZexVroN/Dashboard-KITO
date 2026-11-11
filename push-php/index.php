@@ -150,6 +150,8 @@ try {
 
     switch ("$method $route") {
         case 'GET /api/pengguna': { kp_admin(); kp_json(200, kp_pengguna()); }
+        case 'PUT /api/pengguna': { kp_admin(); kp_json(200, kp_pengguna_edit(kp_body())); }
+        case 'POST /api/pengguna/password': { kp_admin(); kp_json(200, kp_pengguna_password(kp_body())); }
         case 'GET /api/health': kp_json(200, ['ok' => true, 'waktu' => gmdate('c'), 'backend' => 'php']);
         case 'GET /api/vapid-public-key': kp_json(200, ['publicKey' => $cfg['vapid_public']]);
 
@@ -268,10 +270,10 @@ try {
         if (is_string($hasil)) kp_fail($kode, $hasil);
         kp_json($kode, $hasil);
     }
-    if ($method === 'GET' && $route === '/api/feedback/cabang') {
-        if (!kp_rate('fbc:' . kp_ip(), 60)) kp_fail(429, 'terlalu banyak permintaan');
+    if ($method === 'POST' && $route === '/api/feedback/saya') {   // keluhan milik akun login (daftar publik per cabang sudah dihapus)
+        if (!kp_rate('fbs:' . kp_ip(), 60)) kp_fail(429, 'terlalu banyak permintaan');
         header('Cache-Control: no-store');
-        kp_json(200, ['ok' => true, 'keluhan' => kp_fb_cabang((string)($_GET['kode'] ?? ''), (int)($_GET['limit'] ?? 20)), 'pembalas' => array_keys(KP_FB_PEMBALAS)]);
+        kp_json(200, kp_fb_saya(kp_body()));
     }
     if ($method === 'POST' && $route === '/api/feedback/masuk') {
         if (!kp_rate('fbm:' . kp_ip(), 60)) kp_fail(429, 'terlalu banyak permintaan');
@@ -282,8 +284,17 @@ try {
         if (!kp_rate('fbb:' . kp_ip(), 20)) kp_fail(429, 'terlalu banyak balasan, coba lagi sebentar lagi');
         kp_json(200, kp_fb_balas((int)$m[1], kp_body()));
     }
-    if ($method === 'GET' && $route === '/api/feedback') { kp_admin(); kp_json(200, ['masukan' => kp_fb_list($_GET), 'kategori' => KP_FB_KATEGORI, 'status' => KP_FB_STATUS]); }
-    if ($method === 'GET' && $route === '/api/feedback/summary') { kp_admin(); kp_json(200, kp_fb_summary((int)($_GET['days'] ?? 90))); }
+    if ($method === 'GET' && $route === '/api/feedback') { kp_admin(); kp_json(200, ['masukan' => kp_fb_lengkapi(kp_fb_list($_GET)), 'kategori' => KP_FB_KATEGORI, 'status' => KP_FB_STATUS]); }
+    if ($method === 'GET' && $route === '/api/feedback/summary') { kp_admin(); kp_json(200, kp_fb_summary($_GET)); }
+    if ($method === 'DELETE' && preg_match('#^/api/feedback/(\d+)$#', $route, $m)) {
+        kp_admin(); $n = kp_fb_hapus([(int)$m[1]]);
+        if (!$n) kp_fail(404, 'masukan tidak ditemukan');
+        kp_json(200, ['ok' => true, 'dihapus' => $n]);
+    }
+    if ($method === 'POST' && $route === '/api/feedback/hapus') {
+        kp_admin(); $b = kp_body();
+        kp_json(200, ['ok' => true, 'dihapus' => kp_fb_hapus(is_array($b['ids'] ?? null) ? $b['ids'] : [])]);
+    }
     if ($method === 'GET' && $route === '/api/feedback/export') {
         kp_admin(); [$nama, $rows] = kp_fb_export($_GET);
         header('Content-Type: text/csv; charset=utf-8'); header('Content-Disposition: attachment; filename="kito-' . $nama . '"');

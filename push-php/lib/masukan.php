@@ -27,7 +27,7 @@ function kp_fb_db(): PDO {
     ");
     // kolom tambahan untuk keluhan cabang (database lama ditambah otomatis)
     $ada = $db->query('PRAGMA table_info(feedback)')->fetchAll(PDO::FETCH_COLUMN, 1);
-    foreach (['urgensi' => 'TEXT', 'waktu_kejadian' => 'TEXT'] as $kol => $tipe) if (!in_array($kol, $ada, true)) $db->exec("ALTER TABLE feedback ADD COLUMN $kol $tipe");
+    foreach (['urgensi' => 'TEXT', 'waktu_kejadian' => 'TEXT', 'akun' => 'TEXT'] as $kol => $tipe) if (!in_array($kol, $ada, true)) $db->exec("ALTER TABLE feedback ADD COLUMN $kol $tipe");
     $siap = true;
     return $db;
 }
@@ -70,7 +70,9 @@ function kp_fb_simpan(array $b): array {
     $nilai = [$jenis, $rating, $kategori, $aspek, $pesan, kp_fb_teks($b['nama'] ?? null, 80), kp_fb_teks($b['kontak'] ?? null, 80), $dev,
         ($j = kp_fb_teks($b['jabatan'] ?? null, 20)) ? strtoupper($j) : null, kp_fb_teks($b['area'] ?? null, 80), kp_fb_teks($b['kode'] ?? null, 20),
         kp_fb_teks($b['cabang'] ?? null, 120), kp_fb_teks($b['tanggal'] ?? null, 10),
-        in_array($b['app'] ?? '', ['web', 'pwa', 'apk'], true) ? $b['app'] : 'web', $pl, $br, kp_fb_teks($b['versi'] ?? null, 40), kp_ip(), $urgensi, $waktuKejadian];
+        in_array($b['app'] ?? '', ['web', 'pwa', 'apk'], true) ? $b['app'] : 'web', $pl, $br, kp_fb_teks($b['versi'] ?? null, 40), kp_ip(), $urgensi, $waktuKejadian,
+        // akun login pelapor (mis. "bom:11325"): keluhan hanya dapat dibaca akun ini + pembalas sesuai cakupan
+        $jenis !== 'rating' && function_exists('kp_akun_valid') ? kp_akun_valid($b['akun'] ?? null) : null];
     if ($jenis === 'rating' && $dev) {
         $q = $db->prepare("SELECT id FROM feedback WHERE jenis = 'rating' AND device_id = ? AND date(created_at, '+7 hours') = date('now', '+7 hours')");
         $q->execute([$dev]);
@@ -80,15 +82,29 @@ function kp_fb_simpan(array $b): array {
             return [200, ['ok' => true, 'id' => (int)$id, 'diperbarui' => true]];
         }
     }
-    $db->prepare('INSERT INTO feedback (jenis, rating, kategori, aspek, pesan, nama, kontak, device_id, jabatan, area, kode, cabang, tanggal_data, app, platform, browser, versi, ip, urgensi, waktu_kejadian)
-        VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)')->execute($nilai);
+    $db->prepare('INSERT INTO feedback (jenis, rating, kategori, aspek, pesan, nama, kontak, device_id, jabatan, area, kode, cabang, tanggal_data, app, platform, browser, versi, ip, urgensi, waktu_kejadian, akun)
+        VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)')->execute($nilai);
     return [201, ['ok' => true, 'id' => (int)$db->lastInsertId()]];
+}
+
+/** rentang waktu (UTC) dari filter admin: dari & sampai = tanggal WIB (YYYY-MM-DD), atau days = N hari terakhir */
+function kp_fb_rentang(array $g): array {
+    $tgl = function ($v) { return is_string($v) && preg_match('/^\d{4}-\d{2}-\d{2}$/', $v) && strtotime($v . ' 00:00:00 UTC') !== false ? $v : null; };
+    $dari = $tgl($g['dari'] ?? null); $sampai = $tgl($g['sampai'] ?? null);
+    if ($dari || $sampai) {
+        $dari = $dari ?: '2000-01-01'; $sampai = $sampai ?: gmdate('Y-m-d', time() + 7 * 3600);
+        if ($dari > $sampai) [$dari, $sampai] = [$sampai, $dari];
+        // 00:00 WIB = 17:00 UTC hari sebelumnya
+        return [gmdate('Y-m-d H:i:s', strtotime($dari . ' 00:00:00 UTC') - 7 * 3600), gmdate('Y-m-d H:i:s', strtotime($sampai . ' 00:00:00 UTC') + 17 * 3600), $dari, $sampai];
+    }
+    $hari = max(1, min(3650, (int)($g['days'] ?? 90)));
+    return [gmdate('Y-m-d H:i:s', time() - $hari * 86400), gmdate('Y-m-d H:i:s', time() + 86400), null, null];
 }
 
 function kp_fb_list(array $g): array {
     $db = kp_fb_db();
-    $hari = max(1, min(3650, (int)($g['days'] ?? 90)));
-    $w = ["created_at >= datetime('now', ?)"]; $p = ['-' . $hari . ' days'];
+    [$mulai, $akhir] = kp_fb_rentang($g);
+    $w = ['created_at >= ?', 'created_at < ?']; $p = [$mulai, $akhir];
     if (in_array($g['jenis'] ?? '', KP_FB_JENIS, true)) { $w[] = 'jenis = ?'; $p[] = $g['jenis']; }
     if (in_array($g['urgensi'] ?? '', KP_FB_URGENSI, true)) { $w[] = 'urgensi = ?'; $p[] = $g['urgensi']; }
     if (in_array($g['status'] ?? '', KP_FB_STATUS, true)) { $w[] = 'status = ?'; $p[] = $g['status']; }
@@ -98,16 +114,21 @@ function kp_fb_list(array $g): array {
         array_push($p, ...array_fill(0, 8, $like));   // kontak = NIP pelapor
     }
     $lim = max(1, min(5000, (int)($g['limit'] ?? 500)));
-    $st = $db->prepare('SELECT * FROM feedback WHERE ' . implode(' AND ', $w) . " ORDER BY id DESC LIMIT $lim");
+    $urut = ($g['urut'] ?? '') === 'lama' ? 'ASC' : 'DESC';   // terbaru dulu (bawaan) / terlama dulu
+    $st = $db->prepare('SELECT * FROM feedback WHERE ' . implode(' AND ', $w) . " ORDER BY created_at $urut, id $urut LIMIT $lim");
     $st->execute($p);
     return array_map(function ($r) { $r['id'] = (int)$r['id']; $r['rating'] = $r['rating'] === null ? null : (int)$r['rating']; return $r; }, $st->fetchAll());
 }
 
-function kp_fb_summary(int $hari): array {
+function kp_fb_summary($g): array {
     $db = kp_fb_db();
-    $sejak = '-' . max(1, min(3650, $hari)) . ' days';
-    $satu = function (string $sql) use ($db, $sejak) { $q = $db->prepare($sql); $q->execute([$sejak]); return $q->fetch(); };
-    $banyak = function (string $sql) use ($db, $sejak) { $q = $db->prepare($sql); $q->execute([$sejak]);
+    if (!is_array($g)) $g = ['days' => (int)$g];
+    [$mulai, $akhir, $dari, $sampai] = kp_fb_rentang($g);
+    $hari = (int)($g['days'] ?? 90);
+    // semua kueri ringkasan memakai rentang yang sama
+    $rg = function (string $sql) { return str_replace("created_at >= datetime('now', ?)", 'created_at >= ? AND created_at < ?', $sql); };
+    $satu = function (string $sql) use ($db, $mulai, $akhir, $rg) { $q = $db->prepare($rg($sql)); $q->execute([$mulai, $akhir]); return $q->fetch(); };
+    $banyak = function (string $sql) use ($db, $mulai, $akhir, $rg) { $q = $db->prepare($rg($sql)); $q->execute([$mulai, $akhir]);
         return array_map(function ($r) { foreach (['n', 'rating', 'bintang'] as $k) if (isset($r[$k]) && is_numeric($r[$k])) $r[$k] = $k === 'rating' ? round((float)$r[$k], 2) : (int)$r[$k]; return $r; }, $q->fetchAll()); };
     $r = $satu("SELECT COUNT(*) n, AVG(rating) rata, SUM(rating >= 4) puas, SUM(rating <= 2) kecewa FROM feedback WHERE jenis = 'rating' AND created_at >= datetime('now', ?)");
     $k = $satu("SELECT COUNT(*) n, SUM(status = 'baru') baru, SUM(status = 'diproses') diproses, SUM(status = 'selesai') selesai FROM feedback WHERE jenis = 'keluhan' AND created_at >= datetime('now', ?)");
@@ -121,7 +142,7 @@ function kp_fb_summary(int $hari): array {
         SUM(urgensi IN ('tinggi', 'kritis') AND status IN ('baru', 'diproses')) mendesak FROM feedback WHERE jenis = 'cabang' AND created_at >= datetime('now', ?)");
     $n = (int)$r['n'];
     return [
-        'hari' => $hari,
+        'hari' => $hari, 'dari' => $dari, 'sampai' => $sampai,
         'rating' => ['n' => $n, 'rata' => $n ? round((float)$r['rata'], 2) : null, 'puasPersen' => $n ? round($r['puas'] / $n * 100) : null, 'kecewaPersen' => $n ? round($r['kecewa'] / $n * 100) : null],
         'keluhan' => ['n' => (int)$k['n'], 'baru' => (int)$k['baru'], 'diproses' => (int)$k['diproses'], 'selesai' => (int)$k['selesai']],
         'cabang' => ['n' => (int)$c['n'], 'baru' => (int)$c['baru'], 'diproses' => (int)$c['diproses'], 'selesai' => (int)$c['selesai'], 'mendesak' => (int)$c['mendesak']],
@@ -140,6 +161,20 @@ function kp_fb_summary(int $hari): array {
     ];
 }
 
+/** admin: hapus masukan (beserta balasan tindak lanjutnya); mengembalikan jumlah yang terhapus */
+function kp_fb_hapus(array $ids): int {
+    $ids = array_values(array_unique(array_filter(array_map('intval', $ids), function ($x) { return $x > 0; })));
+    if (!$ids) return 0;
+    $ids = array_slice($ids, 0, 1000);
+    $db = kp_fb_balasan_db();
+    $tanda = implode(',', array_fill(0, count($ids), '?'));
+    $db->beginTransaction();
+    $db->prepare("DELETE FROM feedback_balasan WHERE feedback_id IN ($tanda)")->execute($ids);
+    $q = $db->prepare("DELETE FROM feedback WHERE id IN ($tanda)"); $q->execute($ids);
+    $db->commit();
+    return $q->rowCount();
+}
+
 function kp_fb_update(int $id, array $b): bool {
     $set = []; $p = [];
     if (array_key_exists('status', $b)) { if (!in_array($b['status'], KP_FB_STATUS, true)) return false; $set[] = 'status = ?'; $p[] = $b['status']; }
@@ -152,17 +187,23 @@ function kp_fb_update(int $id, array $b): bool {
 
 function kp_fb_export(array $g): array {
     $wib = function ($s) { return $s ? gmdate('Y-m-d H:i:s', strtotime($s . ' UTC') + 7 * 3600) : ''; };
-    $nmJenis = ['rating' => 'Rating', 'keluhan' => 'Keluhan', 'cabang' => 'Keluhan cabang'];
+    $nmJenis = ['rating' => 'Rating', 'keluhan' => 'Keluhan aplikasi', 'cabang' => 'Keluhan cabang'];
     $rows = [['No', 'Waktu lapor (WIB)', 'Jenis', 'Rating', 'Kategori keluhan', 'Urgensi', 'Waktu kejadian (WIB)', 'Aspek dinilai', 'Pesan', 'Nama pelapor', 'NIP', 'Jabatan', 'Area', 'Kode cabang', 'Cabang',
-              'Tanggal data dilihat', 'Aplikasi', 'OS', 'Browser', 'Status', 'Catatan admin', 'Diperbarui (WIB)']];
-    foreach (kp_fb_list($g + ['limit' => 5000]) as $r) $rows[] = [$r['id'], $wib($r['created_at']), $nmJenis[$r['jenis']] ?? $r['jenis'], $r['rating'], $r['kategori'],
+              'Tanggal data dilihat', 'Aplikasi', 'OS', 'Browser', 'Status', 'Catatan admin', 'Diperbarui (WIB)', 'Jumlah balasan', 'Balasan tindak lanjut']];
+    $teksBalasan = function (array $bs) use ($wib) {
+        return implode("\n", array_map(function ($b) use ($wib) {
+            return '[' . $wib($b['created_at']) . '] ' . $b['jabatan'] . ($b['nama'] ? ' · ' . $b['nama'] : '') . ($b['status'] ? ' (-> ' . $b['status'] . ')' : '') . ': ' . $b['pesan'];
+        }, $bs));
+    };
+    foreach (kp_fb_lengkapi(kp_fb_list($g + ['limit' => 5000])) as $r) $rows[] = [$r['id'], $wib($r['created_at']), $nmJenis[$r['jenis']] ?? $r['jenis'], $r['rating'], $r['kategori'],
         $r['urgensi'], $wib($r['waktu_kejadian']), $r['aspek'], $r['pesan'],
-        $r['nama'], $r['kontak'], $r['jabatan'], $r['area'], $r['kode'], $r['cabang'], $r['tanggal_data'], $r['app'], $r['platform'], $r['browser'], $r['status'], $r['catatan'], $wib($r['updated_at'])];
+        $r['nama'], $r['kontak'], $r['jabatan'], $r['area'], $r['kode'], $r['cabang'], $r['tanggal_data'], $r['app'], $r['platform'], $r['browser'], $r['status'], $r['catatan'], $wib($r['updated_at']), count($r['balasan']), $teksBalasan($r['balasan'])];
     return ['masukan-' . ($g['jenis'] ?? 'semua') . '-' . gmdate('Ymd-Hi', time() + 7 * 3600) . '.csv', $rows];
 }
 
 /* ---------- tindak lanjut di kotak 🔔 dashboard ----------
-   Publik : GET  /api/feedback/cabang?kode=<kode cabang>  -> keluhan cabang & keluhan aplikasi dari cabang itu + balasannya
+   Privasi: keluhan hanya dapat dibaca akun pelapor (kolom akun, mis. BOM-BOS "bom:<kode>") dan pembalas sesuai cakupan.
+   Login  : POST /api/feedback/saya {jabatan, cabang?, area?, hash} -> keluhan yang dikirim akun ini + balasannya
             (NIP pelapor, IP, dan data perangkat tidak ditampilkan)
    Login  : POST /api/feedback/masuk {jabatan, area?, hash}  -> kotak masuk keluhan sesuai cakupan pengguna
             POST /api/feedback/<id>/balas {jabatan, area?, hash, pesan, status?, nama?}
@@ -216,10 +257,12 @@ function kp_fb_lengkapi(array $rows): array {
     if (!$rows) return [];
     $db = kp_fb_balasan_db();
     $ids = array_map(function ($r) { return (int)$r['id']; }, $rows);
-    $b = $db->prepare('SELECT id, feedback_id, jabatan, nama, pesan, status, created_at FROM feedback_balasan WHERE feedback_id IN (' . implode(',', array_fill(0, count($ids), '?')) . ') ORDER BY id');
-    $b->execute($ids);
     $per = [];
-    foreach ($b->fetchAll(PDO::FETCH_ASSOC) as $x) { $fid = (int)$x['feedback_id']; unset($x['feedback_id']); $x['id'] = (int)$x['id']; $per[$fid][] = $x; }
+    foreach (array_chunk($ids, 500) as $pot) {   // dipecah agar tidak melewati batas variabel SQLite
+        $b = $db->prepare('SELECT id, feedback_id, jabatan, nama, pesan, status, created_at FROM feedback_balasan WHERE feedback_id IN (' . implode(',', array_fill(0, count($pot), '?')) . ') ORDER BY id');
+        $b->execute($pot);
+        foreach ($b->fetchAll(PDO::FETCH_ASSOC) as $x) { $fid = (int)$x['feedback_id']; unset($x['feedback_id']); $x['id'] = (int)$x['id']; $per[$fid][] = $x; }
+    }
     foreach ($rows as &$r) { $r['id'] = (int)$r['id']; $r['balasan'] = $per[$r['id']] ?? []; }
     return $rows;
 }
@@ -240,14 +283,13 @@ function kp_fb_masuk(array $b): array {
     return ['ok' => true, 'cakupan' => $area ?? 'REGION', 'keluhan' => kp_fb_lengkapi($rows)];
 }
 
-function kp_fb_cabang(string $kode, int $limit = 20): array {
-    if (!preg_match('/^\d{3,6}$/', $kode)) return [];
-    $db = kp_fb_balasan_db();
-    $lim = max(1, min(50, $limit));
-    $q = $db->prepare("SELECT " . KP_FB_KOLOM_PUBLIK . " FROM feedback WHERE kode = ? AND jenis IN ('cabang', 'keluhan')
-        AND created_at >= datetime('now', '-120 days') ORDER BY id DESC LIMIT $lim");
-    $q->execute([$kode]);
-    return kp_fb_lengkapi($q->fetchAll(PDO::FETCH_ASSOC));
+/** keluhan milik akun login (pelapor) */
+function kp_fb_saya(array $b): array {
+    [$kunci] = kp_akun_cek($b);   // gagal -> 401
+    $q = kp_fb_balasan_db()->prepare("SELECT " . KP_FB_KOLOM_PUBLIK . " FROM feedback WHERE akun = ? AND jenis IN ('cabang', 'keluhan')
+        AND created_at >= datetime('now', '-120 days') ORDER BY id DESC LIMIT 40");
+    $q->execute([$kunci]);
+    return ['ok' => true, 'keluhan' => kp_fb_lengkapi($q->fetchAll(PDO::FETCH_ASSOC))];
 }
 
 function kp_fb_balas(int $id, array $b): array {

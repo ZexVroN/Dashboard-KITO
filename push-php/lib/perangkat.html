@@ -170,6 +170,8 @@
     const n = +v; return n ? [geser(h, -(n - 1)), h] : null;
   }
   const rentangQS = () => `dari=${$('#dari').value}&sampai=${$('#sampai').value}`;
+  // nama pengguna: nama dari admin / akun login; perangkat yang dipakai tanpa login ditulis "Tanpa login"
+  const namaPengguna = (x) => (!x.label_manual && !x.pengguna) || !x.label || x.label === 'Tanpa login' ? '<span class="mu">Tanpa login</span>' : `<b>${esc(x.label)}</b>`;
   const labelPeriode = () => { const a = $('#dari').value, b = $('#sampai').value; return a === b ? `${namaHari(a)}, ${tglPendek(a)}` : `${tglPendek(a)} – ${tglPendek(b)}`; };
   function setRentang(a, b, preset) {
     if (b < a) [a, b] = [b, a];
@@ -255,7 +257,7 @@
     sesiLama = new Set(d.aktif.map((a) => a.sesi_id));
     if (tanda !== tandaAktif) {
       tandaAktif = tanda;
-      $('#aktif').innerHTML = d.aktif.map((a) => `<tr class="${baru.has(a.sesi_id) ? 'baru' : ''}" data-sesi="${esc(a.sesi_id)}"><td>${perangkat(a)}${a.label ? `<br><b>${esc(a.label)}</b>` : ''}</td><td>${esc(a.jabatan || '–')}</td><td>${tempat(a)}</td><td>${esc(a.page || '–')}</td>
+      $('#aktif').innerHTML = d.aktif.map((a) => `<tr class="${baru.has(a.sesi_id) ? 'baru' : ''}" data-sesi="${esc(a.sesi_id)}"><td>${perangkat(a)}<br>${namaPengguna(a)}</td><td>${esc(a.jabatan || '–')}</td><td>${tempat(a)}</td><td>${esc(a.page || '–')}</td>
         <td>${lokasi(a)}${a.isp ? `<br><span class="mu">${esc(a.isp)}</span>` : ''}</td><td class="n" data-mulai="${esc(a.started_at)}">${durasi(a.detik)}</td><td class="n">${laluEl(a.last_seen)}</td></tr>`).join('')
         || '<tr><td colspan="7" class="mu">Tidak ada perangkat yang aktif saat ini.</td></tr>';
     } else {
@@ -304,7 +306,7 @@
     const { perangkat: list } = await api('GET', `/api/presence/devices?${rentangQS()}&q=${encodeURIComponent(q)}`);
     $('#dev').innerHTML = list.map((d) => `<tr><td>${d.aktif ? '<span class="pill on">aktif</span>' : ''}</td>
       <td title="${esc(d.user_agent)}">${perangkat(d)}<br><span class="mu">${esc(d.screen || '')} · ${esc(d.id.slice(0, 8))}</span></td>
-      <td>${d.label ? `<b>${esc(d.label)}</b>` : '<span class="mu">–</span>'}${d.label_manual ? ' <span class="mu" title="Diisi admin">(admin)</span>' : ''} <button class="sec" data-label="${esc(d.id)}" data-now="${esc(d.label_manual || d.pengguna || '')}" title="Ubah nama pengguna">✎</button></td>
+      <td>${namaPengguna(d)}${d.label_manual ? ' <span class="mu" title="Diisi admin">(admin)</span>' : ''} <button class="sec" data-label="${esc(d.id)}" data-now="${esc(d.label_manual || d.pengguna || '')}" title="Ubah nama pengguna">✎</button></td>
       <td>${esc(d.jabatan || '–')}</td><td>${tempat(d)}</td><td>${lokasi(d)}</td>
       <td class="n">${esc(d.ip || '')}${d.jumlah_ip > 1 ? `<br><span class="mu">${d.jumlah_ip} IP berbeda</span>` : ''}</td>
       <td class="n">${nf(d.sesi)}</td><td class="n">${durasi(d.detik)}</td><td class="n">${waktu(d.first_seen)}</td><td class="n">${laluEl(d.last_seen)}</td>
@@ -330,7 +332,7 @@
     const u = e.target.closest('[data-unduh]'); if (u) return unduh(u);
     const l = e.target.closest('[data-label]'), d = e.target.closest('[data-del]');
     try {
-      if (l) { const v = prompt('Nama pengguna perangkat ini, format "kode cabang-nama pengguna" (kosongkan untuk memakai nama dari akun login):', l.dataset.now); if (v === null) return; await api('PUT', '/api/presence/devices/' + l.dataset.label, { label: v }); await muatDev(); }
+      if (l) { const v = prompt('Nama pengguna perangkat ini (kosongkan untuk memakai nama dari akun login):', l.dataset.now); if (v === null) return; await api('PUT', '/api/presence/devices/' + l.dataset.label, { label: v }); await muatDev(); }
       if (d && confirm('Hapus perangkat ini beserta riwayat sesinya?')) { await api('DELETE', '/api/presence/devices/' + d.dataset.del); await muat(); }
     } catch (er) { alert('Gagal: ' + er.message); }
   });

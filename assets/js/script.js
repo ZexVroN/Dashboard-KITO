@@ -285,7 +285,7 @@ function kartuTren() {
 
 // Data Kelompok: kotak Teller dan CS, masing-masing dua periode
 function kartuKelompok() {
-  if (window.KITO_BULAN && window.KITO_BULAN.aktif !== "2026-10") return ""; // kelompok 07 & 23 Okt hanya untuk Oktober
+  // tampil di semua periode bulan (Oktober, November, dst.); data kelompok tidak bergantung pada bulan terpilih
   const b = D.B[st.b];
   return `<div class="cd"><h2>Data Kelompok</h2><div class="kel-grid">${[
     ["Teller", 6, 7, 8],

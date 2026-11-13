@@ -127,7 +127,7 @@ function pasangGeserDetail(latar){
   let tarik=null;
   const reset=()=>{
     tarik=null;
-    isi.style.transition='';isi.style.transform='';latar.style.opacity='';
+    isi.style.transition='';isi.style.transform='';latar.style.backgroundColor='';
   };
   isi.addEventListener('touchstart',e=>{
     if(!window.matchMedia('(max-width:759px)').matches||e.touches.length!==1||isi.scrollTop>0||e.target.closest('button,a,input,select,textarea'))return;
@@ -148,22 +148,38 @@ function pasangGeserDetail(latar){
     tarik.dy=Math.max(0,dy);
     isi.style.transition='none';
     isi.style.transform=`translateY(${tarik.dy}px)`;
-    latar.style.opacity=String(Math.max(.35,1-tarik.dy/isi.clientHeight));
+    latar.style.backgroundColor=`rgba(6,16,40,${.55*Math.max(0,1-tarik.dy/isi.clientHeight)})`;
   },{passive:false});
   isi.addEventListener('touchend',()=>{
     const tutup=tarik&&tarik.kunci&&tarik.dy>=90;
-    reset();
-    if(tutup){isi.style.transform='translateY(100vh)';tutupDetail();}
+    if(tutup){
+      tarik=null;
+      // Lanjutkan dari posisi jari terakhir tanpa kembali ke posisi awal.
+      tutupDetail(true);
+    }else reset();
   });
   isi.addEventListener('touchcancel',reset);
 }
-function tutupDetail(){
+function tutupDetail(digeser=false){
   if(!panel)return;
   const p=panel;panel=null;
+  const isi=p.querySelector('.pgn-panel');
+  const durasi=window.matchMedia('(prefers-reduced-motion:reduce)').matches?0:320;
+  if(digeser){
+    // Pastikan posisi tarik sudah dirender sebelum transisi penutupan.
+    isi.getBoundingClientRect();
+    isi.style.transition='';
+    isi.style.transform='translate3d(0,100%,0)';
+  }
   p.classList.remove('buka');
-  document.documentElement.classList.remove('pgn-kunci');
-  setTimeout(()=>p.remove(),220);
-  if(fokusSebelum&&fokusSebelum.focus)try{fokusSebelum.focus();}catch(e){}
+  const fokus=fokusSebelum;
+  setTimeout(()=>{
+    p.remove();
+    if(!panel){
+      document.documentElement.classList.remove('pgn-kunci');
+      if(fokus&&fokus.focus)try{fokus.focus({preventScroll:true});}catch(e){}
+    }
+  },durasi);
 }
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&panel)tutupDetail();});
 

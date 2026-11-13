@@ -26,11 +26,11 @@
 /* ----- panel detail ----- */
 html.pgn-kunci,html.pgn-kunci body{overflow:hidden}
 .pgn-latar{position:fixed;inset:0;z-index:1000;display:flex;align-items:flex-end;justify-content:center;background:rgba(6,16,40,.55);
-  opacity:0;transition:opacity .2s ease;padding:env(safe-area-inset-top,0) 0 0}
+  opacity:0;transition:opacity .32s ease,background-color .32s ease;padding:env(safe-area-inset-top,0) 0 0}
 .pgn-latar.buka{opacity:1}
 .pgn-panel{position:relative;width:100%;max-width:1100px;max-height:92vh;max-height:92dvh;overflow:auto;-webkit-overflow-scrolling:touch;
   background:var(--bg,#f3f6fb);border-radius:22px 22px 0 0;padding:0 14px calc(18px + env(safe-area-inset-bottom,0));
-  transform:translateY(24px);transition:transform .22s ease;box-shadow:0 -10px 40px rgba(0,0,0,.25)}
+  transform:translateY(24px);transition:transform .32s cubic-bezier(.22,1,.36,1);box-shadow:0 -10px 40px rgba(0,0,0,.25)}
 .pgn-latar.buka .pgn-panel{transform:none}
 @media(max-width:759px){.pgn-panel{overscroll-behavior-y:contain}}
 @media(min-width:760px){.pgn-latar{align-items:center;padding:24px}.pgn-panel{border-radius:22px;max-height:88vh;padding:0 22px 22px}}

@@ -29,7 +29,9 @@ function kp_fb_db(): PDO {
         created_at TEXT NOT NULL DEFAULT (datetime('now')), updated_at TEXT NOT NULL DEFAULT (datetime('now')));
       CREATE INDEX IF NOT EXISTS idx_fb_waktu ON feedback(created_at);
       CREATE INDEX IF NOT EXISTS idx_fb_status ON feedback(jenis, status);
+      CREATE TABLE IF NOT EXISTS feedback_tolak (sidik TEXT PRIMARY KEY, created_at TEXT NOT NULL DEFAULT (datetime('now')));
     ");
+    $db->exec("DELETE FROM feedback_tolak WHERE created_at < datetime('now', '-30 days')");
     // kolom tambahan untuk keluhan cabang (database lama ditambah otomatis)
     $ada = $db->query('PRAGMA table_info(feedback)')->fetchAll(PDO::FETCH_COLUMN, 1);
     foreach (['urgensi' => 'TEXT', 'waktu_kejadian' => 'TEXT', 'akun' => 'TEXT', 'pengguna' => 'TEXT',
@@ -120,6 +122,17 @@ function kp_fb_simpan(array $b): array {
             return [200, ['ok' => true, 'id' => (int)$id, 'diperbarui' => true]];
         }
     }
+    if ($jenis !== 'rating') {
+        $sidik = kp_fb_sidik($jenis, $kategori, $nilai[10], $nilai[6], $pesan);
+        // sudah dihapus admin (30 hari terakhir): abaikan tanpa error agar antrean perangkat berhenti mengirim ulang
+        $q = $db->prepare("SELECT 1 FROM feedback_tolak WHERE sidik = ? AND created_at >= datetime('now', '-30 days')"); $q->execute([$sidik]);
+        if ($q->fetchColumn()) return [200, ['ok' => true, 'id' => 0, 'diabaikan' => true]];
+        // isi sama sudah tersimpan dalam 14 hari terakhir (kiriman ganda / antrean): pakai data yang ada, jangan buat baris baru
+        $q = $db->prepare("SELECT id FROM feedback WHERE jenis = ? AND COALESCE(kategori,'') = COALESCE(?,'') AND COALESCE(kode,'') = COALESCE(?,'')
+            AND COALESCE(kontak,'') = COALESCE(?,'') AND TRIM(COALESCE(pesan,'')) = ? AND created_at >= datetime('now', '-14 days') ORDER BY id DESC LIMIT 1");
+        $q->execute([$jenis, $kategori, $nilai[10], $nilai[6], trim((string)$pesan)]);
+        if ($id = $q->fetchColumn()) return [200, ['ok' => true, 'id' => (int)$id, 'ganda' => true]];
+    }
     $db->prepare('INSERT INTO feedback (jenis, rating, kategori, aspek, pesan, nama, kontak, device_id, jabatan, area, kode, cabang, tanggal_data, app, platform, browser, versi, ip, urgensi, waktu_kejadian, akun, pengguna,
         cuti_jabatan, cuti_mulai, cuti_selesai, cuti_pengganti, cuti_hari) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)')->execute($nilai);
     return [201, ['ok' => true, 'id' => (int)$db->lastInsertId()]];
@@ -205,6 +218,11 @@ function kp_fb_summary($g): array {
     ];
 }
 
+/** sidik isi masukan (jenis + kategori + cabang + NIP + pesan) untuk mengenali kiriman ulang yang sama */
+function kp_fb_sidik($jenis, $kategori, $kode, $kontak, $pesan): string {
+    return sha1(implode("\x1f", [(string)$jenis, (string)$kategori, (string)$kode, (string)$kontak, trim((string)$pesan)]));
+}
+
 /** admin: hapus masukan (beserta balasan tindak lanjutnya); mengembalikan jumlah yang terhapus */
 function kp_fb_hapus(array $ids): int {
     $ids = array_values(array_unique(array_filter(array_map('intval', $ids), function ($x) { return $x > 0; })));
@@ -213,6 +231,10 @@ function kp_fb_hapus(array $ids): int {
     $db = kp_fb_balasan_db();
     $tanda = implode(',', array_fill(0, count($ids), '?'));
     $db->beginTransaction();
+    // catat sidik masukan yang dihapus: kiriman ulang yang sama (antrean offline perangkat) ditolak selama 30 hari
+    $q = $db->prepare("SELECT jenis, kategori, kode, kontak, pesan FROM feedback WHERE id IN ($tanda) AND jenis <> 'rating'"); $q->execute($ids);
+    $catat = $db->prepare("INSERT OR REPLACE INTO feedback_tolak (sidik, created_at) VALUES (?, datetime('now'))");
+    foreach ($q->fetchAll() as $r) $catat->execute([kp_fb_sidik($r['jenis'], $r['kategori'], $r['kode'], $r['kontak'], $r['pesan'])]);
     $db->prepare("DELETE FROM feedback_balasan WHERE feedback_id IN ($tanda)")->execute($ids);
     $q = $db->prepare("DELETE FROM feedback WHERE id IN ($tanda)"); $q->execute($ids);
     $db->commit();

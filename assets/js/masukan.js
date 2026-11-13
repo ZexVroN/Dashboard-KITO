@@ -57,11 +57,18 @@
       return { ok: true, diantre: true };
     }
   }
+  // satu proses pada satu waktu; item dihapus dari antrean segera setelah terkirim (tidak terkirim ganda bila event 'online' & timer bersamaan)
+  let antreJalan = false;
   async function kirimAntrean() {
-    const q = baca(K_ANTRE, []); if (!q.length || !navigator.onLine) return;
-    const sisa = [];
-    for (const it of q) { try { const { diantre, ...isi } = it; await post(isi); } catch (e) { if (!e.tetap && Date.now() - it.diantre < 14 * 864e5) sisa.push(it); } }
-    tulis(K_ANTRE, sisa);
+    if (antreJalan || !navigator.onLine || !baca(K_ANTRE, []).length) return;
+    antreJalan = true;
+    try {
+      for (const it of baca(K_ANTRE, [])) {
+        let buang = true;
+        try { const { diantre, ...isi } = it; await post(isi); } catch (e) { buang = e.tetap || Date.now() - it.diantre >= 14 * 864e5; }
+        if (buang) tulis(K_ANTRE, baca(K_ANTRE, []).filter((x) => x.diantre !== it.diantre));
+      }
+    } finally { antreJalan = false; }
   }
   addEventListener('online', kirimAntrean);
   setTimeout(kirimAntrean, 4000);

@@ -233,6 +233,58 @@ function daftar(){
   return `<section class="cd"><h2>${judul}<button type="button" class="unduh" data-rg-csv="1">⬇ CSV</button></h2>${ringkas}${pin}${isi}${more}<p class="rg-note">${clean(m.sumber(per))} · ${ket}. Ketuk ${isArea?'area untuk melihat ranking cabang di area tersebut':'cabang untuk membuka dashboard-nya'}.</p></section>`;
 }
 
+/* ----- Ranking Pegawai (khusus indikator Informasi Sales) -----
+   Ekstensifikasi/Intensifikasi: kito.json [KITO_SALES_PEGAWAI].rows · Tabungan/Cetak Emas: [KITO_EMAS].pegawai.
+   Lingkup ikut pilihan Region II / Area; persentase = realisasi ÷ target per pegawai; % sama & realisasi sama = peringkat sama. */
+const IDX_KODE=new Map(D.B.map((b,i)=>[kd(b[0]),i]));
+const SUMBER_PEG={
+  e:{rows:()=>SP?.rows||[],kode:r=>r[4],nilai:r=>[Number(lastV(r[5]))||0,Number(r[6])||0],dec:0,sat:'Akuisisi New CIF'},
+  i:{rows:()=>SP?.rows||[],kode:r=>r[4],nilai:r=>[Number(r[11])||0,Number(r[12])||0],dec:2,sat:'Balance New Acc ETB'},
+  tab:{rows:()=>EM?.pegawai||[],kode:r=>r[3],nilai:r=>[Number(r[5])||0,Number(r[6])||0],dec:0,sat:'Tabungan Emas'},
+  cetak:{rows:()=>EM?.pegawai||[],kode:r=>r[3],nilai:r=>[Number(r[8])||0,Number(r[9])||0],dec:0,sat:'Cetak Emas ATM'},
+};
+const KEL_PEG=[['tl','Teller',j=>/^teller/i.test(j)],['cs','Customer Service',j=>/^customer service/i.test(j)],
+  ['bo','Branch Operation',j=>/^branch/i.test(j)],['gb','General Banker',j=>/^general banker/i.test(j)],['ln','Lainnya',()=>true]];
+const kelPeg=j=>KEL_PEG.find(q=>q[2](j||''))[0];
+const pegUi={jab:'all',lim:20};
+function barisPegawai(key){
+  const S=SUMBER_PEG[key],area=areaAktif();
+  const xs=S.rows().map(r=>{const i=IDX_KODE.get(kd(S.kode(r)));if(i==null)return null;if(area&&D.B[i][2]!==area)return null;
+    const[v,t]=S.nilai(r);return{r,i,v,t,p:t>0?v/t:null,jab:kelPeg(r[2])};}).filter(Boolean);
+  xs.sort((a,b)=>(b.p??-1)-(a.p??-1)||b.v-a.v||String(a.r[0]).localeCompare(String(b.r[0])));
+  return xs;
+}
+function rankPegawai(){
+  const m=metOf(ui.m);if(m.g!=='Informasi Sales'||ui.level==='area')return '';
+  const key=m.key.slice(2),S=SUMBER_PEG[key];if(!S)return '';
+  const semua=barisPegawai(key);if(!semua.length)return '';
+  if(pegUi.jab!=='all'&&!semua.some(x=>x.jab===pegUi.jab))pegUi.jab='all';
+  const xs=pegUi.jab==='all'?semua:semua.filter(x=>x.jab===pegUi.jab);
+  let rk=0;xs.forEach((x,n)=>{const p=xs[n-1];if(!p||p.p!==x.p||p.v!==x.v)rk=n+1;x.rk=rk;});
+  const nf=(v,d)=>Number(v||0).toLocaleString('id-ID',{maximumFractionDigits:d});
+  const jabBtn=`<div class="seg" role="group" aria-label="Jabatan pegawai">${[['all','Semua Jabatan',semua.length]].concat(KEL_PEG.map(q=>[q[0],q[1],semua.filter(x=>x.jab===q[0]).length]).filter(x=>x[2])).map(([v,t,n])=>`<button type="button" data-rg-pj="${v}" class="${v===pegUi.jab?'on':''}">${t} <small>${n}</small></button>`).join('')}</div>`;
+  const meKode=String(D.B[st.b][0]);
+  const row=x=>{const k=x.p==null?'n':x.v===0?'bad':x.p>=1?'ok':'mid',medal=x.rk<=3?['🥇','🥈','🥉'][x.rk-1]:'',b=D.B[x.i];
+    return `<button type="button" class="rg-row ${String(b[0])===meKode?'me':''}" data-rg-code="${clean(b[0])}" aria-label="Buka ${clean(b[1])}"><span class="rg-no ${x.rk<=3?'top':''}">${medal||x.rk}</span><span class="rg-mid"><span class="rg-nm">${clean(x.r[0])}<small>${clean(x.r[2]||'–')} · ${clean(b[1])}${isRegion()?' · '+clean(b[2]):''} · ${nf(x.v,S.dec)} / ${nf(x.t,S.dec)}</small></span><span class="rg-bar"><i class="${k}" style="width:${x.p==null?0:Math.min(100,x.p*100)}%"></i></span></span><span class="rg-val ${k}">${m.fmt(x.p)}</span></button>`;};
+  const tampilkan=xs.slice(0,pegUi.lim);
+  const lagi=xs.length>pegUi.lim?`<button type="button" class="rg-more" data-rg-plim="1">Tampilkan ${Math.min(20,xs.length-pegUi.lim)} berikutnya · ${xs.length-pegUi.lim} lagi</button>`:(pegUi.lim>20?`<button type="button" class="rg-more" data-rg-plim="0">Tampilkan 20 teratas saja</button>`:'');
+  const bugar=xs.filter(x=>x.t>0&&x.v>=x.t).length,nol=xs.filter(x=>x.v===0).length;
+  const lingkup=isRegion()?'Region II':areaAktif();
+  return `<section class="cd" id="rg-peg"><h2>Ranking Pegawai · ${clean(m.n)} · ${clean(lingkup)} · ${perLabel(m,ui.per)}<button type="button" class="unduh" data-rg-pcsv="1">⬇ CSV</button></h2>${jabBtn}
+    <p class="rg-sub">${nf(xs.length,0)} pegawai · <b class="ok">${nf(bugar,0)}</b> mencapai target · <b class="bad">${nf(nol,0)}</b> belum ada realisasi. ${clean(S.sat)}: realisasi ÷ target per pegawai.</p>
+    <div>${tampilkan.map(row).join('')}</div>${lagi}
+    <p class="rg-note">Urut dari persentase tertinggi; persentase sama diurutkan menurut realisasi. Hijau = mencapai target, kuning = di bawah target, merah = belum ada realisasi. Ketuk pegawai untuk membuka dashboard cabangnya.</p></section>`;
+}
+function unduhPegawai(){
+  if(typeof csv!=='function')return;
+  const m=metOf(ui.m),key=m.key.slice(2),S=SUMBER_PEG[key];if(!S)return;
+  let xs=barisPegawai(key);if(pegUi.jab!=='all')xs=xs.filter(x=>x.jab===pegUi.jab);
+  csv(['ranking-pegawai',m.key,isRegion()?'region':norm(areaAktif())].join('-'),[
+    ['Peringkat','Nama','NIP','Jabatan','Cabang','Area','Realisasi','Target',m.n+' ('+perLabel(m,ui.per)+')'],
+    ...xs.map((x,n,a)=>{const p=a[n-1];x.rk=!p||p.p!==x.p||p.v!==x.v?n+1:p.rk;return x;}).map(x=>[x.rk,x.r[0],x.r[1],x.r[2],D.B[x.i][1],D.B[x.i][2],x.v,x.t,m.fmt(x.p)]),
+  ]);
+}
+
 /* Rekap: peringkat setiap indikator + peringkat gabungan.
    - Kolom Rata² (rata-rata peringkat) ditampilkan; urut menaik (peringkat gabungan 1 → terbesar).
    - Baris diambil berdasarkan kotak pencarian di header (nama / kode cabang, atau nama area);
@@ -272,7 +324,7 @@ function rekap(){
   return `<section class="cd" id="rg-rekap"><h2>Rekap Peringkat Semua Indikator</h2><p class="rg-sub">${perTxt}. Angka di sel = peringkat ${isArea?'area':'cabang'} pada indikator tersebut; kolom # = peringkat gabungan dan Rata² = rata-rata peringkat; diurutkan dari yang terkecil (naik). ${info}.</p><div class="tw rg-tw"><table class="rg-tbl">${head}${body}</table></div>${more}<div class="rg-leg"><span><i class="q1"></i>25% teratas</span><span><i class="q2"></i>25–50%</span><span><i class="q3"></i>50–75%</span><span><i class="q4"></i>25% terbawah</span><span><i class="rg-na-i"></i>tidak ada data</span></div><p class="rg-note">Peringkat gabungan memberi bobot sama pada ${cols.length} indikator. Kolom "Rata²" menampilkan x/${cols.length} bila sebagian indikator tidak tersedia. Ketuk baris untuk membuka ${isArea?'ranking cabang area tersebut':'dashboard cabang'}.</p></section>`;
 }
 
-const page=()=>ui.fokus?hero()+pilihPeriode()+rapor()+rekap():hero()+pilihIndikator()+daftar()+rekap();
+const page=()=>ui.fokus?hero()+pilihPeriode()+rapor()+rekap():hero()+pilihIndikator()+daftar()+rankPegawai()+rekap();
 
 /* ----- bungkus render() ----- */
 
@@ -330,7 +382,10 @@ app.addEventListener('click',e=>{
     fill();render();return;
   }
   if((x=a('pf'))){ui.m=x.dataset.rgPf;ui.fokus=false;ui.level='cabang';ui.semua=false;st.a=ALL;fill();render();window.scrollTo({top:0,behavior:'smooth'});return;}
-  if((x=a('m'))){ui.m=x.dataset.rgM;ui.semua=false;render();return;}
+  if((x=a('m'))){ui.m=x.dataset.rgM;ui.semua=false;pegUi.lim=20;render();return;}
+  if((x=a('pj'))){pegUi.jab=x.dataset.rgPj;pegUi.lim=20;render();return;}
+  if((x=a('plim'))){pegUi.lim=x.dataset.rgPlim==='1'?pegUi.lim+20:20;render();if(pegUi.lim===20)document.getElementById('rg-peg')?.scrollIntoView({behavior:'smooth',block:'start'});return;}
+  if((x=a('pcsv'))){unduhPegawai();return;}
   if((x=a('per'))){ui.per=x.dataset.rgPer;render();return;}
   if((x=a('semua'))){ui.semua=!ui.semua;render();return;}
   if((x=a('rekap'))){ui.rekapSemua=!ui.rekapSemua;render();return;}

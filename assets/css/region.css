@@ -103,3 +103,14 @@ body.mode-region .fl { grid-template-columns: 1fr; }
 /* tooltip selalu selebar strip (tidak menyempit ke satu kotak saat diklik) */
 .rx-strip .rx-strip-box{position:static!important;transform:none!important}
 .rx-strip .rx-strip-tip{position:absolute;left:0;right:0;width:auto;box-sizing:border-box;white-space:normal;overflow-wrap:break-word;word-break:normal}
+
+/* Akuisisi Inbranch · Region II (Ekstensifikasi & Intensifikasi) */
+.rx-ib{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;margin:10px 0 12px}
+.rx-ib-t{border:1px solid var(--ln);border-radius:12px;padding:10px 12px;display:flex;flex-direction:column;gap:3px}
+.rx-ib-t small{font-size:11px;color:var(--mu)}
+.rx-ib-t>b{font-size:24px;font-variant-numeric:tabular-nums}
+.rx-ib-t span{font-size:12px;color:var(--mu)}
+.rx-ib-t .ok,.rx-ib .ok{color:var(--ok)}.rx-ib-t .bad,.rx-ib .bad{color:var(--bd)}
+.rx-ib-t .as-meter{height:6px;border-radius:4px;background:var(--ln);overflow:hidden;margin-top:4px}
+.rx-ib-t .as-meter i{display:block;height:100%;background:var(--c1,#2b6cb0)}
+.rx-ant tr.on td{background:var(--sf2,rgba(127,127,127,.08))}

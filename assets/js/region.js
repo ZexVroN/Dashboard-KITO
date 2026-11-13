@@ -171,6 +171,36 @@ function kartuGrup(g){
     <div class="rx-subs"><div class="rx-sub-h"><span>Indikator</span><span>Region ${clean(FOKUS.no)}</span><span>Rank</span><span>vs ${clean(nama(cmp))}</span></div>${baris}</div></section>`;
 }
 
+/* ===== Akuisisi Inbranch (Ekstensifikasi & Intensifikasi) level Region II =====
+   Sumber kito.json [KITO_SALES_PEGAWAI] (laporan Inbranch MTD, hanya Region II), dikelompokkan per Area lewat kode cabang (D.B).
+   Ekstensifikasi = Akuisisi New CIF ÷ Target · Intensifikasi = Balance New Acc ETB ÷ Target Balance (sama dengan tab Area · Informasi Sales). */
+const SP=window.KITO_SALES_PEGAWAI;
+function inbranch(){
+  if(!SP?.rows?.length||typeof D==='undefined')return '';
+  const kd=x=>String(x??'').replace(/\D/g,'');
+  const cab=new Map(D.B.map(b=>[kd(b[0]),b[2]]));
+  const last=a=>Array.isArray(a)?a[a.length-1]??0:Number(a)||0;
+  const kosong=()=>({n:0,cab:new Set(),ea:0,et:0,ib:0,it:0,eNol:0,iNol:0});
+  const tambah=(o,r,k)=>{const ea=Number(last(r[5]))||0,ib=Number(r[11])||0;o.n++;o.cab.add(k);o.ea+=ea;o.et+=Number(r[6])||0;o.ib+=ib;o.it+=Number(r[12])||0;if(!ea)o.eNol++;if(!ib)o.iNol++;};
+  const reg=kosong(),per=new Map();
+  SP.rows.forEach(r=>{const k=kd(r[4]);if(!cab.has(k))return;const a=cab.get(k);if(!per.has(a))per.set(a,kosong());tambah(reg,r,k);tambah(per.get(a),r,k);});
+  if(!reg.n)return '';
+  const pc=(v,t)=>t>0?pct1(v/t):'–';
+  const nf=(v,d=0)=>Number(v||0).toLocaleString('id-ID',{maximumFractionDigits:d});
+  const kls=(v,t,ref)=>t>0&&ref!=null?(v/t>=ref?'ok':'bad'):'';
+  const pE=reg.et>0?reg.ea/reg.et:null,pI=reg.it>0?reg.ib/reg.it:null;
+  const gap=(v,t,d)=>{const g=v-t;return `<b class="${g>=0?'ok':'bad'}">${g>=0?'+':'−'}${nf(Math.abs(g),d)}</b>`;};
+  const tile=(judul,sub,v,t,d,nol)=>`<div class="rx-ib-t"><small>${judul}</small><b class="${t>0&&v>=t?'ok':'bad'}">${pc(v,t)}</b><span>${sub}: <b>${nf(v,d)}</b> / ${nf(t,d)}</span><span>Gap ${gap(v,t,d)} · ${nf(nol)} pegawai belum ada realisasi</span><div class="as-meter"><i style="width:${t>0?Math.min(1,v/t)*100:0}%"></i></div></div>`;
+  const urut=[...per].map(([a,o])=>({a,o,e:o.et>0?o.ea/o.et:-1})).sort((x,y)=>y.e-x.e||x.a.localeCompare(y.a));
+  const baris=urut.map((r,i)=>`<tr><td class="mu">${i+1}</td><td style="text-align:left"><b>${clean(r.a)}</b><small>${nf(r.o.cab.size)} cabang · ${nf(r.o.n)} pegawai</small></td><td>${nf(r.o.ea)} / ${nf(r.o.et)}</td><td class="${kls(r.o.ea,r.o.et,pE)}"><b>${pc(r.o.ea,r.o.et)}</b></td><td>${nf(r.o.ib,2)} / ${nf(r.o.it,2)}</td><td class="${kls(r.o.ib,r.o.it,pI)}"><b>${pc(r.o.ib,r.o.it)}</b></td></tr>`).join('');
+  const tot=`<tr class="on"><td class="mu">Σ</td><td style="text-align:left"><b>Region II</b><small>${nf(reg.cab.size)} cabang · ${nf(reg.n)} pegawai</small></td><td>${nf(reg.ea)} / ${nf(reg.et)}</td><td><b>${pc(reg.ea,reg.et)}</b></td><td>${nf(reg.ib,2)} / ${nf(reg.it,2)}</td><td><b>${pc(reg.ib,reg.it)}</b></td></tr>`;
+  const tgl=iso=>iso?isoShort(iso):'';
+  return `<section class="cd rx-card"><div class="rx-card-h"><span class="rx-ik">🏦</span><div><h2>Akuisisi Inbranch · Region II</h2><p class="rg-sub">Ekstensifikasi (Akuisisi New CIF ÷ Target) & Intensifikasi (Balance New Acc ETB ÷ Target Balance) · MTD s.d. ${tgl(SP.tanggal)} · semakin besar semakin baik</p></div></div>
+    <div class="rx-ib">${tile('Ekstensifikasi · Region II','Akuisisi New CIF',reg.ea,reg.et,0,reg.eNol)}${tile('Intensifikasi · Region II','Balance New Acc ETB',reg.ib,reg.it,2,reg.iNol)}</div>
+    <div class="tw"><table class="rx-ant"><tr><th>#</th><th style="text-align:left">Area</th><th>Akuisisi / Target</th><th>Ekstensif</th><th>Balance / Target</th><th>Intensif</th></tr>${tot}${baris}</table></div>
+    <p class="rg-note">Data laporan inbranch hanya tersedia untuk Region II, sehingga tidak dibandingkan dengan region lain. Urut menurut Ekstensifikasi; hijau = di atas Region II (Ekstensifikasi ${pE==null?'–':pct1(pE)} · Intensifikasi ${pI==null?'–':pct1(pI)}), merah = di bawah. Rincian pegawai ada di tab Area · Informasi Sales. Sumber: ${clean(SP.sumber)}.</p></section>`;
+}
+
 /* ===== 3. Head-to-head: Region II vs pembanding ===== */
 function versus(){
   const cmp=cmpEnt();let unggul=0,total=0;
@@ -320,7 +350,7 @@ function catatan(){
   return `<section class="cd"><p class="rg-note" style="margin:0">Sumber: ${clean(R.sumber.waktu)} · ${clean(R.sumber.nbds)} · ${clean(R.sumber.o2o)}${emRegion.size?' · '+clean(EM.sumber):''}. Waktu antri DtD ${rentangP95} = P95; ${mtdTag()==='P95'?'MTD = rata-rata P95 harian bulan berjalan':'tanggal sebelumnya dan MTD historis = P90 (tidak sebanding langsung)'}; Utilisasi NBDS MTD = jumlah harian 1 s.d. tanggal laporan; Shifting Digital = (CSM + O2O) ÷ (CSM + O2O + Old BDS + New BDS) transaksi ganti kartu.</p></section>`;
 }
 
-const page=()=>hero()+`<div class="rx-grid">${GRUP.map(kartuGrup).join('')}</div>`+versus()+antrian()+daftar()+tren()+rekap()+catatan();
+const page=()=>hero()+`<div class="rx-grid">${GRUP.map(kartuGrup).join('')}${inbranch()}</div>`+versus()+antrian()+daftar()+tren()+rekap()+catatan();
 
 /* ----- bungkus render() ----- */
 const sebelumnya=render;

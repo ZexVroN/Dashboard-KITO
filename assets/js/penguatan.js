@@ -119,6 +119,43 @@ function bukaDetail(){
   requestAnimationFrame(()=>panel.classList.add('buka'));
   panel.querySelector('.pgn-x').focus();
   panel.addEventListener('click',e=>{if(e.target===panel||e.target.closest('[data-pgn-close]'))tutupDetail();});
+  pasangGeserDetail(panel);
+}
+/* Tarik dari posisi scroll teratas; scroll isi tetap mengikuti browser. */
+function pasangGeserDetail(latar){
+  const isi=latar.querySelector('.pgn-panel');
+  let tarik=null;
+  const reset=()=>{
+    tarik=null;
+    isi.style.transition='';isi.style.transform='';latar.style.opacity='';
+  };
+  isi.addEventListener('touchstart',e=>{
+    if(!window.matchMedia('(max-width:759px)').matches||e.touches.length!==1||isi.scrollTop>0||e.target.closest('button,a,input,select,textarea'))return;
+    const t=e.touches[0];
+    tarik={x:t.clientX,y:t.clientY,dy:0,kunci:null};
+  },{passive:true});
+  isi.addEventListener('touchmove',e=>{
+    if(!tarik)return;
+    if(e.touches.length!==1){reset();return;}
+    const t=e.touches[0],dx=t.clientX-tarik.x,dy=t.clientY-tarik.y;
+    if(tarik.kunci===null){
+      if(Math.max(Math.abs(dx),Math.abs(dy))<8)return;
+      if(dy<=0||Math.abs(dx)>=dy||isi.scrollTop>0){reset();return;}
+      tarik.kunci=true;
+    }
+    if(!e.cancelable){reset();return;}
+    e.preventDefault();
+    tarik.dy=Math.max(0,dy);
+    isi.style.transition='none';
+    isi.style.transform=`translateY(${tarik.dy}px)`;
+    latar.style.opacity=String(Math.max(.35,1-tarik.dy/isi.clientHeight));
+  },{passive:false});
+  isi.addEventListener('touchend',()=>{
+    const tutup=tarik&&tarik.kunci&&tarik.dy>=90;
+    reset();
+    if(tutup){isi.style.transform='translateY(100vh)';tutupDetail();}
+  });
+  isi.addEventListener('touchcancel',reset);
 }
 function tutupDetail(){
   if(!panel)return;

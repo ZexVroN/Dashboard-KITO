@@ -212,7 +212,8 @@ function daftar(){
   const isArea=ui.level==='area';
   const vals=rows.map(r=>r.v).concat(ref!=null?[ref]:[]);
   const skala=m.jenis==='waktu'?{max:Math.max(300,...vals)*1.06}:{min:m.jenis==='nbds'?Math.max(0,Math.floor((Math.min(TGT,...vals)-.02)*20)/20):0};
-  const attr=r=>isArea?`data-rg-area="${clean(r.id)}"`:`data-rg-code="${clean(r.id)}"`;
+  // indikator Informasi Sales: ketuk cabang membuka halaman Informasi Sales cabang tersebut
+  const attr=r=>isArea?`data-rg-area="${clean(r.id)}"`:m.g==='Informasi Sales'?`data-sales-kode="${clean(r.id)}" data-sales-tab="${tabSales(m)}"`:`data-rg-code="${clean(r.id)}"`;
   const meId=isArea?areaAktif():String(D.B[st.b][0]);
   const meRow=rows.find(r=>r.id===meId);
   const judul=`Ranking ${isArea?'Area':'Cabang'} · ${clean(m.g)} ${clean(m.n)} · ${perLabel(m,ui.per)}`;
@@ -230,7 +231,7 @@ function daftar(){
   }
   const more=!isArea&&rows.length>20?`<button type="button" class="rg-more" data-rg-semua="1">${ui.semua?'Tampilkan 10 terbaik & 10 terendah':`Tampilkan semua ${rows.length} cabang berurutan`}</button>`:'';
   const ket=[m.jenis==='waktu'?'Semakin kecil semakin baik (mm:ss)':'Semakin besar semakin baik',m.ket,`garis tegak = Region II`,`nilai sama = peringkat sama`].filter(Boolean).join(' · ');
-  return `<section class="cd"><h2>${judul}<button type="button" class="unduh" data-rg-csv="1">⬇ CSV</button></h2>${ringkas}${pin}${isi}${more}<p class="rg-note">${clean(m.sumber(per))} · ${ket}. Ketuk ${isArea?'area untuk melihat ranking cabang di area tersebut':'cabang untuk membuka dashboard-nya'}.</p></section>`;
+  return `<section class="cd"><h2>${judul}<button type="button" class="unduh" data-rg-csv="1">⬇ CSV</button></h2>${ringkas}${pin}${isi}${more}<p class="rg-note">${clean(m.sumber(per))} · ${ket}. Ketuk ${isArea?'area untuk melihat ranking cabang di area tersebut':m.g==='Informasi Sales'?'cabang untuk membuka halaman Informasi Sales-nya':'cabang untuk membuka dashboard-nya'}.</p></section>`;
 }
 
 /* ----- Ranking Pegawai (khusus indikator Informasi Sales) -----
@@ -247,6 +248,8 @@ const KEL_PEG=[['tl','Teller',j=>/^teller/i.test(j)],['cs','Customer Service',j=
   ['bo','Branch Operation',j=>/^branch/i.test(j)],['gb','General Banker',j=>/^general banker/i.test(j)],['ln','Lainnya',()=>true]];
 const kelPeg=j=>KEL_PEG.find(q=>q[2](j||''))[0];
 const pegUi={jab:'all',lim:20};
+// tab halaman Informasi Sales (sales.js) yang dibuka: Ekstensifikasi/Intensifikasi = Akuisisi, Tabungan/Cetak Emas = Program Emas
+const tabSales=m=>/^s-(tab|cetak)$/.test(m.key)?'emas':'akuisisi';
 function barisPegawai(key){
   const S=SUMBER_PEG[key],area=areaAktif();
   const xs=S.rows().map(r=>{const i=IDX_KODE.get(kd(S.kode(r)));if(i==null)return null;if(area&&D.B[i][2]!==area)return null;
@@ -265,7 +268,7 @@ function rankPegawai(){
   const jabBtn=`<div class="seg" role="group" aria-label="Jabatan pegawai">${[['all','Semua Jabatan',semua.length]].concat(KEL_PEG.map(q=>[q[0],q[1],semua.filter(x=>x.jab===q[0]).length]).filter(x=>x[2])).map(([v,t,n])=>`<button type="button" data-rg-pj="${v}" class="${v===pegUi.jab?'on':''}">${t} <small>${n}</small></button>`).join('')}</div>`;
   const meKode=String(D.B[st.b][0]);
   const row=x=>{const k=x.p==null?'n':x.v===0?'bad':x.p>=1?'ok':'mid',medal=x.rk<=3?['🥇','🥈','🥉'][x.rk-1]:'',b=D.B[x.i];
-    return `<button type="button" class="rg-row ${String(b[0])===meKode?'me':''}" data-rg-code="${clean(b[0])}" aria-label="Buka ${clean(b[1])}"><span class="rg-no ${x.rk<=3?'top':''}">${medal||x.rk}</span><span class="rg-mid"><span class="rg-nm">${clean(x.r[0])}<small>${clean(x.r[2]||'–')} · ${clean(b[1])}${isRegion()?' · '+clean(b[2]):''} · ${nf(x.v,S.dec)} / ${nf(x.t,S.dec)}</small></span><span class="rg-bar"><i class="${k}" style="width:${x.p==null?0:Math.min(100,x.p*100)}%"></i></span></span><span class="rg-val ${k}">${m.fmt(x.p)}</span></button>`;};
+    return `<button type="button" class="rg-row ${String(b[0])===meKode?'me':''}" data-sales-kode="${clean(b[0])}" data-sales-tab="${tabSales(m)}" aria-label="Buka Informasi Sales ${clean(b[1])}"><span class="rg-no ${x.rk<=3?'top':''}">${medal||x.rk}</span><span class="rg-mid"><span class="rg-nm">${clean(x.r[0])}<small>${clean(x.r[2]||'–')} · ${clean(b[1])}${isRegion()?' · '+clean(b[2]):''} · ${nf(x.v,S.dec)} / ${nf(x.t,S.dec)}</small></span><span class="rg-bar"><i class="${k}" style="width:${x.p==null?0:Math.min(100,x.p*100)}%"></i></span></span><span class="rg-val ${k}">${m.fmt(x.p)}</span></button>`;};
   const tampilkan=xs.slice(0,pegUi.lim);
   const lagi=xs.length>pegUi.lim?`<button type="button" class="rg-more" data-rg-plim="1">Tampilkan ${Math.min(20,xs.length-pegUi.lim)} berikutnya · ${xs.length-pegUi.lim} lagi</button>`:(pegUi.lim>20?`<button type="button" class="rg-more" data-rg-plim="0">Tampilkan 20 teratas saja</button>`:'');
   const bugar=xs.filter(x=>x.t>0&&x.v>=x.t).length,nol=xs.filter(x=>x.v===0).length;
@@ -273,7 +276,7 @@ function rankPegawai(){
   return `<section class="cd" id="rg-peg"><h2>Ranking Pegawai · ${clean(m.n)} · ${clean(lingkup)} · ${perLabel(m,ui.per)}<button type="button" class="unduh" data-rg-pcsv="1">⬇ CSV</button></h2>${jabBtn}
     <p class="rg-sub">${nf(xs.length,0)} pegawai · <b class="ok">${nf(bugar,0)}</b> mencapai target · <b class="bad">${nf(nol,0)}</b> belum ada realisasi. ${clean(S.sat)}: realisasi ÷ target per pegawai.</p>
     <div>${tampilkan.map(row).join('')}</div>${lagi}
-    <p class="rg-note">Urut dari persentase tertinggi; persentase sama diurutkan menurut realisasi. Hijau = mencapai target, kuning = di bawah target, merah = belum ada realisasi. Ketuk pegawai untuk membuka dashboard cabangnya.</p></section>`;
+    <p class="rg-note">Urut dari persentase tertinggi; persentase sama diurutkan menurut realisasi. Hijau = mencapai target, kuning = di bawah target, merah = belum ada realisasi. Ketuk pegawai untuk membuka halaman Informasi Sales cabangnya.</p></section>`;
 }
 function unduhPegawai(){
   if(typeof csv!=='function')return;

@@ -71,5 +71,23 @@ app.addEventListener('click',e=>{
   render();
   document.querySelector(`[data-sl-tab="${tab}"]`)?.focus({preventScroll:true});
 });
+/* Buka halaman Informasi Sales untuk satu cabang dari halaman mana pun (Ranking, Area · Informasi Sales, ...).
+   Pakai atribut: data-sales-kode="<kode cabang>" [data-sales-tab="akuisisi"|"emas"].
+   Juga tersedia sebagai window.KITO_BUKA_SALES(kode, tab). */
+const kodeAngka=x=>String(x??'').replace(/\D/g,'');
+function bukaSales(kode,t){
+  const i=D.B.findIndex(b=>kodeAngka(b[0])===kodeAngka(kode));if(i<0)return false;
+  st.b=i;st.a=D.B[i][2];
+  if(t&&TAB.some(x=>x[0]===t)){tab=t;try{sessionStorage.setItem('kito-sales-tab',tab);}catch(x){}}
+  tampil='sales';
+  if(typeof fill==='function')fill();
+  render();window.scrollTo(0,0);return true;
+}
+window.KITO_BUKA_SALES=bukaSales;
+document.addEventListener('click',e=>{
+  const b=e.target.closest('[data-sales-kode]');if(!b)return;
+  e.preventDefault();e.stopPropagation();
+  bukaSales(b.dataset.salesKode,b.dataset.salesTab);
+},true);
 if(tampil==='sales')render();
 })();

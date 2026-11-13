@@ -89,6 +89,7 @@ const perOf=(m,per)=>m.per.includes(per)?per:m.per[0];
 const perLabel=(m,per)=>m.jenis==='sales'?`MTD ${tgS(EM.awal)}–${tgS(EM.tanggal)}`:perOf(m,per)==='mtd'?(m.jenis==='o2o'?`MTD s.d. ${isoShort(R.tglO2O)}`:(m.jenis==='waktu'?`${window.KITO_BULAN?window.KITO_BULAN.mtdLabel:'MTD '+BULAN} · ${mtdTag()}`:`MTD ${BULAN}`)):(m.jenis==='waktu'?`DtD ${isoShort(iso())} · ${metrikTgl(iso())}`:`DtD ${isoShort(iso())}`);
 // tgl: tanggal nilai waktu (bawaan: DtD terpilih bila periode DtD); P95 memakai batas 20 menit, P90 & P100 15 menit
 const kelas=(m,v,tgl=perOf(m,ui.per)==='dtd'?iso():null)=>{
+  if(m.key.startsWith('p-'))return 'p100-value';
   if(v==null)return 'n';
   if(m.jenis==='waktu')return mp(v,m.key.startsWith('w-')&&((!!tgl&&metrikTgl(tgl)==='P95')||(!tgl&&perOf(m,ui.per)==='mtd'&&mtdTag()==='P95')))[1];
   if(m.jenis==='nbds')return v>=TGT?'ok':v>=.9?'mid':v>=.8?'warn':'bad';

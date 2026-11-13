@@ -75,3 +75,8 @@
 .em-key{display:inline-block;width:10px;height:10px;border-radius:3px;margin:0 4px 0 10px;vertical-align:-1px}
 .em-key:first-child{margin-left:0}
 @media(max-width:520px){.em-rr{grid-template-columns:22px 1fr 64px 64px}.em-rr .em-rb{display:none}}
+
+/* Top Pegawai Program Emas: baris bisa diketuk (buka halaman Informasi Sales cabang) */
+.em-tp-btn{width:100%;background:none;border:0;border-bottom:1px solid var(--ln);color:inherit;font:inherit;text-align:left;cursor:pointer;border-radius:0}
+.em-tp-btn:hover{background:var(--sf2,rgba(127,127,127,.08))}
+.em-tp-btn:focus-visible{outline:2px solid var(--c1);outline-offset:-2px}

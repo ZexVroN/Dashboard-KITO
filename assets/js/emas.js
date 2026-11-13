@@ -111,7 +111,7 @@ function statusPegawai(sc){
 function topPegawai(sc){
   const list=P.filter(p=>sc.kodes.has(p.kode)&&(p.tab||p.cetak)).sort((a,b)=>(b.tab+b.cetak)-(a.tab+a.cetak)||rasio(b.tab,b.tabT)-rasio(a.tab,a.tabT)).slice(0,10);
   const nama=new Map(D.B.map(b=>[kodeOf(b),b[1]]));
-  const body=list.map((p,i)=>`<div class="em-tp"><span class="em-no">${i+1}</span><span class="em-nm">${esc(p.nama)}<small>${esc(jabPendek(p.jab))} · ${esc(nama.get(p.kode)||p.kode)}</small></span><span class="em-rv"><b>${nf(p.tab)}</b><small>Tab ${pc(rasio(p.tab,p.tabT))}</small></span><span class="em-rv"><b>${nf(p.cetak)}</b><small>Cetak</small></span></div>`).join('');
+  const body=list.map((p,i)=>`<button type="button" class="em-tp em-tp-btn" data-sales-kode="${esc(p.kode)}" data-sales-tab="emas" aria-label="Buka Informasi Sales ${esc(nama.get(p.kode)||p.kode)}"><span class="em-no">${i+1}</span><span class="em-nm">${esc(p.nama)}<small>${esc(jabPendek(p.jab))} · ${esc(nama.get(p.kode)||p.kode)}</small></span><span class="em-rv"><b>${nf(p.tab)}</b><small>Tab ${pc(rasio(p.tab,p.tabT))}</small></span><span class="em-rv"><b>${nf(p.cetak)}</b><small>Cetak</small></span></button>`).join('');
   return `<section class="cd"><h2>Top Pegawai Program Emas · ${esc(sc.nama)}</h2>${body||'<p class="wt-note">Belum ada pegawai yang input pada periode ini.</p>'}</section>`;
 }
 function halamanArea(){

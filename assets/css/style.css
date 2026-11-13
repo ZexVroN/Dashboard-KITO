@@ -736,3 +736,8 @@ footer .kredit{display:flex;flex-direction:column;align-items:center;text-align:
 
 /* keterangan kecil kanal NBDS: Teller Perorangan / Badan / Customer Service */
 .nb-ket{display:block;font-size:.68rem;font-weight:500;font-style:normal;opacity:.7;line-height:1.3;margin-top:1px}
+
+/* P100: nilai maksimum tanpa kategori rentang menit. */
+.p100-value,.q .m.p100-value{color:#0f2a5c}
+i.p100-value,.rg-bar i.p100-value{background:#0f2a5c}
+.wt-legend[hidden]{display:none}

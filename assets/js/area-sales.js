@@ -113,11 +113,11 @@ function ranking(c,regPct){
   const baris=[...grup].map(([key,list])=>({key,list,R:ringkas(list,k)})).sort((a,b)=>(b.R.pct??-1)-(a.R.pct??-1)||b.R.a-a.R.a);
   const body=baris.map((b,i)=>{
     const R=b.R,nm=c.isRegion?b.key:cab.get(b.key).nama;
-    const attr=c.isRegion?`data-as-area="${clean(b.key)}"`:`data-ak-code="${clean(b.key)}"`;
+    const attr=c.isRegion?`data-as-area="${clean(b.key)}"`:`data-sales-kode="${clean(b.key)}" data-sales-tab="akuisisi"`;
     const bar=URUT.map(s=>R.n[s]?`<i class="${ST[s][1]}" style="flex:${R.n[s]}"></i>`:'').join('');
     return `<button type="button" class="as-row ${R.pct!=null&&regPct!=null&&R.pct>=regPct?'ok-row':'bd-row'}" ${attr} aria-label="Buka ${clean(nm)}"><span class="as-no">${i+1}</span><span class="as-mid"><span class="as-nm">${clean(nm)}</span><span class="as-sm">${b.list.length} pegawai · ${nf(R.a,K.dec)} / ${nf(R.t,K.dec)} · Gap <b class="${gapCls(R.gap)}">${gapTxt(R.gap,K.dec)}</b></span><span class="as-stbar as-mini">${bar}</span></span><span class="as-val">${pc(R.pct)}</span></button>`;
   }).join('');
-  return `<section class="cd"><h2>Ranking ${c.isRegion?'Area':'Cabang'} · ${K.judul}${ui.jab==='all'?'':' · '+KEL.find(q=>q[0]===ui.jab)[1]}</h2>${tabs}${jabTabs}<p class="wt-note">${K.dasar}${ui.jab==='all'?'':', hanya pegawai berjabatan '+KEL.find(q=>q[0]===ui.jab)[1]}. Hijau = di atas rata-rata Region II (${pc(regPct)}), merah = di bawah. Ketuk untuk membuka ${c.isRegion?'dashboard area':'cabang'}.</p><div>${body||'<p class="wt-warn">Tidak ada data pegawai untuk pilihan ini.</p>'}</div></section>`;
+  return `<section class="cd"><h2>Ranking ${c.isRegion?'Area':'Cabang'} · ${K.judul}${ui.jab==='all'?'':' · '+KEL.find(q=>q[0]===ui.jab)[1]}</h2>${tabs}${jabTabs}<p class="wt-note">${K.dasar}${ui.jab==='all'?'':', hanya pegawai berjabatan '+KEL.find(q=>q[0]===ui.jab)[1]}. Hijau = di atas rata-rata Region II (${pc(regPct)}), merah = di bawah. Ketuk untuk membuka ${c.isRegion?'dashboard area':'halaman Informasi Sales cabang'}.</p><div>${body||'<p class="wt-warn">Tidak ada data pegawai untuk pilihan ini.</p>'}</div></section>`;
 }
 
 // ranking per pegawai berdasarkan jabatan (kelompok jabatan), lintas cabang di Area / Region II
@@ -132,11 +132,11 @@ function rankPegawai(c){
   const tampil=xs.slice(0,ui.lim);
   const body=tampil.map((p,i)=>{
     const r=p.x.r,gap=p.v-p.t;
-    return `<button type="button" class="as-row" data-ak-code="${clean(p.x.kode)}" aria-label="Buka ${clean(cab.get(p.x.kode).nama)}"><span class="as-no">${i+1}</span><span class="as-mid"><span class="as-nm">${clean(r[0])}</span><span class="as-sm">${clean(r[2]||'–')} · ${clean(cab.get(p.x.kode).nama)}${c.isRegion?' · '+clean(areaOf(p.x.kode)):''}</span><span class="as-sm">${nf(p.v,K.dec)} / ${nf(p.t,K.dec)} · Gap <b class="${gapCls(gap)}">${gapTxt(gap,K.dec)}</b> ${chipSt(p.s)}</span></span><span class="as-val ${p.s==='BUGAR'?'ok':p.s==='IGD'?'bd':''}">${pc(p.pct)}</span></button>`;
+    return `<button type="button" class="as-row" data-sales-kode="${clean(p.x.kode)}" data-sales-tab="akuisisi" aria-label="Buka ${clean(cab.get(p.x.kode).nama)}"><span class="as-no">${i+1}</span><span class="as-mid"><span class="as-nm">${clean(r[0])}</span><span class="as-sm">${clean(r[2]||'–')} · ${clean(cab.get(p.x.kode).nama)}${c.isRegion?' · '+clean(areaOf(p.x.kode)):''}</span><span class="as-sm">${nf(p.v,K.dec)} / ${nf(p.t,K.dec)} · Gap <b class="${gapCls(gap)}">${gapTxt(gap,K.dec)}</b> ${chipSt(p.s)}</span></span><span class="as-val ${p.s==='BUGAR'?'ok':p.s==='IGD'?'bd':''}">${pc(p.pct)}</span></button>`;
   }).join('');
   const lagi=xs.length>ui.lim?`<button type="button" class="as-more" data-as-more="1">Tampilkan ${Math.min(20,xs.length-ui.lim)} berikutnya · ${xs.length-ui.lim} lagi</button>`:(ui.lim>20?`<button type="button" class="as-more" data-as-more="0">Tampilkan lebih sedikit</button>`:'');
   const nm=ui.pj==='all'?'Semua Jabatan':KEL.find(q=>q[0]===ui.pj)[1];
-  return `<section class="cd"><h2>Ranking Pegawai · ${K.judul} · ${clean(nm)}</h2>${tabs}${jabTabs}<p class="wt-note">${nf(xs.length)} pegawai · ${K.dasar}. Urut dari persentase tertinggi; status Bugar ≥ target, IGD belum ada realisasi. Ketuk pegawai untuk membuka cabangnya.</p><div>${body||'<p class="wt-warn">Tidak ada pegawai untuk pilihan ini.</p>'}</div>${lagi}</section>`;
+  return `<section class="cd"><h2>Ranking Pegawai · ${K.judul} · ${clean(nm)}</h2>${tabs}${jabTabs}<p class="wt-note">${nf(xs.length)} pegawai · ${K.dasar}. Urut dari persentase tertinggi; status Bugar ≥ target, IGD belum ada realisasi. Ketuk pegawai untuk membuka halaman Informasi Sales cabangnya.</p><div>${body||'<p class="wt-warn">Tidak ada pegawai untuk pilihan ini.</p>'}</div>${lagi}</section>`;
 }
 
 // persentase semua area sekaligus (Ekstensifikasi & Intensifikasi), area terpilih disorot

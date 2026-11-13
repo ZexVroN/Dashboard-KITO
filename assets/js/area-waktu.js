@@ -79,7 +79,7 @@ function p100Card(e,isRegion){
   const x=xOf(e),rx=xOf(region);
   const t=(name,svc)=>{
     const v=x?.p?.[XI[svc]]??null,ft=delta(v,rx?.p?.[XI[svc]]??null,isRegion);
-    return `<div class="wt-tile"><b class="wt-nm">${name}</b><div class="wt-v ${tk(v)}">${clock(v)}</div><span class="chip ${tk(v)}">${catText(v)}</span><div class="wt-info"><small>Waktu tunggu terlama<br>dari <b>${nfmt(x?.n?.[XI[svc]])}</b> reservasi</small></div>${ft?`<div class="wt-foot">${ft}</div>`:''}</div>`;
+    return `<div class="wt-tile"><b class="wt-nm">${name}</b><div class="wt-v p100-value">${clock(v)}</div><div class="wt-info"><small>Waktu tunggu terlama<br>dari <b>${nfmt(x?.n?.[XI[svc]])}</b> reservasi</small></div>${ft?`<div class="wt-foot">${ft}</div>`:''}</div>`;
   };
   return `<section class="cd wt-period"><h2>P100 · ${isoLong(dtdIso())}</h2>${x?'':`<p class="wt-warn">Data P100 untuk tanggal ini belum ada di laporan.</p>`}<div class="wt-tiles">${t('Teller','teller')}${t('CS','cs')}${t('All Trx','all')}</div>${isRegion?'':'<p class="wt-note">▲ lebih cepat · ▼ lebih lambat dibanding Region II.</p>'}</section>`;
 }
@@ -112,11 +112,11 @@ function ranking(e,isRegion){
   const seg=(attr,list,cur)=>`<div class="seg">${list.map(([k,t])=>`<button type="button" data-wt-${attr}="${k}" class="${k===cur?'on':''}">${t}</button>`).join('')}</div>`;
   const list=rows.map((r,i)=>{
     const me=!isRegion&&e&&r.a.name===e.name;
-    return `<button type="button" class="wt-row ${me?'me':''}" data-wt-area="${clean(r.a.name)}" aria-label="Buka ${clean(r.a.name)}"><span class="wt-no">${i+1}</span><span class="wt-mid"><span class="wt-nm">${clean(r.a.name)}</span><span class="wt-bar"><i class="${cls(r.v,p95)}" style="width:${r.v/max*100}%"></i><u class="t5" style="left:${300/max*100}%"></u>${reg!=null?`<u class="rg" style="left:${reg/max*100}%"></u>`:''}</span></span><span class="wt-val ${tk(r.v,p95)}">${clock(r.v)}</span></button>`;
+    return `<button type="button" class="wt-row ${me?'me':''}" data-wt-area="${clean(r.a.name)}" aria-label="Buka ${clean(r.a.name)}"><span class="wt-no">${i+1}</span><span class="wt-mid"><span class="wt-nm">${clean(r.a.name)}</span><span class="wt-bar"><i class="${per==='p100'?'p100-value':cls(r.v,p95)}" style="width:${r.v/max*100}%"></i><u class="t5" style="left:${300/max*100}%"></u>${reg!=null?`<u class="rg" style="left:${reg/max*100}%"></u>`:''}</span></span><span class="wt-val ${per==='p100'?'p100-value':tk(r.v,p95)}">${clock(r.v)}</span></button>`;
   }).join('');
   const svcName=SVC.find(x=>x[0]===svc)[1];
   const perName=per==='dtd'?`DtD ${pctl()} ${isoShort(dtdIso())}`:per==='p100'?`P100 ${isoShort(dtdIso())}`:(window.KITO_BULAN?window.KITO_BULAN.mtdLabel:'MTD Oktober');
-  return `<section class="cd"><h2>Ranking Area · ${svcName} · ${perName}</h2>${seg('per',baru()?[['dtd','DtD P95'],['p100','P100'],['mtd','MTD '+mtdTag()]]:[['dtd','DtD'],['mtd','MTD']],per)}${seg('svc',SVC,svc)}${rows.length?`<div>${list}</div>`:'<p class="wt-warn">Belum ada data untuk periode ini.</p>'}<div class="wt-legend"><span><i class="ok"></i>&lt; 5 mnt</span><span><i class="md"></i>5–10</span><span><i class="wr"></i>10–${ta}</span><span><i class="bd"></i>&gt; ${ta}</span><span><u class="t5"></u>Batas 5 menit</span><span><u class="rg"></u>Region II ${clock(reg)}</span></div><p class="wt-note">Urut dari tercepat. Ketuk area untuk membuka dashboard-nya.</p></section>`;
+  return `<section class="cd"><h2>Ranking Area · ${svcName} · ${perName}</h2>${seg('per',baru()?[['dtd','DtD P95'],['p100','P100'],['mtd','MTD '+mtdTag()]]:[['dtd','DtD'],['mtd','MTD']],per)}${seg('svc',SVC,svc)}${rows.length?`<div>${list}</div>`:'<p class="wt-warn">Belum ada data untuk periode ini.</p>'}<div class="wt-legend" ${per==='p100'?'hidden':''}><span><i class="ok"></i>&lt; 5 mnt</span><span><i class="md"></i>5–10</span><span><i class="wr"></i>10–${ta}</span><span><i class="bd"></i>&gt; ${ta}</span><span><u class="t5"></u>Batas 5 menit</span><span><u class="rg"></u>Region II ${clock(reg)}</span></div><p class="wt-note">Urut dari tercepat. Ketuk area untuk membuka dashboard-nya.</p></section>`;
 }
 
 const TCOL={teller:'var(--c1)',cs:'var(--c2)',all:'var(--c3)'};

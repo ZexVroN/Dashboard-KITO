@@ -27,7 +27,7 @@ function kp_menu(string $aktif, ?string $app = null): string {
         'perangkat'  => ['<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><rect x="6" y="2" width="12" height="20" rx="3"/><path d="M10 18h4"/></svg>', 'Perangkat & Lokasi', $app . '/admin/perangkat'],
         'masukan'    => ['<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M21 11a9 9 0 0 1-9 9H3l2-5a9 9 0 1 1 16-4Z"/><path d="M8 10h8M8 14h5"/></svg>', 'Masukan', $app . '/admin/masukan'],
     ] : [];   // belum disetel: menu kosong, halaman setup tetap bisa dibuka langsung
-    if ($cfg) $item['pengguna'] = ['<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><circle cx="9" cy="7" r="4"/><path d="M2 21v-3a7 7 0 0 1 14 0v3M17 3a4 4 0 0 1 0 8M22 21v-3a7 7 0 0 0-4-6"/></svg>', 'Pengguna', $app . '/admin/pengguna'];
+    if ($cfg && function_exists('kp_pengguna')) $item['pengguna'] = ['<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><circle cx="9" cy="7" r="4"/><path d="M2 21v-3a7 7 0 0 1 14 0v3M17 3a4 4 0 0 1 0 8M22 21v-3a7 7 0 0 0-4-6"/></svg>', 'Pengguna', $app . '/admin/pengguna'];
     $dash = KP_DASHBOARD_URL;
     $h = '<nav class="kpm" aria-label="Menu backend"><div class="kpm-in"><a class="kpm-brand" href="' . kp_h($cfg ? $app . '/admin' : $dir . '/setup.php') . '"><img class="kpm-logo" src="' . kp_h($dir . '/lib/kito-logo.png') . '" alt="KITO" width="108" height="72"><span>Backend</span></a><div class="kpm-list">';
     foreach ($item as $k => [$ic, $label, $url]) {

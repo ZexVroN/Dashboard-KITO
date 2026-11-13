@@ -11,3 +11,7 @@ app.db
 # Lingkungan Python
 .venv/
 __pycache__/
+# Fitur admin "Pengguna" (daftar pengguna): disimpan lokal saja, tidak di-push ke GitHub.
+# Unggah manual ke hosting (push-php/lib/) bila ada perubahan.
+push-php/lib/pengguna.php
+push-php/lib/pengguna.html

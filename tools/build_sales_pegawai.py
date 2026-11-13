@@ -37,6 +37,7 @@ per cabang dihitung, jadi target & pencapaian cabang ikut menyesuaikan. Entri ya
 dicetak sebagai PERINGATAN (mis. Excel sudah memperbarui datanya, entri boleh dihapus).
 """
 
+import datetime as dt
 import json
 import re
 import sys
@@ -66,9 +67,17 @@ wb = openpyxl.load_workbook(SRC, read_only=True, data_only=True)
 # tahun untuk judul kolom tanpa tahun ("Akuisisi update 01 Nov"): ambil dari nama file / judul sheet pegawai
 _m = re.search(r"(20\d{2})", os.path.basename(SRC))
 SRC_TAHUN = (_m.group(1)[2:] if _m else "26")
-ws = wb["Monitoring Ind Pegawai"]
+# Dua format laporan:
+#   lama : "Dashboard Sales Inbranch ..." -> sheet "Monitoring Ind Pegawai" (+ "Monitoring Cabang (All)")
+#   baru : "Report Inbranch MTD - <tgl>"  -> sheet "By Individual Peg" (bankwide, disaring Region II)
+#          + "Series New CIF" / "Series Add On" (akuisisi kumulatif per cabang per tanggal)
+#          Ekstensifikasi = New CIF, Intensifikasi = New Acc ETB / Add On. Balance = Balance Rekening,
+#          target balance = Target / Bln (sama dengan dasar kolom Achievement di laporan).
+FORMAT_MTD = "Monitoring Ind Pegawai" not in wb.sheetnames and "By Individual Peg" in wb.sheetnames
+REGION = "02"
+ws = wb["By Individual Peg" if FORMAT_MTD else "Monitoring Ind Pegawai"]
 rows = list(ws.iter_rows(min_row=1, values_only=True))
-blok_baris, judul = rows[2], rows[4]
+blok_baris, judul = (rows[8], rows[9]) if FORMAT_MTD else (rows[2], rows[4])
 
 # kolom awal tiap blok
 blok = {}
@@ -93,11 +102,32 @@ def tanggal(teks):
     d, b, y = m.groups()
     return f"20{y}-{BULAN[b.lower()]:02d}-{int(d):02d}"
 
-P = "PROFILE PEGAWAI INBRANCH"
-c_nama, c_nip, c_jab = kol(P, r"^nama pegawai"), kol(P, r"^nip$"), kol(P, r"^jabatan")
-c_area, c_kode = kol(P, r"^area"), kol(P, r"^kode cabang")
-BL = {}
-for key, nama in (("e", "EKSTENSIFIKASI"), ("i", "INTENSIFIKASI")):
+def iso_tgl(v):
+    return v.date().isoformat() if hasattr(v, "date") else None
+
+if FORMAT_MTD:
+    def kj(pola, dari=0, sampai=None):
+        sampai = sampai or len(judul)
+        return next(i for i in range(dari, sampai) if judul[i] and re.search(pola, str(judul[i]).strip(), re.I))
+    c_reg, c_nama, c_nip, c_jab = kj(r"^reg$"), kj(r"^nama pegawai"), kj(r"^nip$"), kj(r"^jabatan$")
+    c_area, c_kode = kj(r"^kode area$"), kj(r"^kode cabang$")
+    # tanggal laporan (D) dan D-1: sheet ringkasan region, sel C3 / C4
+    ring = list(wb[wb.sheetnames[0]].iter_rows(min_row=3, max_row=4, values_only=True))
+    TGL_D, TGL_D1 = iso_tgl(ring[0][2]), iso_tgl(ring[1][2])
+    a_e = next(i for i, v in enumerate(blok_baris) if isinstance(v, str) and re.match(r"^akuisisi new cif \(mtd\)", v.strip(), re.I))
+    a_i = next(i for i, v in enumerate(blok_baris) if isinstance(v, str) and re.match(r"^aku[s]?isi new acc etb", v.strip(), re.I))
+    b_i = next(i for i, v in enumerate(blok_baris) if isinstance(v, str) and i > a_i)
+    BL = {}
+    for key, a, b, pbal in (("e", a_e, a_i, r"^balance rekening new cif"), ("i", a_i, b_i, r"^balance rekening etb")):
+        BL[key] = {"akuisisi": [kj(r"^akuisisi \(day before\)", a, b), kj(r"^akuisisi$", a, b)],
+                   "tgl": [TGL_D1, TGL_D], "target": kj(r"^target$", a, b), "bal": kj(pbal, a, b),
+                   "tbal": kj(r"^target / bln", a, b)}
+    print(f"Format Report Inbranch MTD · tanggal {TGL_D} (D-1 {TGL_D1}) · Region {REGION}")
+    rows_peg = [r for r in rows[12:] if r[c_nama] and str(r[c_reg]).strip() == REGION]
+else:
+    rows_peg = None
+BL = BL if FORMAT_MTD else {}
+for key, nama in (() if FORMAT_MTD else (("e", "EKSTENSIFIKASI"), ("i", "INTENSIFIKASI"))):
     akuisisi = kol(nama, r"^akuisisi update", semua=True)
     BL[key] = {
         "akuisisi": akuisisi,
@@ -106,6 +136,13 @@ for key, nama in (("e", "EKSTENSIFIKASI"), ("i", "INTENSIFIKASI")):
         "bal": kol(nama, r"^bal( inten)?$"),
         "tbal": kol(nama, r"^target bal"),
     }
+
+if not FORMAT_MTD:
+    P = "PROFILE PEGAWAI INBRANCH"
+    c_nama, c_nip, c_jab = kol(P, r"^nama pegawai"), kol(P, r"^nip$"), kol(P, r"^jabatan")
+    c_area, c_kode = kol(P, r"^area"), kol(P, r"^kode cabang")
+    rows_peg = [r for r in rows[5:] if r[c_nama]]
+
 
 def num(v):
     if not isinstance(v, (int, float)) or isinstance(v, bool):
@@ -150,9 +187,7 @@ dipakai = set()
 
 # ---------- laporan baru ----------
 pegawai = []
-for r in rows[5:]:
-    if not r[c_nama]:
-        continue
+for r in rows_peg:
     p = {"id": [str(r[c_nama]).strip(), samar(r[c_nip]), str(r[c_jab] or "").strip(), kode(r[c_area]), kode(r[c_kode])]}
     nm, kd = p["id"][0], p["id"][4]
     t = next((i for i, a in enumerate(ATUR["takeout"]) if _cocok(a, nm, kd)), None)
@@ -210,7 +245,22 @@ if ATUR.get("pegawai"):
 
 # ---------- total per cabang (sheet "Monitoring Cabang (All)") ----------
 cab_seri = {}                     # kode -> {"e": {tgl: n}, "i": {tgl: n}}
-if "Monitoring Cabang (All)" in wb.sheetnames:
+if FORMAT_MTD:
+    # akuisisi kumulatif MTD per cabang per tanggal (blok pertama "Akuisisi ... All"), hanya s.d. tanggal laporan
+    for key, sh in (("e", "Series New CIF"), ("i", "Series Add On")):
+        if sh not in wb.sheetnames:
+            continue
+        sr = list(wb[sh].iter_rows(min_row=1, values_only=True))
+        sj = sr[3]
+        kolt = [(i, iso_tgl(v)) for i, v in enumerate(sj) if iso_tgl(v)]
+        a0 = kolt[0][0]
+        kolt = [(i, t) for i, t in kolt if i < a0 + 32 and t <= TGL_D]
+        for r in sr[5:]:
+            if len(r) < 5 or str(r[3]).replace(" ", "") != "R" + REGION:
+                continue
+            cab_seri.setdefault(kode(r[0]), {"e": {}, "i": {}})[key] = {t: num(r[i]) for i, t in kolt}
+    print(f"Sheet Series New CIF / Add On: {len(cab_seri)} cabang Region II, tanggal s.d. {TGL_D}")
+elif "Monitoring Cabang (All)" in wb.sheetnames:
     cr = list(wb["Monitoring Cabang (All)"].iter_rows(min_row=1, values_only=True))
     cblok, cjudul = cr[2], cr[4]
     cb = {str(v).strip().upper(): i for i, v in enumerate(cblok) if isinstance(v, str) and v.strip()}
@@ -238,7 +288,10 @@ for v in cab_seri.values():
     semua |= set(v["e"]) | set(v["i"])
 for v in riwayat.values():
     semua |= set(v["e"]) | set(v["i"])
-update = sorted(semua)[-A.tampil:]
+# Sabtu/Minggu tidak ditampilkan (laporan seri harian memuat akhir pekan dengan nilai kumulatif yang sama),
+# kecuali hari kerja yang tersedia kurang dari jumlah tampil
+_kerja = sorted(t for t in semua if dt.date.fromisoformat(t).weekday() < 5)
+update = (_kerja if len(_kerja) >= A.tampil else sorted(semua))[-A.tampil:]
 tanpa_riwayat = 0
 data = []
 for p in pegawai:
@@ -275,7 +328,7 @@ print(f"Ditampilkan: {update} · pegawai tanpa riwayat (titik lama kosong): {tan
 out = {
     "tanggal": update[-1],
     "update": update,
-    "sumber": SRC.replace("\\", "/").split("/")[-1] + " · sheet Monitoring Ind Pegawai",
+    "sumber": SRC.replace("\\", "/").split("/")[-1] + (" · sheet By Individual Peg (Region II)" if FORMAT_MTD else " · sheet Monitoring Ind Pegawai"),
     "kolom": ["nama", "nip", "jabatan", "area", "kode",
               "eAkuisisi", "eTarget", "eBal", "eTargetBal", "iAkuisisi", "iTarget", "iBal", "iTargetBal"],
     "rows": data,

@@ -16,7 +16,9 @@ declare(strict_types=1);
 require __DIR__ . '/lib/app.php';
 require __DIR__ . '/lib/presence.php';
 require __DIR__ . '/lib/masukan.php';
-require __DIR__ . '/lib/pengguna.php';
+// fitur admin Pengguna dipisah dari GitHub (lihat .gitignore): hanya aktif bila file-nya diunggah manual ke hosting
+const KP_FITUR_PENGGUNA = __DIR__ . '/lib/pengguna.php';
+if (is_file(KP_FITUR_PENGGUNA)) require KP_FITUR_PENGGUNA;
 require __DIR__ . '/lib/akun.php';
 
 function kp_json(int $status, $data): void {
@@ -61,7 +63,7 @@ if ($method === 'OPTIONS') { http_response_code(204); exit; }
 // halaman admin (notifikasi & perangkat), keduanya dengan menu bar bersama dari lib/page.php
 if ($route === '/') { header('Location: index.php/admin'); exit; } // selalu berfungsi, dengan atau tanpa rewrite
 $halamanAdmin = ['/admin' => ['admin.html', 'notifikasi'], '/admin/perangkat' => ['perangkat.html', 'perangkat'], '/admin/masukan' => ['masukan.html', 'masukan']];
-$halamanAdmin['/admin/pengguna'] = ['pengguna.html', 'pengguna'];
+if (function_exists('kp_pengguna') && is_file(__DIR__ . '/lib/pengguna.html')) $halamanAdmin['/admin/pengguna'] = ['pengguna.html', 'pengguna'];
 if (isset($halamanAdmin[$route])) {
     require_once __DIR__ . '/lib/page.php';
     header('Content-Type: text/html; charset=utf-8');
@@ -149,9 +151,14 @@ try {
     if ($public && !kp_rate('pub:' . kp_ip(), 60)) kp_fail(429, 'terlalu banyak permintaan');
 
     switch ("$method $route") {
-        case 'GET /api/pengguna': { kp_admin(); kp_json(200, kp_pengguna()); }
-        case 'PUT /api/pengguna': { kp_admin(); kp_json(200, kp_pengguna_edit(kp_body())); }
-        case 'POST /api/pengguna/password': { kp_admin(); kp_json(200, kp_pengguna_password(kp_body())); }
+        case 'GET /api/pengguna':
+        case 'PUT /api/pengguna':
+        case 'POST /api/pengguna/password': {
+            kp_admin();
+            if (!function_exists('kp_pengguna')) kp_fail(404, 'fitur Pengguna belum dipasang (unggah lib/pengguna.php)');
+            if ($method === 'GET') kp_json(200, kp_pengguna());
+            kp_json(200, $method === 'PUT' ? kp_pengguna_edit(kp_body()) : kp_pengguna_password(kp_body()));
+        }
         case 'GET /api/health': kp_json(200, ['ok' => true, 'waktu' => gmdate('c'), 'backend' => 'php']);
         case 'GET /api/vapid-public-key': kp_json(200, ['publicKey' => $cfg['vapid_public']]);
 

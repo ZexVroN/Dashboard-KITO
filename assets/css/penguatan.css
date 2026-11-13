@@ -1,4 +1,4 @@
-/* Notifikasi Highlight Issue & detail kontrol operasional (penguatan.js) */
+/* Notifikasi & halaman Informasi Highlight Issue Operasional: daftar berita, Penguatan Operasional, Waspada Setor Angin (penguatan.js) */
 :root{--pgn-navy:#0f2a5c;--pgn-gold:#f5b81b;--pgn-krem:#fff6dc;--pgn-krem-bd:#f3d98a}
 
 /* ----- kartu notifikasi di halaman Cabang ----- */
@@ -34,7 +34,7 @@ html.pgn-kunci,html.pgn-kunci body{overflow:hidden}
 .pgn-latar.buka .pgn-panel{transform:none}
 @media(max-width:759px){.pgn-panel{overscroll-behavior-y:contain}}
 @media(min-width:760px){.pgn-latar{align-items:center;padding:24px}.pgn-panel{border-radius:22px;max-height:88vh;padding:0 22px 22px}}
-.pgn-xbar{position:sticky;top:0;z-index:3;height:0;display:flex;justify-content:flex-end}
+.pgn-xbar{position:sticky;top:0;z-index:3;height:0;display:flex;justify-content:flex-end;align-items:flex-start;gap:8px}
 .pgn-x{margin:12px -2px 0 0;width:38px;height:38px;flex:none;display:flex;align-items:center;justify-content:center;border:1px solid rgba(255,255,255,.35);border-radius:50%;
   background:rgba(15,42,92,.85);color:#fff;cursor:pointer;padding:0;box-shadow:0 2px 8px rgba(0,0,0,.25)}
 .pgn-x:focus-visible{outline:3px solid var(--pgn-gold);outline-offset:2px}
@@ -103,3 +103,110 @@ html.pgn-kunci,html.pgn-kunci body{overflow:hidden}
 [data-theme="dark"] .pgn-ket-w.sorot{background:#1c3566;border-color:#2f4f8c}
 [data-theme="dark"] .pgn-ket-r p{color:#c4d4f2}
 [data-theme="dark"] .pgn-ket-r small{color:#8fb4ff}
+
+/* ===== halaman Informasi Highlight Issue Operasional (daftar berita) ===== */
+.pgn-back{margin:12px auto 0 -2px;height:38px;display:flex;align-items:center;gap:4px;padding:0 14px 0 8px;border:1px solid rgba(255,255,255,.35);border-radius:999px;
+  background:rgba(15,42,92,.85);color:#fff;font:700 13px Inter,system-ui,sans-serif;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.25)}
+.pgn-back svg{width:18px;height:18px}
+.pgn-back:focus-visible{outline:3px solid var(--pgn-gold);outline-offset:2px}
+.pgn-panel[data-hal="penguatan"] .pgn-hero,.pgn-panel[data-hal="setor"] .pgn-hero{padding-top:62px}
+.pgn-hero-j{margin:0 0 8px;font-size:22px;font-weight:900;line-height:1.25;color:#fff;letter-spacing:0;text-transform:none}
+.pgn-hero-j:focus,.pgn-hero-lbl:focus{outline:none}
+@media(min-width:760px){.pgn-hero-info{grid-template-columns:auto 1fr}.pgn-hero-info .pgn-hero-ik{grid-row:1/4}.pgn-hero-j{font-size:26px}}
+
+.pgn-brt-list{display:flex;flex-direction:column;gap:12px}
+.pgn-brt{display:flex;gap:14px;align-items:stretch;width:100%;text-align:left;padding:14px;border-radius:16px;border:1px solid var(--ln,#dfe5ef);background:var(--cd,#fff);
+  color:var(--tx,#14213d);font:inherit;cursor:pointer;box-shadow:0 2px 10px rgba(15,42,92,.06);transition:transform .15s ease,box-shadow .15s ease}
+.pgn-brt:hover{transform:translateY(-2px);box-shadow:0 8px 22px rgba(15,42,92,.12)}
+.pgn-brt:focus-visible{outline:3px solid var(--pgn-gold);outline-offset:2px}
+.pgn-brt-th{flex:none;display:flex;align-items:center;justify-content:center;width:72px;border-radius:12px;color:var(--pgn-gold);background:linear-gradient(160deg,#0f2a5c,#16397a)}
+.pgn-brt-merah .pgn-brt-th{background:linear-gradient(160deg,#dc2626,#991b1b);color:#fff}
+.pgn-brt-th svg{width:32px;height:32px}
+@media(min-width:560px){.pgn-brt-th{width:110px}.pgn-brt-th svg{width:42px;height:42px}}
+.pgn-brt-tx{flex:1;min-width:0;display:flex;flex-direction:column;gap:5px}
+.pgn-brt-meta{display:flex;flex-wrap:wrap;align-items:center;gap:6px 8px;font-size:11px}
+.pgn-brt-baru{padding:2px 8px;border-radius:999px;background:#dc2626;color:#fff;font-weight:900;letter-spacing:.8px;text-transform:uppercase;font-size:10px;animation:pgn-alert-blink 1.6s ease-in-out infinite}
+.pgn-brt-kat{font-weight:800;letter-spacing:1.2px;text-transform:uppercase;color:#2b5aa8}
+.pgn-brt-merah .pgn-brt-kat{color:#b42318}
+.pgn-brt-tgl{color:#64748b;font-weight:600}
+.pgn-brt-tgl::before{content:"·";margin-right:8px}
+.pgn-brt-j{font-size:17px;font-weight:900;line-height:1.3}
+.pgn-brt-r{font-size:13px;line-height:1.5;color:#475569}
+.pgn-brt-go{display:inline-flex;align-items:center;gap:2px;margin-top:2px;font-size:12.5px;font-weight:800;color:#2b5aa8}
+.pgn-brt-go svg{width:15px;height:15px}
+[data-theme="dark"] .pgn-brt{background:var(--cd);border-color:var(--ln)}
+[data-theme="dark"] .pgn-brt-r{color:#c4d4f2}
+[data-theme="dark"] .pgn-brt-kat,[data-theme="dark"] .pgn-brt-go{color:#8fb4ff}
+[data-theme="dark"] .pgn-brt-merah .pgn-brt-kat{color:#ff8a80}
+[data-theme="dark"] .pgn-brt-tgl{color:#94a3b8}
+
+/* ===== halaman berita Waspada Setor Angin ===== */
+.sa-hero{display:block!important;background:linear-gradient(160deg,#0f2a5c 0%,#16397a 60%,#7f1d1d 140%)}
+.sa-tag{display:inline-block;margin-bottom:12px;padding:4px 10px;border-radius:6px;background:var(--pgn-gold);color:#0f2a5c;font-size:11px;font-weight:900;letter-spacing:1.4px;text-transform:uppercase}
+.sa-hero .pgn-hero-j{font-size:26px}
+@media(min-width:760px){.sa-hero .pgn-hero-j{font-size:32px}}
+.sa-ref{margin:12px 0 0;font-size:11.5px;line-height:1.5;color:rgba(255,255,255,.65)}
+.sa-sub{display:flex;align-items:center;gap:10px;margin:22px 0 12px;font-size:18px;font-weight:900;color:var(--tx,#14213d);text-transform:none;letter-spacing:0}
+.sa-sub::before{content:"";width:4px;height:20px;border-radius:2px;background:var(--pgn-gold)}
+.sa-def{display:flex;gap:14px;align-items:center;padding:16px;border-radius:16px;background:var(--cd,#fff);border:1px solid var(--ln,#dfe5ef)}
+.sa-def-ik{flex:none;display:flex;align-items:center;justify-content:center;width:56px;height:56px;border-radius:50%;background:#fde8e8;color:#c8102e}
+.sa-def-ik svg{width:28px;height:28px}
+.sa-def p{margin:0;font-size:14px;line-height:1.6;color:var(--tx,#14213d)}
+.sa-def p b{color:#c8102e}
+.sa-alur{list-style:none;margin:12px 0 0;padding:0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+@media(min-width:760px){.sa-alur{grid-template-columns:repeat(4,minmax(0,1fr))}}
+.sa-alur li{display:flex;flex-direction:column;gap:3px;padding:12px;border-radius:12px;background:var(--cd,#fff);border:1px solid var(--ln,#dfe5ef);text-align:center}
+.sa-alur li.m{background:#fdecec;border-color:#f5b5b5}
+.sa-alur b{font-size:13px;font-weight:800;color:var(--tx,#14213d)}
+.sa-alur li.m b{color:#c8102e}
+.sa-alur small{font-size:11.5px;color:#64748b}
+.sa-g4,.sa-g2{display:grid;grid-template-columns:1fr;gap:12px}
+@media(min-width:560px){.sa-g4,.sa-g2{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(min-width:900px){.sa-g4{grid-template-columns:repeat(4,minmax(0,1fr))}}
+.sa-gjl+.sa-g2{margin-top:12px}
+.sa-dmp,.sa-mod,.sa-cg{position:relative;padding:16px;border-radius:16px;background:var(--cd,#fff);border:1px solid var(--ln,#dfe5ef);box-shadow:0 2px 10px rgba(15,42,92,.06)}
+.sa-dmp{border-top:3px solid #dc2626}
+.sa-dmp-ik{display:flex;color:#dc2626;margin-bottom:10px}
+.sa-dmp-ik svg{width:24px;height:24px}
+.sa-dmp b,.sa-cg b{display:block;font-size:15px;font-weight:800;color:var(--tx,#14213d)}
+.sa-dmp p{margin:4px 0 0;font-size:13px;line-height:1.5;color:#475569}
+.sa-mod-no{display:flex;align-items:center;justify-content:center;width:30px;height:30px;border-radius:8px;background:var(--pgn-navy);color:var(--pgn-gold);font-weight:900;margin-bottom:10px}
+.sa-siapa{display:block;font-size:10.5px;font-weight:800;letter-spacing:1.4px;text-transform:uppercase;color:#b42318;margin-bottom:4px}
+.sa-mod p{margin:0;font-size:13.5px;line-height:1.55;color:var(--tx,#14213d)}
+.sa-mod ul,.sa-cg ul,.sa-jl ul{margin:8px 0 0;padding-left:18px;font-size:13px;line-height:1.55;color:#334155}
+.sa-cg li+li,.sa-jl li+li,.sa-mod li+li{margin-top:5px}
+.sa-cg li::marker{color:#e0a50c}
+.sa-cg-h{display:flex;gap:12px;align-items:center;margin-bottom:6px}
+.sa-cg-h .sa-siapa{color:#2b5aa8;margin-bottom:2px}
+.sa-cg-ik{flex:none;display:flex;align-items:center;justify-content:center;width:42px;height:42px;border-radius:12px;background:var(--pgn-navy);color:var(--pgn-gold)}
+.sa-cg-ik svg{width:22px;height:22px}
+.sa-chip{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.sa-chip span{padding:5px 10px;border-radius:999px;background:#eef3fb;border:1px solid #d5e0f2;font-size:12px;font-weight:600;color:#1e3a6e}
+.sa-gjl{display:flex;gap:14px;margin-top:16px;padding:18px;border-radius:16px;background:linear-gradient(160deg,#0f2a5c,#16397a);color:#fff}
+.sa-gjl-ik{flex:none;display:flex;color:var(--pgn-gold)}
+.sa-gjl-ik svg{width:34px;height:34px}
+.sa-gjl b{font-size:16px;font-weight:900;color:var(--pgn-gold)}
+.sa-gjl p{margin:4px 0 0;font-size:13px;line-height:1.5;color:rgba(255,255,255,.85)}
+.sa-gjl .sa-chip span{background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.25);color:#fff}
+.sa-jl{padding:16px;border-radius:16px;border:1px solid}
+.sa-jl>b{font-size:14px;font-weight:900;letter-spacing:1px;text-transform:uppercase}
+.sa-no{background:#fdf0f0;border-color:#f5c2c2}.sa-no>b{color:#c8102e}
+.sa-ya{background:#eef8f1;border-color:#bfe3cb}.sa-ya>b{color:#15803d}
+.sa-zero{display:flex;flex-wrap:wrap;gap:10px 18px;align-items:center;margin-top:16px;padding:18px;border-radius:16px;background:var(--pgn-gold);color:#0f2a5c}
+.sa-zero strong{font-size:24px;font-weight:900;line-height:1;text-transform:uppercase}
+.sa-zero p{flex:1;min-width:200px;margin:0;font-size:13.5px;line-height:1.5;font-weight:600}
+.sa-src{margin:14px 0 0;font-size:11.5px;color:#64748b;text-align:center}
+[data-theme="dark"] .sa-def,[data-theme="dark"] .sa-alur li,[data-theme="dark"] .sa-dmp,[data-theme="dark"] .sa-mod,[data-theme="dark"] .sa-cg{background:var(--cd);border-color:var(--ln)}
+[data-theme="dark"] .sa-alur li.m{background:#3a1717;border-color:#7a2a2a}
+[data-theme="dark"] .sa-alur li.m b,[data-theme="dark"] .sa-def p b{color:#ff8a80}
+[data-theme="dark"] .sa-def-ik{background:#3a1717;color:#ff8a80}
+[data-theme="dark"] .sa-dmp p,[data-theme="dark"] .sa-mod ul,[data-theme="dark"] .sa-cg ul,[data-theme="dark"] .sa-alur small{color:#c4d4f2}
+[data-theme="dark"] .sa-siapa{color:#ff8a80}
+[data-theme="dark"] .sa-cg-h .sa-siapa{color:#8fb4ff}
+[data-theme="dark"] .sa-chip span{background:#1b2848;border-color:#3a4c75;color:#e8eefc}
+[data-theme="dark"] .sa-no{background:#2e1616;border-color:#6b2a2a}
+[data-theme="dark"] .sa-ya{background:#14291c;border-color:#2a5c3a}
+[data-theme="dark"] .sa-jl ul{color:#e2e8f0}
+[data-theme="dark"] .sa-ya>b{color:#6ee7a0}
+[data-theme="dark"] .sa-no>b{color:#ff8a80}
+@media (prefers-reduced-motion:reduce){.pgn-brt{transition:none}.pgn-brt-baru{animation:none}}

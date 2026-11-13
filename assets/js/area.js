@@ -3,7 +3,7 @@
 if(typeof D==='undefined'||typeof render!=='function')return;
 const app=document.getElementById('app');
 const number=n=>Number(n||0).toLocaleString('id-ID');
-const percent=(a,b)=>b>0?(100*a/b).toLocaleString('id-ID',{maximumFractionDigits:1})+'%':'–';
+const percent=(a,b)=>b>0?(100*a/b).toLocaleString('id-ID',{minimumFractionDigits:2,maximumFractionDigits:2})+'%':'–';   // O2O & NBDS: 2 desimal
 const avg=a=>a.length?a.reduce((x,y)=>x+y,0)/a.length:null;
 const time=x=>x==null?'–':f(x);
 const label=(s)=>esc(s||'–');

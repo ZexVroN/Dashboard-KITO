@@ -19,6 +19,9 @@ const f = (s) => {
 
 const pc = (a, b) => (a == null || b == null || a + b === 0 ? null : a / (a + b));
 const P = (x) => (x == null ? "–" : Math.round(x * 100) + "%");
+// Utilisasi NBDS & O2O: 2 angka di belakang koma. NBDS dipotong (97,999% tidak tampil 98,00%; target 98%), O2O dibulatkan.
+const P2 = (x) => (x == null ? "–" : (x * 100).toLocaleString("id-ID", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + "%");
+const PN = (x) => (x == null ? "–" : (Math.floor(x * 10000 + 1e-9) / 100).toLocaleString("id-ID", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + "%");
 
 const dl = (s) => {
   const [y, m, d] = s.split("-");
@@ -165,12 +168,12 @@ function util(label, n, o, lalu) {
   if (pl != null) {
     const sel = p != null ? p - pl : null,
       sama = sel != null && Math.abs(sel) < 0.0005,
-      tanda = sel == null ? "" : sama ? '<span class="nb-vs-dl mu">≈ setara</span>' : `<span class="nb-vs-dl ${sel > 0 ? "ok" : "bd"}">${sel > 0 ? "▲" : "▼"} ${(Math.abs(sel) * 100).toFixed(1).replace(".", ",")} %</span>`;
-    vs = `<div class="row sub nb-vs" style="justify-content:space-between"><span>vs ${lalu.lbl} <b>${P(pl)}</b> <small>(NBDS ${lalu.n ?? "–"} · Old BDS ${lalu.o ?? "–"})</small></span>${tanda}</div>`;
+      tanda = sel == null ? "" : sama ? '<span class="nb-vs-dl mu">≈ setara</span>' : `<span class="nb-vs-dl ${sel > 0 ? "ok" : "bd"}">${sel > 0 ? "▲" : "▼"} ${(Math.abs(sel) * 100).toFixed(2).replace(".", ",")} %</span>`;
+    vs = `<div class="row sub nb-vs" style="justify-content:space-between"><span>vs ${lalu.lbl} <b>${PN(pl)}</b> <small>(NBDS ${lalu.n ?? "–"} · Old BDS ${lalu.o ?? "–"})</small></span>${tanda}</div>`;
   }
   return `<div class="u"><div class="row" style="justify-content:space-between"><b>${label}${KET_KANAL[label] ? `<small class="nb-ket">${KET_KANAL[label]}</small>` : ""}</b>${chip(c,cc)}</div>
   <div class="bar"><b style="width:${(p || 0) * 100}%;background:var(--${warna})"></b></div>
-  <div class="row sub" style="justify-content:space-between"><span>NBDS <b>${n ?? "–"}</b> · Old BDS <b>${o ?? "–"}</b></span><b>${P(p)}${p != null && p >= 0.98 ? " " : ""}</b></div>${vs}</div>`;
+  <div class="row sub" style="justify-content:space-between"><span>NBDS <b>${n ?? "–"}</b> · Old BDS <b>${o ?? "–"}</b></span><b>${PN(p)}${p != null && p >= 0.98 ? " " : ""}</b></div>${vs}</div>`;
 }
 
 // lingkaran O2O
@@ -179,7 +182,7 @@ function donut(a, b) {
     p = t ? a / t : 0,
     r = 42,
     C = 2 * Math.PI * r;
-  return `<svg viewBox="0 0 110 110" style="width:110px;flex:none"><circle cx="55" cy="55" r="${r}" fill="none" stroke="var(--ln)" stroke-width="14"/><circle cx="55" cy="55" r="${r}" fill="none" stroke="var(--c1)" stroke-width="14" stroke-dasharray="${p * C} ${C}" transform="rotate(-90 55 55)"/><text x="55" y="61" text-anchor="middle" font-size="19" font-weight="800" fill="var(--tx)">${P(p)}</text></svg>`;
+  return `<svg viewBox="0 0 110 110" style="width:110px;flex:none"><circle cx="55" cy="55" r="${r}" fill="none" stroke="var(--ln)" stroke-width="14"/><circle cx="55" cy="55" r="${r}" fill="none" stroke="var(--c1)" stroke-width="14" stroke-dasharray="${p * C} ${C}" transform="rotate(-90 55 55)"/><text x="55" y="61" text-anchor="middle" font-size="19" font-weight="800" fill="var(--tx)">${P2(p)}</text></svg>`;
 }
 
 /* ===== 4. PENGATURAN RANKING ===== */
@@ -200,6 +203,7 @@ const METRIK = [
     n: "O2O %",
     g: "Utilisasi",
     tinggi: true,
+    fmt: P2,
     f: (i) => {
       const m = D.M[i];
       return m && m[0] + m[1] > 0 ? m[0] / (m[0] + m[1]) : null;
@@ -307,7 +311,7 @@ function kartuO2O() {
     abv = tot && o2o / tot > D.bw;
   return `<div class="cd"><h2>Overall O2O · MTD s.d. ${dlong(D.mdate)}</h2><div class="row">${donut(o2o, nb)}<div style="flex:1;min-width:150px">
      <div class="kv"><span>Livin O2O</span><b>${o2o}</b></div><div class="kv"><span>NBDS</span><b>${nb}</b></div><div class="kv"><span>Total</span><b>${tot}</b></div></div></div>
-     <div class="note">Avg Bankwide ${P(D.bw)} · ${tot ? (abv ? '<b class="ok">⬆ Above Avg</b>' : '<b class="bad">⬇ Below Avg</b>') : ""}</div></div>`;
+     <div class="note">Avg Bankwide ${P2(D.bw)} · ${tot ? (abv ? '<b class="ok">⬆ Above Avg</b>' : '<b class="bad">⬇ Below Avg</b>') : ""}</div></div>`;
 }
 
 // Shifting Digital: (O2O + CSM) / total, dengan rincian empat bagian
@@ -332,7 +336,7 @@ function kartuShifting() {
     .map(([n, v, c]) => `<div class="sh-it"><i class="${c}"></i><span>${n}</span><b>${v}</b><small>${pct(v)} dari total</small></div>`)
     .join("");
   return `<div class="cd"><h2>Shifting Digital · MTD s.d. ${dlong(D.mdate)}</h2>
-    <div class="sh-atas"><div class="sh-n">${sh ? P(dig / sh) : "–"}</div>
+    <div class="sh-atas"><div class="sh-n">${sh ? P2(dig / sh) : "–"}</div>
       <div class="sh-t">${sh ? `<b>${dig}</b> dari <b>${sh}</b> transaksi lewat O2O dan CSM` : "Belum ada data transaksi"}</div></div>
     ${sh ? `<div class="sh-bar">${bar}</div><div class="sh-grid">${leg}</div>` : ""}
     <div class="note">Rumus: (O2O + CSM) ÷ (O2O + NBDS + CSM + OBDS) · NBDS = seluruh transaksi ganti kartu lewat New BDS</div>
@@ -456,7 +460,7 @@ function kartuDetailAntrian() {
   const sel = (v, p95) => `<td class="${mp(v, p95)[1]}"><b>${f(v)}</b></td>`;
   const nb = (pair) => {
     const u = pair ? pc(pair[0], pair[1]) : null;
-    return `<td class="${club(u)[1]}"><b>${P(u)}</b></td>`;
+    return `<td class="${club(u)[1]}"><b>${PN(u)}</b></td>`;
   };
   const mtd = `<tr><td><b>MTD ${BULAN_DATA}</b></td>${["teller", "cs", "all"].map((k) => sel(kel?.mtd?.[k] ?? null, false)).join("")}${KN.map((k) => nb(c?.m?.[k])).join("")}</tr>`;
   const harian = D.dates
@@ -501,7 +505,7 @@ function kartuDetailO2O() {
       p = tot ? j[0] / tot : null,
       shTot = j[0] + j[2] + j[3] + j[4],
       sh = j[2] == null || !shTot ? null : (j[0] + j[2]) / shTot;
-    return `<tr class="${on ? "on" : ""}"><td><b>${esc(nama)}</b>${rk ? `<small>#${rk[0]} dari ${rk[1]} cabang</small>` : ""}</td><td>${j[0].toLocaleString("id-ID")}</td><td>${j[1].toLocaleString("id-ID")}</td><td>${tot.toLocaleString("id-ID")}</td><td class="${kls(p)}"><b>${P(p)}</b></td><td>${P(sh)}</td></tr>`;
+    return `<tr class="${on ? "on" : ""}"><td><b>${esc(nama)}</b>${rk ? `<small>#${rk[0]} dari ${rk[1]} cabang</small>` : ""}</td><td>${j[0].toLocaleString("id-ID")}</td><td>${j[1].toLocaleString("id-ID")}</td><td>${tot.toLocaleString("id-ID")}</td><td class="${kls(p)}"><b>${P2(p)}</b></td><td>${P2(sh)}</td></tr>`;
   };
   const rows = [
     baris("Cabang ini", jumlah([st.b]), null, true),
@@ -509,7 +513,7 @@ function kartuDetailO2O() {
     baris("Region II", jumlah(semua), peringkat(semua)),
     bw ? baris("Bankwide", [bw[0], bw[1], null, null, null], null) : "",
   ].join("");
-  return `<div class="cd"><h2>Detail O2O · MTD s.d. ${dlong(D.mdate)}</h2><div class="tw"><table><tr><th>Cakupan</th><th>Livin O2O</th><th>NBDS</th><th>Total</th><th>O2O %</th><th>Shifting</th></tr>${rows}</table></div><div class="note">O2O % = Livin O2O ÷ (Livin O2O + NBDS); hijau = di atas rata-rata Bankwide ${P(D.bw)}. Shifting = (O2O + CSM) ÷ (O2O + NBDS + CSM + OBDS). # = peringkat O2O % cabang ini (tertinggi = 1).</div></div>`;
+  return `<div class="cd"><h2>Detail O2O · MTD s.d. ${dlong(D.mdate)}</h2><div class="tw"><table><tr><th>Cakupan</th><th>Livin O2O</th><th>NBDS</th><th>Total</th><th>O2O %</th><th>Shifting</th></tr>${rows}</table></div><div class="note">O2O % = Livin O2O ÷ (Livin O2O + NBDS); hijau = di atas rata-rata Bankwide ${P2(D.bw)}. Shifting = (O2O + CSM) ÷ (O2O + NBDS + CSM + OBDS). # = peringkat O2O % cabang ini (tertinggi = 1).</div></div>`;
 }
 
 // Halaman Region dan Area: tampilan "sedang dalam pengembangan"

@@ -24,8 +24,8 @@ const clean=x=>String(x??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':
 const norm=s=>String(s||'').toLowerCase().replace(/^area\s+/,'').replace(/[^a-z0-9]/g,'');
 const num=n=>Number(n||0).toLocaleString('id-ID');
 // persen dipotong (bukan dibulatkan) ke 1 desimal, supaya 97,96% tidak tampil "98,0%" padahal belum capai target
-const pct=p=>{if(p==null)return '–';const v=Math.floor(p*1000+1e-9)/10;return v.toLocaleString('id-ID',{minimumFractionDigits:v%1?1:0,maximumFractionDigits:1})+'%';};
-const ppTxt=d=>(d>=0?'+':'−')+Math.abs(d*100).toLocaleString('id-ID',{minimumFractionDigits:1,maximumFractionDigits:1})+' %';
+const pct=p=>{if(p==null)return '–';const v=Math.floor(p*10000+1e-9)/100;return v.toLocaleString('id-ID',{minimumFractionDigits:2,maximumFractionDigits:2})+'%';};   // dipotong 2 desimal
+const ppTxt=d=>(d>=0?'+':'−')+Math.abs(d*100).toLocaleString('id-ID',{minimumFractionDigits:2,maximumFractionDigits:2})+' %';
 const util=pr=>pr&&pr[0]+pr[1]>0?pr[0]/(pr[0]+pr[1]):null;
 // jumlah transaksi Old BDS yang harus dialihkan ke NBDS agar utilisasi ≥ target
 const need=pr=>pr?Math.max(0,Math.ceil(TGT*(pr[0]+pr[1])-pr[0]-1e-9)):0;

@@ -11,9 +11,11 @@ const app=document.getElementById('app');if(!app)return;
 const clean=x=>String(x??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const num=n=>Number(n||0).toLocaleString('id-ID');
 const clock=s=>{if(s==null)return '–';const t=Math.round(Math.abs(s)),h=Math.floor(t/3600),m=Math.floor(t/60)%60,d=t%60,p=x=>String(x).padStart(2,'0');return (s<0?'-':'')+(h?h+':'+p(m):p(m))+':'+p(d);};
-const pctR=p=>p==null?'–':(p*100).toLocaleString('id-ID',{minimumFractionDigits:1,maximumFractionDigits:1})+'%';
+const pctR=p=>p==null?'–':(p*100).toLocaleString('id-ID',{minimumFractionDigits:2,maximumFractionDigits:2})+'%';
+// Informasi Sales: tetap 1 desimal
+const pct1=p=>p==null?'–':(p*100).toLocaleString('id-ID',{minimumFractionDigits:1,maximumFractionDigits:1})+'%';
 // NBDS: dipotong ke 1 desimal agar 97,96% tidak tampil 98,0% (target 98%)
-const pctT=p=>{if(p==null)return '–';const v=Math.floor(p*1000+1e-9)/10;return v.toLocaleString('id-ID',{minimumFractionDigits:1,maximumFractionDigits:1})+'%';};
+const pctT=p=>{if(p==null)return '–';const v=Math.floor(p*10000+1e-9)/100;return v.toLocaleString('id-ID',{minimumFractionDigits:2,maximumFractionDigits:2})+'%';};
 const isoShort=iso=>new Date(iso+'T00:00').toLocaleDateString('id-ID',{day:'numeric',month:'short'});
 const isoLong=iso=>new Date(iso+'T00:00').toLocaleDateString('id-ID',{day:'numeric',month:'long',year:'numeric'});
 // persentil waktu antri per tanggal (kito.json [KITO_REGION]: queueMetricByDate)
@@ -58,14 +60,33 @@ const MET=[
   {key:'o2o',g:'o2o',n:'Overall O2O',s:'O2O',tinggi:true,jenis:'o2o',per:['mtd'],val:e=>util(e.o2o?.overall),fmt:pctR},
   {key:'shift',g:'o2o',n:'Shifting Digital',s:'Shifting',tinggi:true,jenis:'o2o',per:['mtd'],val:e=>shift(e),fmt:pctR},
 ];
+/* Informasi Sales bankwide: Program Emas per region (kito.json [KITO_EMAS].regions, periode awal s.d. tanggal laporan).
+   Data Ekstensifikasi/Intensifikasi hanya tersedia untuk Region II, sehingga perbandingan 12 region memakai Program Emas.
+   Nasional = jumlah 12 region. */
+const EM=window.KITO_EMAS;
+const emRegion=new Map((EM?.regions||[]).map(x=>[String(x.nama).split('·')[0].trim(),x]));
+const emOf=e=>{
+  if(e!==NAS)return emRegion.get(e.no)||null;
+  const rs=[...emRegion.values()];if(!rs.length)return null;
+  const sum=f=>rs.reduce((s,x)=>s+(f(x)||0),0);
+  return{pegawai:sum(x=>x.pegawai),input:sum(x=>x.input),tab:{t:sum(x=>x.tab.t),v:sum(x=>x.tab.v)},cetak:{t:sum(x=>x.cetak.t),v:sum(x=>x.cetak.v)}};
+};
+const rasio=(v,t)=>t?v/t:null;
+if(emRegion.size)MET.push(
+  {key:'s-tab',g:'sales',n:'Tabungan Emas (realisasi ÷ target)',s:'Tab. Emas',tinggi:true,jenis:'sales',per:['mtd'],val:e=>{const x=emOf(e);return x?rasio(x.tab.v,x.tab.t):null;},fmt:pct1},
+  {key:'s-cetak',g:'sales',n:'Cetak Emas ATM (realisasi ÷ target)',s:'Cetak Emas',tinggi:true,jenis:'sales',per:['mtd'],val:e=>{const x=emOf(e);return x?rasio(x.cetak.v,x.cetak.t):null;},fmt:pct1},
+  {key:'s-part',g:'sales',n:'Partisipasi Pegawai (sudah input)',s:'Partisipasi',tinggi:true,jenis:'sales',per:['mtd'],val:e=>{const x=emOf(e);return x?rasio(x.input,x.pegawai):null;},fmt:pct1},
+);
+const tgS=iso=>iso?isoShort(iso):'';
 const GRUP=[
   {key:'waktu',ik:'⏱',n:'Waktu Antri',main:'w-all',pendek:'Waktu Antri',ket:`DtD ${rentangP95}: P95 & P100 · ${mtdTag()==='P95'?'MTD: P95':'riwayat dan MTD: P90'} · semakin kecil semakin baik`},
   {key:'nbds',ik:'🖥️',n:'Utilisasi NBDS',main:'nb-agg',pendek:'NBDS',ket:'New BDS ÷ (New BDS + Old BDS) · target ≥ 98%'},
   {key:'o2o',ik:'📊',n:'O2O & Shifting Digital',main:'o2o',pendek:'O2O',ket:'Transaksi ganti kartu · semakin besar semakin baik'},
 ];
+if(emRegion.size)GRUP.push({key:'sales',ik:'💰',n:'Informasi Sales · Program Emas',main:'s-tab',pendek:'Sales',ket:'Tabungan Emas & Cetak Emas ATM: realisasi ÷ target · semakin besar semakin baik'});
 const metOf=k=>MET.find(m=>m.key===k)||MET[0];
 const perOf=(m,per)=>m.per.includes(per)?per:m.per[0];
-const perLabel=(m,per)=>perOf(m,per)==='mtd'?(m.jenis==='o2o'?`MTD s.d. ${isoShort(R.tglO2O)}`:(m.jenis==='waktu'?`${window.KITO_BULAN?window.KITO_BULAN.mtdLabel:'MTD '+BULAN} · ${mtdTag()}`:`MTD ${BULAN}`)):(m.jenis==='waktu'?`DtD ${isoShort(iso())} · ${metrikTgl(iso())}`:`DtD ${isoShort(iso())}`);
+const perLabel=(m,per)=>m.jenis==='sales'?`MTD ${tgS(EM.awal)}–${tgS(EM.tanggal)}`:perOf(m,per)==='mtd'?(m.jenis==='o2o'?`MTD s.d. ${isoShort(R.tglO2O)}`:(m.jenis==='waktu'?`${window.KITO_BULAN?window.KITO_BULAN.mtdLabel:'MTD '+BULAN} · ${mtdTag()}`:`MTD ${BULAN}`)):(m.jenis==='waktu'?`DtD ${isoShort(iso())} · ${metrikTgl(iso())}`:`DtD ${isoShort(iso())}`);
 // tgl: tanggal nilai waktu (bawaan: DtD terpilih bila periode DtD); P95 memakai batas 20 menit, P90 & P100 15 menit
 const kelas=(m,v,tgl=perOf(m,ui.per)==='dtd'?iso():null)=>{
   if(v==null)return 'n';
@@ -86,7 +107,7 @@ function peringkat(m,per){
 function selisih(m,v,ref){
   if(v==null||ref==null)return null;
   const d=v-ref,baik=m.tinggi?d>0:d<0,sama=m.jenis==='waktu'?Math.abs(d)<1:Math.abs(d)<0.0005;
-  const teks=m.jenis==='waktu'?`${d<0?'−':'+'}${clock(Math.abs(d))}`:`${d>=0?'+':'−'}${Math.abs(d*100).toLocaleString('id-ID',{minimumFractionDigits:1,maximumFractionDigits:1})} %`;
+  const teks=m.jenis==='waktu'?`${d<0?'−':'+'}${clock(Math.abs(d))}`:`${d>=0?'+':'−'}${Math.abs(d*100).toLocaleString('id-ID',m.jenis==='sales'?{minimumFractionDigits:1,maximumFractionDigits:1}:{minimumFractionDigits:2,maximumFractionDigits:2})} %`;
   // versi kalimat untuk chip/tabel: waktu memakai "lebih cepat/lambat"
   const kata=m.jenis==='waktu'?`${clock(Math.abs(d))} ${d<0?'lebih cepat':'lebih lambat'}`:teks;
   return{d,baik,sama,teks,kata};
@@ -104,11 +125,11 @@ function hero(){
   const opsi=[['NASIONAL','Nasional (bankwide)'],...REG.filter(e=>e!==FOKUS).map(e=>[e.id,`Region ${e.no} · ${e.nama}`])];
   return `<section class="cd rx-hero"><span class="rg-eyebrow">DASHBOARD REGION · BANKWIDE</span>
     <h3>Region ${clean(FOKUS.no)} · ${clean(FOKUS.nama)} <small>vs 11 region lain</small></h3>
-    <p class="rg-sub">Waktu Antri, Utilisasi NBDS, dan O2O. Tanggal DtD mengikuti filter Tanggal di atas · P95 pada ${rentangP95}, P90 pada riwayat sebelumnya · data s.d. ${isoLong(R.tanggal)}.</p>
+    <p class="rg-sub">Waktu Antri, Utilisasi NBDS, O2O${emRegion.size?', dan Informasi Sales (Program Emas)':''}. Tanggal DtD mengikuti filter Tanggal di atas · P95 pada ${rentangP95}, P90 pada riwayat sebelumnya · data s.d. ${isoLong(R.tanggal)}.</p>
     <div class="rx-chips">${ranks}</div>
     <div class="rx-ctrl"><div><span class="rg-g">Periode</span>${seg('per',[['dtd',`DtD ${isoShort(iso())}`],['mtd',`MTD ${BULAN}`]],ui.per)}</div>
     <label class="rx-cmp"><span class="rg-g">Bandingkan dengan</span><select data-rx-cmp aria-label="Pembanding">${opsi.map(([v,t])=>`<option value="${clean(v)}" ${v===ui.cmp?'selected':''}>${clean(t)}</option>`).join('')}</select></label></div>
-    <p class="rg-note">O2O & Shifting Digital hanya tersedia MTD (s.d. ${isoLong(R.tglO2O)}).</p></section>`;
+    <p class="rg-note">O2O & Shifting Digital hanya tersedia MTD (s.d. ${isoLong(R.tglO2O)}).${emRegion.size?` Informasi Sales Program Emas hanya tersedia MTD (${tgS(EM.awal)} s.d. ${isoLong(EM.tanggal)}).`:''}</p></section>`;
 }
 
 /* ===== 2. Kartu skor per indikator ===== */
@@ -118,7 +139,7 @@ function bandingFokus(m,v,fokus){
   if(s.sama)return `Setara dengan ${nama(FOKUS)}`;
   const beda=m.jenis==='waktu'
     ? `${clock(Math.abs(s.d))} ${s.d<0?'lebih cepat':'lebih lambat'}`
-    : `${Math.abs(s.d*100).toLocaleString('id-ID',{minimumFractionDigits:1,maximumFractionDigits:1})} poin persentase ${s.d>0?'lebih tinggi':'lebih rendah'}`;
+    : `${Math.abs(s.d*100).toLocaleString('id-ID',m.jenis==='sales'?{minimumFractionDigits:1,maximumFractionDigits:1}:{minimumFractionDigits:2,maximumFractionDigits:2})} poin persentase ${s.d>0?'lebih tinggi':'lebih rendah'}`;
   return `${beda} dibanding ${nama(FOKUS)}`;
 }
 function strip(rows,cmp,m){
@@ -201,8 +222,9 @@ function daftar(){
   const vals=rows.map(r=>r.v).concat(ref!=null?[ref]:[]);
   const lo=Math.min(...vals),hi=Math.max(...vals);
   // skala: waktu dari 0; persen dari kelipatan 5% di bawah nilai terendah agar selisih terlihat
-  const min=m.jenis==='waktu'?0:Math.max(0,Math.floor((Math.min(lo,m.jenis==='nbds'?TGT:lo)-.02)*20)/20);
-  const max=m.jenis==='waktu'?hi*1.08:1;
+  // sales (Program Emas): pencapaian masih kecil, skala dari 0 sampai sedikit di atas nilai tertinggi
+  const min=m.jenis==='waktu'||m.jenis==='sales'?0:Math.max(0,Math.floor((Math.min(lo,m.jenis==='nbds'?TGT:lo)-.02)*20)/20);
+  const max=m.jenis==='waktu'?hi*1.08:m.jenis==='sales'?Math.min(1,hi*1.1)||1:1;
   const x=v=>Math.max(0,Math.min(100,(v-min)/(max-min)*100));
   const list=rows.map(r=>{const k=kelas(m,r.v),me=r.e===FOKUS,c=r.e===cmp;return `<button type="button" class="rg-row rx-row ${me?'me':''} ${c?'cmp':''}" data-rx-pilih="${clean(r.e.id)}" aria-label="Bandingkan dengan ${clean(namaPanjang(r.e))}"><span class="rg-no ${r.rk<=3?'top':''}">${r.rk<=3?['🥇','🥈','🥉'][r.rk-1]:r.rk}</span><span class="rg-mid"><span class="rg-nm">${clean(nama(r.e))}<small>${clean(r.e.nama)}${me?' · fokus':c?' · pembanding':''}</small></span><span class="rg-bar"><i class="${me?k:'rx-grey'}" style="width:${x(r.v)}%"></i>${ref!=null?`<u style="left:${x(ref)}%"></u>`:''}${m.jenis==='nbds'?`<u class="tgt" style="left:${x(TGT)}%"></u>`:''}</span></span><span class="rg-val ${me?k:''}">${m.fmt(r.v)}</span></button>`;}).join('');
   const me=rows.find(r=>r.e===FOKUS),best=rows[0],worst=rows[rows.length-1];
@@ -214,7 +236,7 @@ function daftar(){
 /* ===== 5. Tren harian: semua region (abu-abu), Region II tebal, pembanding, Nasional ===== */
 function tren(){
   const m=metOf(ui.m);
-  if(!m.seri)return `<section class="cd"><h2>Tren Harian · ${clean(m.n)}</h2><p class="rg-sub">Data O2O & Shifting Digital tersedia sebagai MTD, sehingga tren harian tidak ditampilkan. Pilih indikator Waktu Antri atau Utilisasi NBDS untuk melihat tren.</p></section>`;
+  if(!m.seri)return `<section class="cd"><h2>Tren Harian · ${clean(m.n)}</h2><p class="rg-sub">Data ${m.jenis==='sales'?'Informasi Sales (Program Emas)':'O2O & Shifting Digital'} tersedia sebagai MTD, sehingga tren harian tidak ditampilkan. Pilih indikator Waktu Antri atau Utilisasi NBDS untuk melihat tren.</p></section>`;
   const tgl=m.tgl,n=tgl.length,cmp=cmpEnt();
   const L=40,Rr=12,T=16,Bt=26,H=230,W=lebarGrafik();
   const sp=(W-L-Rr)/Math.max(n-1,1),X=i=>L+i*sp;
@@ -270,7 +292,7 @@ function rekap(){
   const body=tbl.map(x=>`<tr class="${x.e===FOKUS?'on':x.e===cmp?'rx-cmp-row':''}" data-rx-pilih="${clean(x.e.id)}"><td class="rg-sticky2" style="left:0"><b>${clean(nama(x.e))}</b><small>${clean(x.e.nama)}</small></td>${cols.map(c=>{const r=c.map.get(x.e);return r?`<td class="rg-c ${q(r.rk,c.n)}" title="${clean(c.m.n)}: ${clean(c.m.fmt(r.v))}">${r.rk}</td>`:'<td class="rg-na">–</td>';}).join('')}</tr>`).join('')
     ||`<tr><td colspan="${cols.length+1}" class="rg-na" style="padding:16px;text-align:center">Tidak ada region yang cocok dengan pencarian.</td></tr>`;
   const info=cariAktif?` Menampilkan <b>${tbl.length}</b> region sesuai pencarian.`:' Ketik nama/nomor region di kotak pencarian atas untuk menyaring tabel.';
-  return `<section class="cd" id="rx-rekap"><h2>Rekap Peringkat 12 Region</h2><p class="rg-sub">${ui.per==='mtd'?`MTD ${BULAN}`:`DtD ${isoShort(iso())}`} (O2O & Shifting MTD). Angka di sel = peringkat region pada indikator tersebut; baris diurutkan menurut nomor region (I → XII).${info}</p><div class="tw rg-tw"><table class="rg-tbl">${head}${body}</table></div><div class="rg-leg"><span><i class="q1"></i>25% teratas</span><span><i class="q2"></i>25–50%</span><span><i class="q3"></i>50–75%</span><span><i class="q4"></i>25% terbawah</span></div><p class="rg-note">Ketuk baris untuk menjadikan region tersebut pembanding.</p></section>`;
+  return `<section class="cd" id="rx-rekap"><h2>Rekap Peringkat 12 Region</h2><p class="rg-sub">${ui.per==='mtd'?`MTD ${BULAN}`:`DtD ${isoShort(iso())}`} (O2O & Shifting${emRegion.size?', Informasi Sales':''} MTD). Angka di sel = peringkat region pada indikator tersebut; baris diurutkan menurut nomor region (I → XII).${info}</p><div class="tw rg-tw"><table class="rg-tbl">${head}${body}</table></div><div class="rg-leg"><span><i class="q1"></i>25% teratas</span><span><i class="q2"></i>25–50%</span><span><i class="q3"></i>50–75%</span><span><i class="q4"></i>25% terbawah</span></div><p class="rg-note">Ketuk baris untuk menjadikan region tersebut pembanding.</p></section>`;
 }
 
 /* ===== 7. Reservasi, P100 & Wait < 10 detik per region (sejak 27 Okt) ===== */
@@ -295,7 +317,7 @@ function antrian(){
 }
 
 function catatan(){
-  return `<section class="cd"><p class="rg-note" style="margin:0">Sumber: ${clean(R.sumber.waktu)} · ${clean(R.sumber.nbds)} · ${clean(R.sumber.o2o)}. Waktu antri DtD ${rentangP95} = P95; ${mtdTag()==='P95'?'MTD = rata-rata P95 harian bulan berjalan':'tanggal sebelumnya dan MTD historis = P90 (tidak sebanding langsung)'}; Utilisasi NBDS MTD = jumlah harian 1 s.d. tanggal laporan; Shifting Digital = (CSM + O2O) ÷ (CSM + O2O + Old BDS + New BDS) transaksi ganti kartu.</p></section>`;
+  return `<section class="cd"><p class="rg-note" style="margin:0">Sumber: ${clean(R.sumber.waktu)} · ${clean(R.sumber.nbds)} · ${clean(R.sumber.o2o)}${emRegion.size?' · '+clean(EM.sumber):''}. Waktu antri DtD ${rentangP95} = P95; ${mtdTag()==='P95'?'MTD = rata-rata P95 harian bulan berjalan':'tanggal sebelumnya dan MTD historis = P90 (tidak sebanding langsung)'}; Utilisasi NBDS MTD = jumlah harian 1 s.d. tanggal laporan; Shifting Digital = (CSM + O2O) ÷ (CSM + O2O + Old BDS + New BDS) transaksi ganti kartu.</p></section>`;
 }
 
 const page=()=>hero()+`<div class="rx-grid">${GRUP.map(kartuGrup).join('')}</div>`+versus()+antrian()+daftar()+tren()+rekap()+catatan();

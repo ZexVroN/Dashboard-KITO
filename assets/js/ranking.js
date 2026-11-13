@@ -16,9 +16,11 @@ const norm=s=>String(s||'').toLowerCase().replace(/^area\s+/,'').replace(/[^a-z0
 const num=n=>Number(n||0).toLocaleString('id-ID');
 const clock=s=>s==null?'–':String(Math.floor(Math.round(s)/60)).padStart(2,'0')+':'+String(Math.round(s)%60).padStart(2,'0');
 // persen dipotong ke 1 desimal (konsisten dengan dashboard NBDS: 97,96% tidak tampil 98,0%)
-const pct=p=>{if(p==null)return '–';const v=Math.floor(p*1000+1e-9)/10;return v.toLocaleString('id-ID',{minimumFractionDigits:v%1?1:0,maximumFractionDigits:1})+'%';};
+const pct=p=>{if(p==null)return '–';const v=Math.floor(p*10000+1e-9)/100;return v.toLocaleString('id-ID',{minimumFractionDigits:2,maximumFractionDigits:2})+'%';};
 // O2O & Shifting: dibulatkan 1 desimal (sama dengan kartu O2O/Shifting di tab Area & Cabang)
-const pctR=p=>p==null?'–':(p*100).toLocaleString('id-ID',{minimumFractionDigits:1,maximumFractionDigits:1})+'%';
+const pctR=p=>p==null?'–':(p*100).toLocaleString('id-ID',{minimumFractionDigits:2,maximumFractionDigits:2})+'%';
+// Informasi Sales: tetap 1 desimal
+const pct1=p=>p==null?'–':(p*100).toLocaleString('id-ID',{minimumFractionDigits:1,maximumFractionDigits:1})+'%';
 const isoLong=iso=>new Date(iso+'T00:00').toLocaleDateString('id-ID',{day:'numeric',month:'long',year:'numeric'});
 const isoShort=iso=>new Date(iso+'T00:00').toLocaleDateString('id-ID',{day:'numeric',month:'short'});
 const AREAS=[...new Set(D.B.map(b=>b[2]))].sort();
@@ -77,9 +79,38 @@ if(N)N.kanal.forEach(kn=>MET.push({key:'nb-'+kn.key,g:'Utilisasi NBDS',n:kn.labe
   reg:per=>nbU(nbRegion(kn.key,per)),
   tie:(i,per)=>{const p=nbPair(nbCab.get(String(D.B[i][0])),kn.key,per);return p?p[0]-p[1]:0;},
   kelas:v=>kNbds(v),fmt:pct,ket:`Target ≥ ${pct(TGT)}`,sumber:()=>'New BDS ÷ (New BDS + Old BDS)'}));
+/* ----- Informasi Sales -----
+   Ekstensifikasi (Akuisisi New CIF ÷ Target) & Intensifikasi (Balance New Acc ETB ÷ Target Balance): kito.json [KITO_SALES_PEGAWAI],
+   dijumlah dari pegawai inbranch per cabang (aturan sama dengan area-sales.js).
+   Tabungan Emas & Cetak Emas ATM (realisasi ÷ target): kito.json [KITO_EMAS].cabang. Semua per tanggal laporan masing-masing. */
+const SP=window.KITO_SALES_PEGAWAI,EM=window.KITO_EMAS;
+const kd=x=>String(x??'').replace(/\D/g,'');
+const lastV=a=>Array.isArray(a)?a[a.length-1]:a;
+const spCab=new Map();   // kode -> {ea,et,ib,it}
+(SP?.rows||[]).forEach(r=>{const k=kd(r[4]);const o=spCab.get(k)||{ea:0,et:0,ib:0,it:0};o.ea+=Number(lastV(r[5]))||0;o.et+=Number(r[6])||0;o.ib+=Number(r[11])||0;o.it+=Number(r[12])||0;spCab.set(k,o);});
+const emCab=new Map((EM?.cabang||[]).map(c=>[kd(c.kode),c]));
+const kodeIdx=i=>kd(D.B[i][0]);
+// jumlah realisasi & target sekumpulan cabang -> persentase
+const salesP=(idx,ambil)=>{let v=0,t=0,ada=false;idx.forEach(i=>{const x=ambil(kodeIdx(i));if(x){ada=true;v+=x[0];t+=x[1];}});return ada&&t>0?v/t:null;};
+const AMBIL={
+  e:k=>{const o=spCab.get(k);return o?[o.ea,o.et]:null;},
+  i:k=>{const o=spCab.get(k);return o?[o.ib,o.it]:null;},
+  tab:k=>{const c=emCab.get(k);return c?[Number(c.tab?.v)||0,Number(c.tab?.t)||0]:null;},
+  cetak:k=>{const c=emCab.get(k);return c?[Number(c.cetak?.v)||0,Number(c.cetak?.t)||0]:null;},
+};
+const tglSP=SP?.tanggal,tglEM=EM?.tanggal;
+const salesMet=(key,n,s,tgl,sumber)=>({key:'s-'+key,g:'Informasi Sales',n,s,tinggi:true,jenis:'pct',per:['tgl'],tglLabel:tgl?`per ${isoShort(tgl)}`:null,
+  cab:i=>salesP([i],AMBIL[key]),area:a=>salesP(cabOfArea(a),AMBIL[key]),reg:()=>salesP(SEMUA_IDX_S,AMBIL[key]),
+  kelas:(v,ref)=>kRel(v,ref),fmt:pct1,ket:'Hijau = di atas Region II',sumber:()=>sumber});
+const SEMUA_IDX_S=D.B.map((b,i)=>i);
+if(SP)MET.push(salesMet('e','Ekstensifikasi','Ekstensif',tglSP,'Akuisisi New CIF ÷ Target'),salesMet('i','Intensifikasi','Intensif',tglSP,'Balance New Acc ETB ÷ Target Balance'));
+if(EM)MET.push(salesMet('tab','Tabungan Emas','Tab. Emas',tglEM,'Tabungan Emas: realisasi ÷ target'),{...salesMet('cetak','Cetak Emas ATM','Cetak Emas',tglEM,'Cetak Emas ATM: realisasi ÷ target'),rekap:false});
+// rekap:false = tidak dimasukkan ke tabel Rekap Peringkat Semua Indikator maupun peringkat gabungan (Rata²)
+const diRekap=c=>c.m.rekap!==false;
+
 const metOf=k=>MET.find(m=>m.key===k)||MET[2];
 const perOf=(m,per)=>m.per.includes(per)?per:m.per[0];
-const perLabel=(m,per)=>{const p=perOf(m,per);return p==='mtd'?(m.jenis==='waktu'?(window.KITO_BULAN?window.KITO_BULAN.mtdLabel:'MTD Oktober'):'MTD Oktober'):p==='dtd'?`DtD ${isoShort(iso())}`:`per ${isoShort(D.mdate)}`;};
+const perLabel=(m,per)=>{const p=perOf(m,per);if(m.tglLabel)return m.tglLabel;return p==='mtd'?(m.jenis==='waktu'?(window.KITO_BULAN?window.KITO_BULAN.mtdLabel:'MTD Oktober'):'MTD Oktober'):p==='dtd'?`DtD ${isoShort(iso())}`:`per ${isoShort(D.mdate)}`;};
 
 /* ----- state ----- */
 const ui={level:'cabang',m:'w-all',per:'dtd',semua:false,rekapSemua:false,fokus:false}; // fokus: lingkup "Cabang"
@@ -107,7 +138,7 @@ const barisCabang=(m,per)=>barisCabangIdx(m,per,idxLingkup());
 function gabunganCabang(idx,per){
   const cols=MET.map(m=>{const rows=barisCabangIdx(m,per,idx);return{m,n:rows.length,map:new Map(rows.map(r=>[r.id,r]))};});
   const ents=idx.map(i=>({id:String(D.B[i][0]),nama:D.B[i][1],area:D.B[i][2]}));
-  ents.forEach(e=>{const r=cols.map(c=>c.map.get(e.id)?.rk).filter(x=>x!=null);e.cnt=r.length;e.avg=r.length?r.reduce((a,b)=>a+b,0)/r.length:null;});
+  ents.forEach(e=>{const r=cols.filter(diRekap).map(c=>c.map.get(e.id)?.rk).filter(x=>x!=null);e.cnt=r.length;e.avg=r.length?r.reduce((a,b)=>a+b,0)/r.length:null;});
   const ada=ents.filter(e=>e.avg!=null).sort((a,b)=>a.avg-b.avg||b.cnt-a.cnt);
   let prev,r=0;ada.forEach((e,j)=>{const v=Math.round(e.avg*100);if(j===0||v!==prev){r=j+1;prev=v;}e.rk=r;});
   return{cols,ada};
@@ -128,13 +159,13 @@ function hero(){
     :ui.level==='area'?`${AREAS.length} area Region II`
     :area?`${cabOfArea(area).length} cabang di Area ${clean(area)}`:`${D.B.length} cabang Seluruh Region II`;
   const judul=ui.fokus?'Rapor Peringkat Cabang':`Ranking ${ui.level==='area'?'Area':'Cabang'}`;
-  return `<section class="cd rg-hero"><span class="rg-eyebrow">KITO · RANKING REGION II</span><h3>${judul}</h3><p class="rg-sub">${lingkup} · Waktu Antrian, O2O &amp; Shifting Digital, dan Utilisasi NBDS. Lingkup juga bisa dipilih lewat dropdown Area/Cabang di atas.</p>
+  return `<section class="cd rg-hero"><span class="rg-eyebrow">KITO · RANKING REGION II</span><h3>${judul}</h3><p class="rg-sub">${lingkup} · Waktu Antrian, O2O &amp; Shifting Digital, Utilisasi NBDS${SP||EM?', dan Informasi Sales':''}. Lingkup juga bisa dipilih lewat dropdown Area/Cabang di atas.</p>
     ${seg('level',[['cabang','🏢 Cabang'],['area','📍 Area']],ui.fokus?'':ui.level)}
     <div class="rg-lingkup"><span class="rg-g">Lingkup</span>${seg('lingkup',[['region','🌏 Seluruh Region II'],['area','📍 Area: '+clean(areaTombol)],['cabang','🏢 Cabang: '+clean(b[1])]],lingkupAktif)}</div></section>`;
 }
 
 function pilihPeriode(){
-  return `<section class="cd"><div class="rg-per rg-per-only"><span class="rg-g">Periode</span>${seg('per',[['dtd',`DtD ${isoShort(iso())}`],['mtd','MTD']],ui.per==='mtd'?'mtd':'dtd')}</div><p class="rg-note">O2O dan Shifting Digital hanya tersedia per ${isoShort(D.mdate)} (tanggal laporan).</p></section>`;
+  return `<section class="cd"><div class="rg-per rg-per-only"><span class="rg-g">Periode</span>${seg('per',[['dtd',`DtD ${isoShort(iso())}`],['mtd','MTD']],ui.per==='mtd'?'mtd':'dtd')}</div><p class="rg-note">O2O dan Shifting Digital hanya tersedia per ${isoShort(D.mdate)} (tanggal laporan).${SP?` Ekstensifikasi & Intensifikasi per ${isoShort(tglSP)}.`:''}${EM?` Program Emas per ${isoShort(tglEM)}.`:''}</p></section>`;
 }
 
 /* Rapor satu cabang: nilai + peringkat di Region II dan di area, untuk semua indikator */
@@ -158,7 +189,7 @@ function rapor(){
     <div class="rg-pf-head"><span>Indikator</span><span>Nilai</span><span>Region II</span><span>Area</span></div>${baris}
     <div class="rg-leg"><span><i class="q1"></i>25% teratas</span><span><i class="q2"></i>25–50%</span><span><i class="q3"></i>50–75%</span><span><i class="q4"></i>25% terbawah</span></div>
     <button type="button" class="rg-more" data-rg-code="${clean(id)}">🏢 Buka dashboard ${clean(b[1])}</button>
-    <p class="rg-note">Ketuk indikator untuk melihat daftar ranking Seluruh Region II dengan posisi cabang ini ditandai. Peringkat gabungan = rata-rata peringkat ${MET.length} indikator.</p></section>`;
+    <p class="rg-note">Ketuk indikator untuk melihat daftar ranking Seluruh Region II dengan posisi cabang ini ditandai. Peringkat gabungan = rata-rata peringkat ${MET.filter(m=>m.rekap!==false).length} indikator${MET.some(m=>m.rekap===false)?' (tanpa '+MET.filter(m=>m.rekap===false).map(m=>m.n).join(', ')+')':''}.</p></section>`;
 }
 
 function pilihIndikator(){
@@ -213,10 +244,11 @@ function rekap(){
   if(isArea){
     cols=MET.map(m=>{const rows=barisArea(m,ui.per);return{m,n:rows.length,map:new Map(rows.map(r=>[r.id,r]))};});
     const ents=AREAS.map(a=>({id:a,nama:a}));
-    ents.forEach(e=>{const r=cols.map(c=>c.map.get(e.id)?.rk).filter(x=>x!=null);e.cnt=r.length;e.avg=r.length?r.reduce((a,b)=>a+b,0)/r.length:null;});
+    ents.forEach(e=>{const r=cols.filter(diRekap).map(c=>c.map.get(e.id)?.rk).filter(x=>x!=null);e.cnt=r.length;e.avg=r.length?r.reduce((a,b)=>a+b,0)/r.length:null;});
     ada=ents.filter(e=>e.avg!=null).sort((a,b)=>a.avg-b.avg||b.cnt-a.cnt);
     let prev,r=0;ada.forEach((e,j)=>{const v=Math.round(e.avg*100);if(j===0||v!==prev){r=j+1;prev=v;}e.rk=r;});
   }else({cols,ada}=gabunganCabang(idxLingkup(),ui.per));
+  cols=cols.filter(diRekap);   // kolom yang ditampilkan di tabel rekap
   const meId=isArea?areaAktif():String(D.B[st.b][0]);
   const kata=kataCari(),cariAktif=kata.length>0;
   // urut menaik berdasarkan peringkat gabungan (nama sebagai pembeda bila sama)
@@ -235,7 +267,7 @@ function rekap(){
   const body=tbl.map(e=>`<tr class="${e.id===meId?'on':''}" ${isArea?`data-rg-area="${clean(e.id)}"`:`data-rg-code="${clean(e.id)}"`}><td class="rg-sticky"><b>${e.rk}</b></td><td class="rg-sticky2"><b>${clean(e.nama)}</b>${e.area&&isRegion()?`<small>${clean(e.area)}</small>`:''}</td>${cols.map(c=>sel(c,e)).join('')}<td><b>${e.avg.toLocaleString('id-ID',{maximumFractionDigits:1})}</b>${e.cnt<cols.length?`<small>${e.cnt}/${cols.length}</small>`:''}</td></tr>`).join('')
     ||`<tr><td colspan="${cols.length+3}" class="rg-na" style="padding:16px;text-align:center">Tidak ada ${isArea?'area':'cabang'} yang cocok dengan pencarian.</td></tr>`;
   const more=!isArea&&!cariAktif&&ada.length>LIM?`<button type="button" class="rg-more" data-rg-rekap="1">${ui.rekapSemua?`Tampilkan ${LIM} teratas`:`Tampilkan semua ${ada.length} cabang`}</button>`:'';
-  const perTxt=ui.per==='mtd'?'MTD (waktu antri '+(window.KITO_BULAN?window.KITO_BULAN.mtdLabel:'MTD Oktober')+', NBDS MTD Oktober; O2O & Shifting per tanggal laporan)':`DtD ${isoShort(iso())} (O2O & Shifting per ${isoShort(D.mdate)})`;
+  const perTxt=ui.per==='mtd'?'MTD (waktu antri '+(window.KITO_BULAN?window.KITO_BULAN.mtdLabel:'MTD Oktober')+', NBDS MTD Oktober; O2O & Shifting'+(SP||EM?', Informasi Sales':'')+' per tanggal laporan)':`DtD ${isoShort(iso())} (O2O & Shifting per ${isoShort(D.mdate)}${SP?`, Ekstensifikasi & Intensifikasi per ${isoShort(tglSP)}`:''}${EM?`, Program Emas per ${isoShort(tglEM)}`:''})`;
   const info=cariAktif?`Menampilkan <b>${tbl.length}</b> ${isArea?'area':'cabang'} sesuai pencarian`:`Cari nama/kode ${isArea?'area':'cabang'} di kotak pencarian atas untuk menyaring tabel`;
   return `<section class="cd" id="rg-rekap"><h2>Rekap Peringkat Semua Indikator</h2><p class="rg-sub">${perTxt}. Angka di sel = peringkat ${isArea?'area':'cabang'} pada indikator tersebut; kolom # = peringkat gabungan dan Rata² = rata-rata peringkat; diurutkan dari yang terkecil (naik). ${info}.</p><div class="tw rg-tw"><table class="rg-tbl">${head}${body}</table></div>${more}<div class="rg-leg"><span><i class="q1"></i>25% teratas</span><span><i class="q2"></i>25–50%</span><span><i class="q3"></i>50–75%</span><span><i class="q4"></i>25% terbawah</span><span><i class="rg-na-i"></i>tidak ada data</span></div><p class="rg-note">Peringkat gabungan memberi bobot sama pada ${cols.length} indikator. Kolom "Rata²" menampilkan x/${cols.length} bila sebagian indikator tidak tersedia. Ketuk baris untuk membuka ${isArea?'ranking cabang area tersebut':'dashboard cabang'}.</p></section>`;
 }

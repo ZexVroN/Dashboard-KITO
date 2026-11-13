@@ -110,7 +110,7 @@ const INFO={
   intro:'Kumpulan informasi & pengingat kewaspadaan **operasional cabang**. Ketuk informasi untuk membaca selengkapnya.',
 };
 const BERITA=[
-  {id:'setor', ik:'angin', warna:'merah', baru:true, kat:'Reminder Kewaspadaan', tgl:'5 November 2026',
+  {id:'setor', ik:'angin', warna:'merah', baru:true, kat:'Reminder Kewaspadaan', tgl:'',
    judul:'Waspada Transaksi “Setor Angin”',
    ringkas:'Modus fraud kas: posting setoran tunai tanpa fisik uang yang mengakibatkan selisih kas kurang. Kenali 4 modusnya & langkah pencegahan wajib.'},
   {id:'penguatan', ik:'perisai', warna:'navy', kat:'Penguatan Operasional', tgl:'',

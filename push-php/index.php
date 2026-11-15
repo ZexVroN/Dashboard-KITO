@@ -10,10 +10,13 @@
  *   Pemantauan perangkat: /api/presence/ping (POST, publik) · /api/presence/summary · /api/presence/devices (GET, admin)
  *   /api/presence/devices/<id> (PUT label · DELETE, admin) · /api/presence/export?jenis=perangkat|sesi|lokasi&days=30 (CSV, admin)
  *   /admin/perangkat
+ *   Kanal dalam-aplikasi (WebView / tanpa Web Push): /api/inapp/register (POST) · /api/inbox/poll?device_id=&since_id= (GET, alias /api/webview/poll)
+ *   /api/inbox?device_id= (GET, riwayat notifikasi perangkat). Satu POST /api/notifications menjangkau Web Push DAN dalam-aplikasi.
  * Tanpa rewrite .htaccess, rute juga bisa dipanggil sebagai index.php/api/...
  */
 declare(strict_types=1);
 require __DIR__ . '/lib/app.php';
+require __DIR__ . '/lib/inbox.php';
 require __DIR__ . '/lib/presence.php';
 require __DIR__ . '/lib/masukan.php';
 // fitur admin Pengguna dipisah dari GitHub (lihat .gitignore): hanya aktif bila file-nya diunggah manual ke hosting
@@ -78,7 +81,8 @@ if (isset($halamanAdmin[$route])) {
 }
 
 // jadwal yang jatuh tempo ikut diproses pada permintaan biasa (cadangan bila cron belum dipasang)
-if (strpos($route, '/api/') === 0 && $route !== '/api/presence/ping' && random_int(1, 4) === 1) { try { kp_run_due(); } catch (Throwable $e) { error_log('[KITO Push] jadwal: ' . $e->getMessage()); } }
+$jarang = in_array($route, ['/api/inbox/poll', '/api/webview/poll'], true);   // polling sering: cukup sesekali memeriksa jadwal
+if (strpos($route, '/api/') === 0 && $route !== '/api/presence/ping' && random_int(1, $jarang ? 10 : 4) === 1) { try { kp_run_due(); } catch (Throwable $e) { error_log('[KITO Push] jadwal: ' . $e->getMessage()); } }
 
 function kp_body(): array {
     $raw = file_get_contents('php://input');
@@ -113,7 +117,7 @@ function kp_parse_sub($s): array {
 }
 
 function kp_topics_or_default($t): array {
-    if ($t === null) return ['semua'];
+    if ($t === null || $t === []) return ['semua'];   // tanpa topik perangkat tidak akan menerima apa pun: anggap "semua"
     $n = kp_topics($t, 30);
     if ($n === null) kp_fail(400, 'topik tidak valid (maks 30; huruf/angka/:_-.)');
     return $n;
@@ -130,7 +134,8 @@ function kp_parse_notif(array $b): array {
         $target['topics'] = $t;
     }
     if (!empty($b['platforms']) && is_array($b['platforms'])) $target['platforms'] = array_map(function ($p) { return strtolower((string)$p); }, $b['platforms']);
-    $urlOk = function ($u) { return !$u || preg_match('#^(https?://|\.?/|\#|\?)#', (string)$u); };
+    // tautan: https(s)://..., ./relatif, /path-situs (bukan //host), #hash atau ?query; tanpa spasi/karakter kontrol; bukan javascript:/data:
+    $urlOk = function ($u) { return !$u || (is_string($u) && strlen($u) <= 1000 && !preg_match('/[\x00-\x20]/', $u) && preg_match('~^(https?://[^/]|\.{1,2}/|/(?!/)|\#|\?)~i', $u)); };
     if (!$urlOk($b['url'] ?? null)) kp_fail(400, 'url tidak valid');
     if (!empty($b['image']) && strpos((string)$b['image'], 'https://') !== 0) kp_fail(400, 'image harus URL https');
     $actions = null;
@@ -143,14 +148,18 @@ function kp_parse_notif(array $b): array {
             $actions[] = ['title' => mb_substr(trim((string)$a['title']), 0, 40), 'url' => ($a['url'] ?? '') ?: (($b['url'] ?? '') ?: './')];
         }
     }
+    if (!empty($b['icon']) && (!is_string($b['icon']) || !$urlOk($b['icon']))) kp_fail(400, 'icon tidak valid');
     return ['title' => trim($b['title']), 'body' => isset($b['body']) ? (string)$b['body'] : null, 'url' => $b['url'] ?? null, 'icon' => $b['icon'] ?? null,
-        'image' => $b['image'] ?? null, 'tag' => $b['tag'] ?? null, 'actions' => $actions, 'requireInteraction' => !empty($b['requireInteraction']),
-        'ttl' => is_numeric($b['ttl'] ?? null) ? (int)$b['ttl'] : 86400, 'urgency' => $b['urgency'] ?? 'normal', 'target' => $target];
+        'image' => $b['image'] ?? null, 'tag' => isset($b['tag']) && is_scalar($b['tag']) && trim((string)$b['tag']) !== '' ? mb_substr(trim((string)$b['tag']), 0, 64) : null,
+        'actions' => $actions, 'requireInteraction' => !empty($b['requireInteraction']),
+        'ttl' => is_numeric($b['ttl'] ?? null) ? max(0, min(2419200, (int)$b['ttl'])) : 86400,   // maks 28 hari (batas push service)
+        'urgency' => in_array($b['urgency'] ?? 'normal', ['very-low', 'low', 'normal', 'high'], true) ? ($b['urgency'] ?? 'normal') : 'normal', 'target' => $target];
 }
 
 try {
     $public = strpos($route, '/api/subscriptions') === 0;
-    if ($public && !kp_rate('pub:' . kp_ip(), 60)) kp_fail(429, 'terlalu banyak permintaan');
+    // satu kantor cabang bisa berbagi satu IP publik dan setiap perangkat mendaftar otomatis saat aplikasi dibuka: batas dibuat longgar
+    if ($public && !kp_rate('pub:' . kp_ip(), 600)) kp_fail(429, 'terlalu banyak permintaan');
 
     switch ("$method $route") {
         case 'GET /api/pengguna':
@@ -165,14 +174,20 @@ try {
         case 'GET /api/vapid-public-key': kp_json(200, ['publicKey' => $cfg['vapid_public']]);
 
         case 'POST /api/subscriptions': {
+            if (!kp_rate('reg:' . kp_ip(), 120)) kp_fail(429, 'terlalu banyak pendaftaran, coba lagi sebentar lagi');
             $b = kp_body(); $s = kp_parse_sub($b['subscription'] ?? null);
-            $lama = (!empty($b['oldEndpoint']) && !array_key_exists('topics', $b)) ? kp_sub_get((string)$b['oldEndpoint']) : null;
+            $dev = kp_dev_id($b['deviceId'] ?? null);
+            $lamaRow = !empty($b['oldEndpoint']) ? kp_sub_get((string)$b['oldEndpoint']) : null;
+            $lama = ($lamaRow && !array_key_exists('topics', $b)) ? $lamaRow : null;
             $topics = $lama ? $lama['topics'] : kp_topics_or_default($b['topics'] ?? null);
+            if (!$dev && $lamaRow && !empty($lamaRow['device_id'])) $dev = $lamaRow['device_id'];   // pushsubscriptionchange (service worker) tidak tahu ID perangkat
+            $app = kp_app_valid($b['app'] ?? null) ?: ($lamaRow['app'] ?? null);
+            if (!kp_sub_get($s['endpoint']) && (int)kp_db()->query("SELECT COUNT(*) FROM subscriptions WHERE channel = 'push'")->fetchColumn() >= KP_INAPP_MAKS) kp_fail(503, 'kapasitas perangkat penuh');
             if (!empty($b['oldEndpoint']) && $b['oldEndpoint'] !== $s['endpoint']) kp_db()->prepare('DELETE FROM subscriptions WHERE endpoint = ?')->execute([(string)$b['oldEndpoint']]);
             $ua = substr((string)($_SERVER['HTTP_USER_AGENT'] ?? ''), 0, 400); [$pl, $br] = kp_detect($ua);
-            $id = kp_sub_save($s + ['platform' => $pl, 'browser' => $br, 'standalone' => !empty($b['standalone']), 'user_agent' => $ua,
+            $id = kp_sub_save($s + ['platform' => $pl, 'browser' => $br, 'standalone' => !empty($b['standalone']), 'user_agent' => $ua, 'device_id' => $dev, 'app' => $app,
                 'label' => !empty($b['label']) ? mb_substr((string)$b['label'], 0, 120) : null], $topics);
-            kp_json(201, ['ok' => true, 'id' => $id, 'platform' => $pl, 'browser' => $br, 'topics' => $topics]);
+            kp_json(201, ['ok' => true, 'id' => $id, 'channel' => 'push', 'platform' => $pl, 'browser' => $br, 'topics' => $topics]);
         }
         case 'PUT /api/subscriptions/topics': {
             $b = kp_body(); $topics = kp_topics_or_default($b['topics'] ?? null); $s = kp_sub_get((string)($b['endpoint'] ?? ''));
@@ -181,7 +196,7 @@ try {
         }
         case 'POST /api/subscriptions/status': {
             $b = kp_body(); $s = kp_sub_get((string)($b['endpoint'] ?? ''));
-            kp_json(200, $s ? ['terdaftar' => true, 'topics' => $s['topics'], 'platform' => $s['platform'], 'sejak' => $s['created_at']] : ['terdaftar' => false, 'topics' => []]);
+            kp_json(200, $s ? ['terdaftar' => true, 'channel' => $s['channel'] ?? 'push', 'topics' => $s['topics'], 'platform' => $s['platform'], 'sejak' => $s['created_at']] : ['terdaftar' => false, 'topics' => []]);
         }
         case 'DELETE /api/subscriptions': {
             $b = kp_body(); $q = kp_db()->prepare('DELETE FROM subscriptions WHERE endpoint = ?'); $q->execute([(string)($b['endpoint'] ?? '')]);
@@ -193,7 +208,7 @@ try {
             if (!$s) kp_fail(404, 'langganan tidak ditemukan');
             $r = kp_dispatch(['title' => 'Notifikasi KITO aktif ✅', 'body' => 'Perangkat ini akan menerima notifikasi untuk: ' . (implode(', ', $s['topics']) ?: '–') . '.',
                 'tag' => 'kito-tes', 'ttl' => 600, 'target' => ['endpoints' => [$s['endpoint']]]], 'tes');
-            kp_json(200, ['ok' => $r['sent'] === 1] + $r);
+            kp_json(200, ['ok' => ((int)$r['sent'] + (int)($r['inapp'] ?? 0)) >= 1] + $r);   // push: terkirim ke layanan push · dalam-aplikasi: masuk kotak masuk perangkat
         }
 
         case 'POST /api/notifications': {
@@ -220,9 +235,28 @@ try {
         case 'GET /api/notifications': {
             kp_admin(); $lim = max(1, min(500, (int)($_GET['limit'] ?? 50)));
             $q = kp_db()->prepare('SELECT * FROM notifications ORDER BY id DESC LIMIT ?'); $q->bindValue(1, $lim, PDO::PARAM_INT); $q->execute();
-            kp_json(200, ['riwayat' => array_map(function ($r) { $r['target'] = json_decode($r['target'], true); foreach (['id', 'sent', 'failed', 'removed'] as $k) $r[$k] = (int)$r[$k]; return $r; }, $q->fetchAll())]);
+            kp_json(200, ['riwayat' => array_map(function ($r) { $r['target'] = json_decode($r['target'], true); foreach (['id', 'sent', 'failed', 'removed', 'inapp', 'inapp_ok'] as $k) $r[$k] = (int)($r[$k] ?? 0); unset($r['payload']); return $r; }, $q->fetchAll())]);
         }
         case 'GET /api/stats': kp_admin(); kp_json(200, kp_stats());
+
+        /* ---------- kanal dalam-aplikasi: WebView & perangkat tanpa Web Push (lihat lib/inbox.php) ---------- */
+        case 'POST /api/inapp/register': {
+            if (!kp_rate('reg:' . kp_ip(), 120)) kp_fail(429, 'terlalu banyak pendaftaran, coba lagi sebentar lagi');
+            kp_json(201, kp_inapp_register(kp_body()));
+        }
+        case 'GET /api/inbox/poll':
+        case 'GET /api/webview/poll': {   // alias: kontrak worker APK (tools/android-webview-src): ?device_id=&since_id= -> {ok, notifications:[{id,title,body,url}], latestId}
+            if (!kp_rate('poll:' . kp_ip(), 1500)) kp_fail(429, 'terlalu banyak permintaan');
+            $dev = kp_dev_id($_GET['device_id'] ?? ($_GET['deviceId'] ?? null));
+            if (!$dev) kp_fail(400, 'device_id tidak valid');
+            kp_json(200, kp_inapp_poll($dev, (int)($_GET['since_id'] ?? ($_GET['since'] ?? 0))));
+        }
+        case 'GET /api/inbox': {
+            if (!kp_rate('poll:' . kp_ip(), 1500)) kp_fail(429, 'terlalu banyak permintaan');
+            $dev = kp_dev_id($_GET['device_id'] ?? ($_GET['deviceId'] ?? null));
+            if (!$dev) kp_fail(400, 'device_id tidak valid');
+            kp_json(200, kp_inbox_riwayat($dev, max(1, min(50, (int)($_GET['limit'] ?? 20)))));
+        }
 
         /* ---------- pemantauan perangkat ---------- */
         case 'POST /api/presence/ping': {

@@ -1,73 +1,52 @@
-# Source Code Android WebView KITO (Dengan Dukungan Push Notifikasi)
+# Sumber Android WebView KITO (untuk APK berikutnya, dengan notifikasi saat aplikasi ditutup)
 
-Folder ini berisi kode sumber Android Studio untuk **Dashboard KITO versi 1.0 (versionCode 1)** dengan integrasi **Push Notifikasi Native Android WebView**.
-
----
-
-## 🌟 Cara Kerja Notifikasi di Android WebView
-
-Aplikasi Android WebView biasa tidak mendukung Web Push standar (`PushManager`). Solusi ini menggabungkan:
-
-1. **Jembatan JavaScript Interface (`KitoAndroid`)**:
-   - `getDeviceId()`: Menyimpan UUID unik perangkat Android.
-   - `requestPermission()`: Menampilkan dialog izin notifikasi sistem (Android 13+ / API 33+).
-   - `showNotification(title, body, url)`: Memunculkan notifikasi native di status bar Android.
-   - `saveTopics(topicsJson)`: Menyimpan topik langganan (mis. `semua`, `area:jambi`, `cabang:11000`).
-
-2. **Pengecekan di Latar Belakang (*Background Worker*)**:
-   - Dijalankan oleh Android `WorkManager` (`KitoNotificationWorker`) secara periodik (setiap 15 menit).
-   - Memeriksa pembaruan ke server: `https://inbranch.region2.co.id/push-php/api/webview/poll?device_id=...&since_id=...`.
-   - Jika ada notifikasi baru yang sesuai dengan topik langganan perangkat, Android akan langsung membunyikan suara dan menampilkan notifikasi di status bar, **meskipun aplikasi sedang ditutup / tidak dibuka**.
-
-3. **In-App Toast & Notifikasi Saat Aplikasi Dibuka**:
-   - Saat aplikasi sedang dibuka (*foreground*), `push.js` melakukan polling aktif tiap 45 detik.
-   - Memunculkan banner mengambang dengan suara *chime* lembut dan tombol "Buka" yang langsung mengarahkan ke halaman/filter terkait.
+Folder ini berisi kode sumber Android Studio untuk APK **berikutnya**. APK 1.0 yang saat ini beredar (`download/Dashboard-Kito.apk`, paket `com.zexvron.dashboardkito`) adalah WebView biasa **tanpa jembatan dan tanpa worker**. Sumber di folder ini belum dibangun maupun diuji di lingkungan pengembangan situs.
 
 ---
 
-## 🚀 Panduan Build APK di Android Studio
+## Notifikasi KITO: apa yang sudah berjalan tanpa membuat APK baru
 
-1. **Buka Project di Android Studio**:
-   - Buka Android Studio › **Open**.
-   - Pilih folder project Android Anda (atau salin file di folder `tools/android-webview-src/app/` ke project Android Studio yang sudah ada).
+Semua ini berjalan dari situs dan server (`assets/js/notif-otomatis.js`, `push-php/`), termasuk untuk APK 1.0 yang sudah terpasang:
 
-2. **File-file Utama yang Perlu Dimasukkan**:
+- Izin dan pendaftaran perangkat **otomatis saat aplikasi dibuka**, tidak lagi lewat ikon 🔔.
+- Satu input admin (`/admin`, `POST /api/notifications`, atau `tools/kirim_notifikasi.py`) menjangkau semua jalur sekaligus: Web Push (Chrome, Edge, Firefox, Safari/PWA, aplikasi TWA) dan perangkat dalam-aplikasi.
+- **APK 1.0 (WebView)** terdaftar sebagai perangkat dalam-aplikasi. Android WebView tidak punya Push API, jadi notifikasi tampil sebagai **banner saat KITO terbuka** (dicek tiap ±60 detik, dan saat aplikasi kembali ke layar) dan tersimpan di daftar 🔔. Saat aplikasi ditutup, notifikasi sistem tidak bisa muncul dari APK 1.0.
+
+## Yang ditambahkan APK baru dari sumber ini
+
+Notifikasi sistem di status bar **walau aplikasi ditutup**, lewat dua bagian:
+
+1. **Jembatan JavaScript `window.KitoAndroid`** (`KitoBridge.kt`), yang otomatis dipakai `notif-otomatis.js` bila ada:
+   - `getDeviceId()`: ID perangkat `wv-<uuid>`. Dipakai situs saat mendaftar, sehingga worker dan halaman memakai ID yang sama.
+   - `requestPermission()`: dialog izin notifikasi Android 13+ (API 33+). Dipanggil otomatis saat aplikasi dibuka.
+   - `saveTopics(topicsJson)`: topik terbaru (otomatis mengikuti login dan cabang).
+   - `showNotification(title, body, url)`, `isNotificationEnabled()`, `getAppVersion()`.
+   - User-Agent aplikasi berakhiran `KITO-Android/1`.
+2. **Worker latar belakang** (`KitoNotificationWorker.kt`, `WorkManager`, tiap 15 menit): memanggil
+   `https://inbranch.region2.co.id/push-php/api/webview/poll?device_id=...&since_id=...` dan menampilkan notifikasi native. Server mencocokkan topik perangkat yang didaftarkan situs lewat `POST /api/inapp/register`, jadi worker tidak perlu mengirim topik.
+
+Kontrak endpoint (sudah ada di backend): `{ "ok": true, "notifications": [{ "id", "title", "body", "url" }], "latestId": 123 }`.
+
+---
+
+## Panduan build APK di Android Studio
+
+1. Buka Android Studio › **Open**, lalu pilih project Android Anda (atau salin isi `tools/android-webview-src/app/` ke project yang sudah ada).
+2. File utama yang dimasukkan:
    - `app/src/main/java/com/zexvron/dashboardkito/MainActivity.kt`
    - `app/src/main/java/com/zexvron/dashboardkito/KitoBridge.kt`
    - `app/src/main/java/com/zexvron/dashboardkito/KitoNotificationWorker.kt`
-   - `app/src/main/AndroidManifest.xml`
-   - `app/build.gradle.kts` (Pastikan dependensi `androidx.work:work-runtime-ktx` terpasang)
-
-3. **Sinkronkan Gradle**:
-   - Klik tombol **Sync Project with Gradle Files** di pojok kanan atas.
-
-4. **Build APK Release**:
-   - Menu **Build** › **Generate Signed Bundle / APK** (atau **Build APK(s)** untuk testing).
-   - Pilih **APK**.
-   - Masukkan Keystore signing key Anda.
-   - Klik **Release**.
-
-5. **Letakkan APK Baru di Dashboard**:
-   - Salin file APK hasil build ke: `download/Dashboard-Kito.apk`.
-   - Perbarui versi di `assets/js/apk-config.js`:
-     ```js
-     window.KITO_APK = {
-       versi: '1.0',
-       kode: 1, // Versi saat ini; APK 1.0 tidak menampilkan banner pembaruan
-       paket: 'com.zexvron.dashboardkito',
-       file: 'download/Dashboard-Kito.apk',
-       ukuran: '6,2 MB',
-       tanggal: '2026-11-04',
-     };
-     ```
+   - `app/src/main/AndroidManifest.xml` (izin `POST_NOTIFICATIONS` dan `INTERNET`)
+   - `app/build.gradle.kts` (dependensi `androidx.work:work-runtime-ktx`)
+3. **Sync Project with Gradle Files**.
+4. **Build** › **Generate Signed Bundle / APK** › **APK** › pilih keystore Anda › **Release**. Gunakan build release yang tidak `debuggable`. Keystore jangan dimasukkan ke repositori.
+5. Salin APK ke `download/Dashboard-Kito.apk`, lalu naikkan versi di `assets/js/apk-config.js` (`versi`, `kode`, `ukuran`, `tanggal`) agar pengguna APK lama melihat banner pembaruan.
 
 ---
 
-## 🧪 Cara Menguji Notifikasi
+## Cara menguji
 
-1. Buka aplikasi di HP Android.
-2. Ikon **🔔** di pojok kanan atas bar header akan tampil dan bisa diketuk.
-3. Ketuk **🔔** › Pilih topik yang diinginkan › Ketuk **Aktifkan notifikasi**.
-4. Izinkan notifikasi saat dialog Android muncul.
-5. Ketuk **Kirim tes**: Notifikasi akan langsung muncul di layar dan di bar status Android!
-6. Saat ada rilis data harian baru lewat `update_harian_p95.py` atau pengiriman dari admin `push-php`, HP Android akan menerima notifikasi secara otomatis.
+1. Pasang APK, lalu buka aplikasi. Dialog izin notifikasi Android muncul **otomatis** (Android 13+), tanpa membuka 🔔.
+2. Di panel admin (`/admin`) kirim notifikasi ke topik `semua`.
+3. Aplikasi terbuka: banner tampil dalam ±60 detik. Aplikasi ditutup: notifikasi status bar muncul dalam ±15 menit (batas minimum interval WorkManager).
+4. Di 🔔 › **Kirim tes** untuk mencoba kapan saja. Panel admin menampilkan jumlah perangkat per jalur (Push, Dalam aplikasi) dan per jenis aplikasi (APK, TWA, PWA, Browser).

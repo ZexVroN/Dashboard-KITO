@@ -32,6 +32,15 @@ function kp_db(): PDO {
     if (!is_dir(KP_DATA)) mkdir(KP_DATA, 0750, true);
     $db = new PDO('sqlite:' . KP_DATA . '/push.sqlite', null, null, [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION, PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC]);
     $db->exec('PRAGMA journal_mode = WAL; PRAGMA foreign_keys = ON; PRAGMA busy_timeout = 5000;');
+    // skema hanya dibuat / dimigrasi bila versinya belum terbaru (permintaan biasa, termasuk polling, tidak menjalankan DDL)
+    if ((int)$db->query('PRAGMA user_version')->fetchColumn() < KP_SKEMA) kp_skema($db);
+    return $db;
+}
+
+/* Versi skema. 2 = kanal "dalam aplikasi": subscriptions.channel/device_id/app/last_seen_at/cursor_id dan notifications.payload/inapp/inapp_ok. */
+const KP_SKEMA = 2;
+
+function kp_skema(PDO $db): void {
     $db->exec("
       CREATE TABLE IF NOT EXISTS subscriptions (id INTEGER PRIMARY KEY AUTOINCREMENT, endpoint TEXT NOT NULL UNIQUE, p256dh TEXT NOT NULL, auth TEXT NOT NULL,
         platform TEXT, browser TEXT, standalone INTEGER DEFAULT 0, user_agent TEXT, label TEXT,
@@ -46,7 +55,19 @@ function kp_db(): PDO {
       CREATE TABLE IF NOT EXISTS hits (k TEXT NOT NULL, t INTEGER NOT NULL);
       CREATE INDEX IF NOT EXISTS idx_hits ON hits(k, t);
     ");
-    return $db;
+    // kolom baru (database lama dimigrasi di tempat; dua proses yang menjalankan ini bersamaan aman: kolom yang sudah ada dilewati)
+    $tambah = function (string $tabel, array $kolom) use ($db): void {
+        foreach ($kolom as $nama => $def) {
+            $ada = $db->query("PRAGMA table_info($tabel)")->fetchAll(PDO::FETCH_COLUMN, 1);
+            if (in_array($nama, $ada, true)) continue;
+            try { $db->exec("ALTER TABLE $tabel ADD COLUMN $nama $def"); }
+            catch (Throwable $e) { if (!in_array($nama, $db->query("PRAGMA table_info($tabel)")->fetchAll(PDO::FETCH_COLUMN, 1), true)) throw $e; }
+        }
+    };
+    $tambah('subscriptions', ['channel' => "TEXT NOT NULL DEFAULT 'push'", 'device_id' => 'TEXT', 'app' => 'TEXT', 'last_seen_at' => 'TEXT', 'cursor_id' => 'INTEGER NOT NULL DEFAULT 0']);
+    $tambah('notifications', ['payload' => 'TEXT', 'inapp' => 'INTEGER NOT NULL DEFAULT 0', 'inapp_ok' => 'INTEGER NOT NULL DEFAULT 0']);
+    $db->exec('CREATE INDEX IF NOT EXISTS idx_sub_dev ON subscriptions(device_id); CREATE INDEX IF NOT EXISTS idx_sub_ch ON subscriptions(channel)');
+    $db->exec('PRAGMA user_version = ' . KP_SKEMA);
 }
 
 /* ---------- utilitas ---------- */
@@ -87,18 +108,69 @@ function kp_host_allowed(string $endpoint): bool {
     return false;
 }
 
-/* IP klien. X-Forwarded-For hanya dipercaya bila permintaan datang dari proxy di jaringan internal (IP privat/loopback)
-   atau dari proxy yang didaftarkan di data/config.php ('trusted_proxies' => ['1.2.3.4']). Tanpa ini, penyerang bisa
-   mengarang header X-Forwarded-For untuk melewati batas percobaan login. */
+/* IP klien. Header penerus (CF-Connecting-IP, X-Forwarded-For) hanya dipercaya bila permintaan benar-benar datang dari proxy tepercaya:
+     1. jaringan internal hosting (IP privat/loopback),
+     2. jaringan Cloudflare (daftar resmi di KP_CLOUDFLARE; Hostinger CDN dan banyak domain .co.id memakainya),
+     3. alamat/CIDR yang didaftarkan di data/config.php: 'trusted_proxies' => ['203.0.113.7', '198.51.100.0/24'].
+   Rantai X-Forwarded-For dibaca dari KANAN: alamat paling kanan yang BUKAN proxy tepercaya adalah klien. Alamat di kiri bisa dikarang
+   penyerang, jadi tidak dipakai. Tanpa aturan ini penyerang bisa mengarang header untuk lolos dari batas percobaan login; dan tanpa
+   daftar proxy yang benar, semua pengguna di balik CDN terlihat berasal dari satu IP (cek di status.php › Deteksi alamat IP). */
+const KP_CLOUDFLARE = ['173.245.48.0/20', '103.21.244.0/22', '103.22.200.0/22', '103.31.4.0/22', '141.101.64.0/18', '108.162.192.0/18', '190.93.240.0/20', '188.114.96.0/20',
+    '197.234.240.0/22', '198.41.128.0/17', '162.158.0.0/15', '104.16.0.0/13', '104.24.0.0/14', '172.64.0.0/13', '131.0.72.0/22',
+    '2400:cb00::/32', '2606:4700::/32', '2803:f800::/32', '2405:b500::/32', '2405:8100::/32', '2a06:98c0::/29', '2c0f:f248::/32'];
+
+function kp_ip_norm(string $ip): string {
+    $b = @inet_pton($ip);
+    if ($b === false) return $ip;
+    if (strlen($b) === 16 && substr($b, 0, 12) === "\0\0\0\0\0\0\0\0\0\0\xff\xff") return inet_ntop(substr($b, 12)); // ::ffff:1.2.3.4 -> 1.2.3.4
+    return (string)inet_ntop($b);
+}
+
+function kp_ip_dalam(string $ip, string $cidr): bool {
+    $p = explode('/', $cidr, 2);
+    $a = @inet_pton($ip); $b = @inet_pton($p[0]);
+    if ($a === false || $b === false || strlen($a) !== strlen($b)) return false;
+    $bit = isset($p[1]) ? (int)$p[1] : strlen($b) * 8;
+    if ($bit < 0 || $bit > strlen($b) * 8) return false;
+    $bytes = intdiv($bit, 8); $sisa = $bit % 8;
+    if ($bytes && substr($a, 0, $bytes) !== substr($b, 0, $bytes)) return false;
+    if ($sisa === 0) return true;
+    $mask = (0xFF << (8 - $sisa)) & 0xFF;
+    return (ord($a[$bytes]) & $mask) === (ord($b[$bytes]) & $mask);
+}
+
+function kp_ip_cloudflare(string $ip): bool {
+    foreach (KP_CLOUDFLARE as $c) if (kp_ip_dalam($ip, $c)) return true;
+    return false;
+}
+
+function kp_proxy_tepercaya(string $ip): bool {
+    if (!filter_var($ip, FILTER_VALIDATE_IP)) return false;
+    if (!filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE)) return true; // privat / loopback / reserved
+    if (kp_ip_cloudflare($ip)) return true;
+    $c = kp_config() ?: [];
+    foreach ((array)($c['trusted_proxies'] ?? []) as $p) if (is_string($p) && kp_ip_dalam($ip, $p)) return true;
+    return false;
+}
+
 function kp_ip(): string {
     $remote = (string)($_SERVER['REMOTE_ADDR'] ?? '?');
-    $f = (string)($_SERVER['HTTP_X_FORWARDED_FOR'] ?? '');
+    if (!filter_var($remote, FILTER_VALIDATE_IP)) return $remote;
+    $remote = kp_ip_norm($remote);
+    if (!kp_proxy_tepercaya($remote)) return $remote;
+    // Cloudflare: CF-Connecting-IP diisi Cloudflare sendiri (hanya dipercaya bila sambungan memang dari jaringan Cloudflare)
+    $cf = trim((string)($_SERVER['HTTP_CF_CONNECTING_IP'] ?? ''));
+    if ($cf !== '' && filter_var($cf, FILTER_VALIDATE_IP) && kp_ip_cloudflare($remote)) return kp_ip_norm($cf);
+    $f = trim((string)($_SERVER['HTTP_X_FORWARDED_FOR'] ?? ''));
     if ($f === '') return $remote;
-    $c = kp_config() ?: [];
-    $internal = filter_var($remote, FILTER_VALIDATE_IP) && !filter_var($remote, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE);
-    if (!$internal && !in_array($remote, (array)($c['trusted_proxies'] ?? []), true)) return $remote;
-    $ip = trim(explode(',', $f)[0]);
-    return filter_var($ip, FILTER_VALIDATE_IP) ? $ip : $remote;
+    $rantai = array_map('trim', explode(',', $f));
+    for ($i = count($rantai) - 1; $i >= 0; $i--) {
+        if (!filter_var($rantai[$i], FILTER_VALIDATE_IP)) return $remote;   // rantai rusak: jangan percaya
+        $ip = kp_ip_norm($rantai[$i]);
+        if (!kp_proxy_tepercaya($ip)) return $ip;
+    }
+    $kiri = $rantai[0];   // seluruh rantai adalah proxy internal: pakai yang paling kiri
+    return (filter_var($kiri, FILTER_VALIDATE_IP) ? kp_ip_norm($kiri) : $remote);
 }
 
 function kp_rate(string $key, int $perMinute): bool {
@@ -137,12 +209,16 @@ function kp_sub_get(string $endpoint): ?array {
 function kp_sub_save(array $s, array $topics): int {
     $db = kp_db(); $db->beginTransaction();
     try {
-        $db->prepare("INSERT INTO subscriptions (endpoint, p256dh, auth, platform, browser, standalone, user_agent, label) VALUES (?,?,?,?,?,?,?,?)
+        $db->prepare("INSERT INTO subscriptions (endpoint, p256dh, auth, platform, browser, standalone, user_agent, label, channel, device_id, app, last_seen_at) VALUES (?,?,?,?,?,?,?,?,'push',?,?,datetime('now'))
           ON CONFLICT(endpoint) DO UPDATE SET p256dh=excluded.p256dh, auth=excluded.auth, platform=excluded.platform, browser=excluded.browser,
-          standalone=excluded.standalone, user_agent=excluded.user_agent, label=COALESCE(excluded.label, subscriptions.label), updated_at=datetime('now'), fail_count=0")
-           ->execute([$s['endpoint'], $s['p256dh'], $s['auth'], $s['platform'], $s['browser'], $s['standalone'] ? 1 : 0, $s['user_agent'], $s['label']]);
-        $q = $db->prepare('SELECT id FROM subscriptions WHERE endpoint = ?'); $q->execute([$s['endpoint']]); $id = (int)$q->fetchColumn();
+          standalone=excluded.standalone, user_agent=excluded.user_agent, label=COALESCE(excluded.label, subscriptions.label), channel='push',
+          device_id=COALESCE(excluded.device_id, subscriptions.device_id), app=COALESCE(excluded.app, subscriptions.app),
+          last_seen_at=datetime('now'), updated_at=datetime('now'), fail_count=0")
+           ->execute([$s['endpoint'], $s['p256dh'], $s['auth'], $s['platform'], $s['browser'], $s['standalone'] ? 1 : 0, $s['user_agent'], $s['label'], $s['device_id'] ?? null, $s['app'] ?? null]);
+        $q = $db->prepare('SELECT id, device_id FROM subscriptions WHERE endpoint = ?'); $q->execute([$s['endpoint']]); $row = $q->fetch(); $id = (int)$row['id'];
         kp_set_topics_id($id, $topics);
+        // satu perangkat = satu langganan: baris lain milik perangkat yang sama (kanal dalam-aplikasi, atau endpoint push lama) dihapus agar tidak dobel
+        if (!empty($row['device_id'])) $db->prepare('DELETE FROM subscriptions WHERE device_id = ? AND id <> ?')->execute([$row['device_id'], $id]);
         $db->commit(); return $id;
     } catch (Throwable $e) { $db->rollBack(); throw $e; }
 }
@@ -186,13 +262,30 @@ function kp_payload(array $n): string {
     return json_encode(array_filter($p, function ($v) { return $v !== null; }), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
 }
 
+/* Isi notifikasi untuk kanal dalam-aplikasi (disimpan di notifications.payload; dibaca perangkat saat polling). */
+function kp_inapp_payload(array $n): string {
+    $c = kp_config();
+    $p = ['title' => mb_substr($n['title'], 0, 120), 'body' => mb_substr((string)($n['body'] ?? ''), 0, 500), 'url' => ($n['url'] ?? null) ?: ($c['default_url'] ?? './'),
+        'image' => $n['image'] ?? null, 'tag' => $n['tag'] ?? null, 'urgensi' => $n['urgency'] ?? 'normal', 'tetap' => !empty($n['requireInteraction']) ? true : null,
+        'ttl' => (int)($n['ttl'] ?? 86400)];
+    if (!empty($n['actions'])) $p['aksi'] = array_map(function ($a) { return ['title' => $a['title'], 'url' => $a['url']]; }, array_values($n['actions']));
+    return json_encode(array_filter($p, function ($v) { return $v !== null; }), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+}
+
+/* SATU pintu pengiriman untuk semua kanal. Penerima dipilih dari tabel subscriptions (topik / semua / endpoint / platform):
+     - channel 'push'  : Web Push (Chrome, Edge, Firefox, Safari PWA, aplikasi TWA) - dikirim sekarang, sampai walau aplikasi ditutup
+     - channel 'inapp' : perangkat tanpa Web Push (APK WebView, iPhone di browser, izin ditolak) - notifikasi disimpan di tabel notifications
+                         dan diambil perangkat saat polling (lihat lib/inbox.php), tampil sebagai banner di dalam aplikasi. */
 function kp_dispatch(array $n, string $source = 'api'): array {
     $c = kp_config(); $db = kp_db();
     $vapid = ['publicKey' => $c['vapid_public'], 'privateKey' => $c['vapid_private'], 'subject' => $c['vapid_subject']];
-    $subs = kp_targets($n['target']);
-    $db->prepare('INSERT INTO notifications (title, body, url, target, source) VALUES (?,?,?,?,?)')->execute([$n['title'], $n['body'] ?? null, $n['url'] ?? null, json_encode($n['target']), $source]);
+    $semua = kp_targets($n['target']);
+    $subs = array_values(array_filter($semua, function ($s) { return ($s['channel'] ?? 'push') !== 'inapp'; }));
+    $nInapp = count($semua) - count($subs);
+    $db->prepare('INSERT INTO notifications (title, body, url, target, source, payload, inapp) VALUES (?,?,?,?,?,?,?)')
+       ->execute([$n['title'], $n['body'] ?? null, $n['url'] ?? null, json_encode($n['target']), $source, kp_inapp_payload($n), $nInapp]);
     $nid = (int)$db->lastInsertId();
-    $payload = kp_payload($n); $res = ['id' => $nid, 'targets' => count($subs), 'sent' => 0, 'failed' => 0, 'removed' => 0];
+    $payload = kp_payload($n); $res = ['id' => $nid, 'targets' => count($subs), 'sent' => 0, 'failed' => 0, 'removed' => 0, 'inapp' => $nInapp];
     $byId = []; $jobs = [];
     foreach ($subs as $s) {
         $byId[$s['id']] = $s;
@@ -221,6 +314,7 @@ function kp_dispatch(array $n, string $source = 'api'): array {
 /* ---------- jadwal: dijalankan oleh cron.php dan sesekali oleh permintaan biasa ---------- */
 function kp_run_due(): int {
     $db = kp_db(); $n = 0;
+    if (random_int(1, 100) === 1) $db->exec("DELETE FROM subscriptions WHERE channel = 'inapp' AND COALESCE(last_seen_at, updated_at) < datetime('now', '-90 days')"); // APK/browser yang sudah tidak dipakai
     $db->exec("UPDATE scheduled SET status = 'menunggu' WHERE status = 'mengirim' AND created_at < datetime('now', '-15 minutes')"); // pulihkan yang terputus
     $now = gmdate('Y-m-d\TH:i:s.000\Z');
     $q = $db->prepare("SELECT * FROM scheduled WHERE status = 'menunggu' AND send_at <= ?"); $q->execute([$now]);
@@ -241,13 +335,19 @@ function kp_run_due(): int {
 
 function kp_stats(): array {
     $db = kp_db();
+    $n = function ($sql) use ($db) { return (int)$db->query($sql)->fetchColumn(); };
+    $grup = function ($sql) use ($db) { return array_map(function ($r) { $r['n'] = (int)$r['n']; return $r; }, $db->query($sql)->fetchAll()); };
     return [
-        'total' => (int)$db->query('SELECT COUNT(*) FROM subscriptions')->fetchColumn(),
-        'perPlatform' => array_map(function ($r) { $r['n'] = (int)$r['n']; return $r; }, $db->query("SELECT COALESCE(platform,'lainnya') platform, COUNT(*) n FROM subscriptions GROUP BY 1 ORDER BY 2 DESC")->fetchAll()),
-        'perBrowser' => array_map(function ($r) { $r['n'] = (int)$r['n']; return $r; }, $db->query("SELECT COALESCE(browser,'lainnya') browser, COUNT(*) n FROM subscriptions GROUP BY 1 ORDER BY 2 DESC")->fetchAll()),
-        'terpasang' => (int)$db->query('SELECT COUNT(*) FROM subscriptions WHERE standalone = 1')->fetchColumn(),
-        'perTopic' => array_map(function ($r) { $r['n'] = (int)$r['n']; return $r; }, $db->query('SELECT topic, COUNT(*) n FROM subscription_topics GROUP BY topic ORDER BY 2 DESC LIMIT 200')->fetchAll()),
-        'notifikasi' => (int)$db->query('SELECT COUNT(*) FROM notifications')->fetchColumn(),
+        'total' => $n('SELECT COUNT(*) FROM subscriptions'),                                                   // semua perangkat penerima (push + dalam-aplikasi)
+        'push' => $n("SELECT COUNT(*) FROM subscriptions WHERE channel = 'push'"),                              // Web Push: browser, TWA, PWA
+        'inapp' => $n("SELECT COUNT(*) FROM subscriptions WHERE channel = 'inapp'"),                            // dalam aplikasi: WebView, izin ditolak, tanpa Web Push
+        'inappAktif' => $n("SELECT COUNT(*) FROM subscriptions WHERE channel = 'inapp' AND last_seen_at > datetime('now', '-2 days')"),
+        'perPlatform' => $grup("SELECT COALESCE(platform,'lainnya') platform, COUNT(*) n FROM subscriptions GROUP BY 1 ORDER BY 2 DESC"),
+        'perBrowser' => $grup("SELECT COALESCE(browser,'lainnya') browser, COUNT(*) n FROM subscriptions GROUP BY 1 ORDER BY 2 DESC"),
+        'perApp' => $grup("SELECT COALESCE(app,'web') app, channel, COUNT(*) n FROM subscriptions GROUP BY 1, 2 ORDER BY 3 DESC"),
+        'terpasang' => $n('SELECT COUNT(*) FROM subscriptions WHERE standalone = 1'),
+        'perTopic' => $grup('SELECT topic, COUNT(*) n FROM subscription_topics GROUP BY topic ORDER BY 2 DESC LIMIT 200'),
+        'notifikasi' => $n('SELECT COUNT(*) FROM notifications'),
     ];
 }
 

@@ -122,7 +122,9 @@ def jalankan(tanggal=None, uji=False):
         return
     hasil = kirim(pesan, server, token)
     total = sum(h["sent"] for h in hasil["hasil"])
-    print(f"  terkirim ke {total} perangkat (total semua pesan)")
+    inapp = sum(h.get("inapp", 0) for h in hasil["hasil"])
+    # satu kali kirim menjangkau semua jalur: push (Chrome/Edge/Firefox/Safari/PWA/TWA) dan dalam aplikasi (APK WebView)
+    print(f"  terkirim (total semua pesan): {total} push + {inapp} dalam aplikasi")
 
 
 if __name__ == "__main__":

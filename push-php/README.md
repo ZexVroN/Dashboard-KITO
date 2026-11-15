@@ -20,7 +20,7 @@ Berjalan di **hosting PHP biasa**, termasuk semua paket Hostinger. Tidak perlu N
    ```js
    window.KITO_PUSH = { api: 'https://domain-anda/push' };
    ```
-   Tombol 🔔 akan muncul di dashboard.
+   Tombol 🔔 akan muncul di dashboard. Izin notifikasi dan pendaftaran perangkat berjalan **otomatis** saat dashboard dibuka (lihat [Notifikasi otomatis](#notifikasi-otomatis--satu-input-untuk-semua-jalur)).
 
 Selesai. Halaman admin ada di `https://domain-anda/push/admin` (atau `…/push/index.php/admin`).
 
@@ -30,11 +30,11 @@ Selesai. Halaman admin ada di `https://domain-anda/push/admin` (atau `…/push/i
   hPanel › Advanced › Cron Jobs › Custom: `curl -s "https://domain-anda/push/cron.php?key=…" >/dev/null`.
   Tanpa cron, jadwal tetap diproses saat ada aktivitas di backend.
 - Buka `status.php` › **Uji koneksi push service** untuk memastikan hosting bisa menghubungi Google, Apple, Mozilla, dan Microsoft.
-- Uji dari HP: dashboard › 🔔 › **Aktifkan** › **Kirim tes**. Untuk iPhone, tambahkan dashboard ke Layar Utama dulu (iOS 16.4+).
+- Uji dari HP: buka dashboard (izin diminta otomatis; di iPhone ketuk kartu **Aktifkan** yang muncul), lalu 🔔 › **Kirim tes**. Untuk iPhone, tambahkan dashboard ke Layar Utama dulu (iOS 16.4+).
 
 ## Fitur
 
-- Langganan per topik: `semua`, `area:<nama>`, `cabang:<kode>`.
+- Langganan per topik: `semua`, `area:<nama>`, `cabang:<kode>`, `jabatan:<kode>` (roh, toh, sqor, asm, sqoa, atom, bom). Topik dipilih otomatis dari akun login dan cabang yang dibuka.
 - Halaman admin:
   - template, pratinjau Android/desktop & iPhone;
   - gambar dan 2 tombol aksi;
@@ -42,6 +42,44 @@ Selesai. Halaman admin ada di `https://domain-anda/push/admin` (atau `…/push/i
   - kirim sekarang atau **jadwalkan**, plus statistik dan riwayat.
 - **Otomatis dari skrip update harian**: `KITO_PUSH_URL=https://domain-anda/push` dan `KITO_PUSH_TOKEN=<token admin>` lalu jalankan `tools/update_harian_p95.py`.
 - API dipakai bersama oleh dashboard dan skrip update harian.
+
+## Notifikasi otomatis & satu input untuk semua jalur
+
+Pengguna **tidak perlu menyalakan apa pun**. Saat dashboard dibuka, `assets/js/notif-otomatis.js` meminta izin, mendaftarkan perangkat, dan memilih topik sendiri. Ikon 🔔 hanya menampilkan daftar notifikasi terbaru dan status (kirim tes, matikan, aktifkan kembali). Semua perubahan ada di situs dan server, **tanpa membuat APK baru**.
+
+| Perangkat | Yang terjadi saat dibuka | Jalur |
+|---|---|---|
+| Chrome / Edge (komputer & Android) dan aplikasi Android **TWA** (`id.co.region2.inbranch`) | Izin diminta otomatis (maks. 3 kali, minimal 12 jam sekali). Bila permintaan tidak tampil atau tidak dijawab dalam 6 detik, muncul kartu "Aktifkan notifikasi KITO" | Web Push, sampai walau aplikasi ditutup |
+| Firefox, Safari, **iPhone/iPad (PWA)** | Peramban mewajibkan ketukan pengguna: muncul kartu "Aktifkan notifikasi KITO" (sekali ketuk, tidak lewat 🔔) | Web Push |
+| **APK WebView**, iPhone di Safari (belum di Layar Utama), izin ditolak, atau jaringan yang memblokir layanan push | Terdaftar sendiri sebagai perangkat *dalam aplikasi* | Banner saat KITO terbuka + daftar di 🔔 |
+
+**Batas APK WebView:** Android WebView tidak punya Push API/Notifications API, jadi APK versi 1.0 yang beredar tidak bisa menampilkan notifikasi sistem saat aplikasi ditutup. Untuk APK itu notifikasi muncul sebagai banner begitu KITO dibuka (dicek tiap ±60 detik selama aplikasi terbuka, dan saat aplikasi kembali ke layar). Untuk notifikasi saat aplikasi ditutup: pakai Chrome, aplikasi TWA, atau PWA; atau bangun ulang APK dari `tools/android-webview-src` (worker-nya memakai endpoint yang sama).
+
+**Satu input admin menjangkau semua jalur.** Kirim sekali lewat halaman admin, `POST /api/notifications`, atau `tools/kirim_notifikasi.py`. Server mengirim Web Push ke perangkat push, dan menaruh notifikasi yang sama di kotak masuk perangkat dalam-aplikasi. Hasilnya:
+
+```json
+{"id": 12, "targets": 2, "sent": 2, "failed": 0, "removed": 0, "inapp": 1}
+```
+
+`sent`/`targets` untuk perangkat push, `inapp` untuk perangkat dalam-aplikasi yang topiknya cocok. Statistik admin menampilkan jumlah perangkat per jalur dan per jenis aplikasi (browser, PWA, APK, TWA). Masa berlaku (`ttl`), urgensi (`high` = banner merah yang tampil lebih lama), tombol aksi, dan "tetap tampil" ikut berlaku di banner dalam aplikasi.
+
+**Topik otomatis** (mengikuti login dan logout): `semua`; akun login menambah `jabatan:<kode>`; BOM-BOS menambah `cabang:<kode>` dan `area:<nama>`; ASM dan SQO Area menambah `area:<nama>`; tamu memakai cabang yang dipilih dan areanya. Admin bisa menyasar satu jabatan, mis. `"topics": ["jabatan:bom"]`.
+
+### Endpoint
+
+| Endpoint | Fungsi |
+|---|---|
+| `POST /api/subscriptions` | Daftar Web Push `{subscription, topics, deviceId?, app?, standalone?, label?}`. `app` = `web` · `pwa` · `apk` · `twa`. Satu `deviceId` = satu baris: beralih push ↔ dalam-aplikasi otomatis menggantikan baris lama |
+| `POST /api/inapp/register` | Daftar perangkat dalam-aplikasi `{deviceId, topics, app?, standalone?, label?}` |
+| `GET /api/inbox/poll?device_id=&since_id=` | Notifikasi baru untuk perangkat dalam-aplikasi. Alias `GET /api/webview/poll` memakai format worker APK: `{ok, notifications:[{id,title,body,url}], latestId}` |
+| `GET /api/inbox?device_id=&limit=` | Riwayat 14 hari untuk daftar di 🔔 |
+| `POST /api/subscriptions/test` | Notifikasi tes ke satu perangkat (push maupun dalam-aplikasi) |
+
+Skema database diperbarui otomatis saat pertama diakses (`PRAGMA user_version`), data lama tetap aman. Perangkat dalam-aplikasi yang tidak terlihat 90 hari dihapus otomatis.
+
+### Alamat IP dan batas permintaan
+
+Batas permintaan dihitung per alamat IP, dan kantor cabang bisa berbagi satu IP, jadi batasnya dibuat longgar. Server hanya memercayai `X-Forwarded-For` / `CF-Connecting-IP` bila permintaan datang dari proxy tepercaya: alamat privat, rentang Cloudflare, atau daftar `trusted_proxies` di `data/config.php`, mis. `'trusted_proxies' => ['203.0.113.0/24']`. Buka `status.php` › **Deteksi alamat IP**. Bila semua perangkat tampak berasal dari satu IP padahal hosting memakai proxy atau CDN lain, tambahkan rentang IP proxy itu.
 
 ## Keamanan
 

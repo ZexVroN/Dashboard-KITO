@@ -78,7 +78,7 @@
     <button id="btnLogin">Masuk</button> <span id="loginMsg" class="msg"></span>
   </section>
 
-  <section class="cd hidden" id="statsCd"><h2>Statistik langganan</h2><div class="stats" id="stats"></div><p class="mu" id="topics"></p></section>
+  <section class="cd hidden" id="statsCd"><h2>Statistik langganan</h2><div class="stats" id="stats"></div><p class="mu" id="apps"></p><p class="mu" id="topics"></p></section>
 
   <section class="cd hidden" id="issueCd">
     <h2>⚠️ Highlight issue keluhan cabang <small class="mu" style="text-transform:none;letter-spacing:0;font-weight:400">· 30 hari terakhir, belum selesai</small></h2>
@@ -89,6 +89,7 @@
 
   <section class="cd hidden" id="formCd">
     <h2>Buat notifikasi</h2>
+    <p class="mu" style="margin:-4px 0 12px">Satu kali kirim menjangkau <b>semua jalur sekaligus</b>: notifikasi sistem (Chrome, Edge, Firefox, Safari/PWA, aplikasi Android TWA) dan banner dalam aplikasi untuk perangkat yang tidak mendukung push (APK WebView, izin ditolak). Tidak perlu membuat APK baru.</p>
     <div class="grid2">
       <div>
         <div class="tpl" id="tpl">
@@ -102,7 +103,7 @@
           <div><label class="f" for="url">Tautan saat diketuk</label><input id="url" type="text" placeholder="./index.html" /></div>
           <div><label class="f" for="image">Gambar besar <small>(URL https, opsional)</small></label><input id="image" type="text" placeholder="https://…/banner.png" /></div>
         </div>
-        <label class="f">Tombol aksi <small>(opsional, maks 2 · tampil di Chrome/Edge & Android)</small></label>
+        <label class="f">Tombol aksi <small>(opsional, maks 2 · tampil di Chrome/Edge, Android, dan banner dalam aplikasi)</small></label>
         <div class="row"><input id="a0t" type="text" maxlength="40" placeholder="Teks tombol 1, mis. Buka dashboard" /><input id="a0u" type="text" placeholder="Tautan tombol 1" /></div>
         <div class="row" style="margin-top:8px"><input id="a1t" type="text" maxlength="40" placeholder="Teks tombol 2" /><input id="a1u" type="text" placeholder="Tautan tombol 2" /></div>
 
@@ -126,7 +127,7 @@
         </div>
         <div class="row">
           <div><label class="f" for="ttl">Berlaku bila perangkat offline <small>(jam)</small></label><input id="ttl" type="text" value="24" /></div>
-          <div><label class="f"><input type="checkbox" id="sticky" /> Tetap tampil sampai diketuk <small>(desktop)</small></label></div>
+          <div><label class="f"><input type="checkbox" id="sticky" /> Tetap tampil sampai diketuk <small>(desktop & banner dalam aplikasi)</small></label></div>
         </div>
         <label class="f">Waktu kirim</label>
         <div class="chips"><label><input type="radio" name="when" value="now" checked /> Kirim sekarang</label><label><input type="radio" name="when" value="later" /> Jadwalkan</label></div>
@@ -211,16 +212,18 @@
   async function load() {
     const s = await api('GET', '/api/stats');
     const pl = Object.fromEntries(s.perPlatform.map((x) => [x.platform, x.n]));
-    $('#stats').innerHTML = [['Total perangkat', s.total], ['Android', pl.android || 0], ['iOS', pl.ios || 0], ['Windows', pl.windows || 0], ['macOS', pl.macos || 0], ['Linux', pl.linux || 0], ['Terpasang (PWA)', s.terpasang], ['Notifikasi dibuat', s.notifikasi]]
+    $('#stats').innerHTML = [['Total perangkat', s.total], ['Push (sistem)', s.push], ['Dalam aplikasi', s.inapp], ['Dalam aplikasi aktif ≤2 hari', s.inappAktif], ['Android', pl.android || 0], ['iOS', pl.ios || 0], ['Windows', pl.windows || 0], ['macOS', pl.macos || 0], ['Linux', pl.linux || 0], ['Terpasang (PWA)', s.terpasang], ['Notifikasi dibuat', s.notifikasi]]
       .map(([k, v]) => `<div class="stat"><small>${k}</small><b>${Number(v).toLocaleString('id-ID')}</b></div>`).join('');
+    const NM_APP = { web: 'Browser', pwa: 'PWA terpasang', apk: 'APK WebView', twa: 'Aplikasi Android (TWA)' };
+    $('#apps').textContent = (s.perApp || []).length ? 'Jalur: ' + s.perApp.map((a) => `${NM_APP[a.app] || a.app} · ${a.channel === 'inapp' ? 'dalam aplikasi' : 'push'} (${a.n})`).join(' · ') : '';
     topikMap = Object.fromEntries(s.perTopic.map((t) => [t.topic, t.n]));
     $('#topics').textContent = s.perTopic.length ? 'Topik: ' + s.perTopic.map((t) => `${t.topic} (${t.n})`).join(' · ') : 'Belum ada langganan.';
     $('#tpList').innerHTML = s.perTopic.map((t) => `<option value="${esc(t.topic)}">${t.n} perangkat</option>`).join('');
     $('#tpChips').innerHTML = s.perTopic.slice(0, 12).map((t) => `<button type="button" class="sec" data-add="${esc(t.topic)}">+ ${esc(t.topic)}</button>`).join('');
     const j = await api('GET', '/api/scheduled?limit=30');
-    $('#sched').innerHTML = j.jadwal.map((x) => `<tr><td>${x.id}</td><td>${esc(lokal(x.sendAt))}</td><td><b>${esc(x.title)}</b><div class="mu">${esc(x.body)}</div></td><td class="mu">${esc(tgtTxt(x.target))}</td><td><span class="st ${esc(x.status)}">${esc(x.status)}</span>${x.result && x.result.sent != null ? `<div class="mu">${x.result.sent} terkirim</div>` : ''}</td><td>${x.status === 'menunggu' ? `<button class="del" data-cancel="${x.id}">Batalkan</button>` : ''}</td></tr>`).join('') || '<tr><td colspan="6" class="mu">Belum ada jadwal.</td></tr>';
+    $('#sched').innerHTML = j.jadwal.map((x) => `<tr><td>${x.id}</td><td>${esc(lokal(x.sendAt))}</td><td><b>${esc(x.title)}</b><div class="mu">${esc(x.body)}</div></td><td class="mu">${esc(tgtTxt(x.target))}</td><td><span class="st ${esc(x.status)}">${esc(x.status)}</span>${x.result && x.result.sent != null ? `<div class="mu">${x.result.sent} terkirim${x.result.inapp ? ` · ${x.result.inapp} dalam aplikasi` : ''}</div>` : ''}</td><td>${x.status === 'menunggu' ? `<button class="del" data-cancel="${x.id}">Batalkan</button>` : ''}</td></tr>`).join('') || '<tr><td colspan="6" class="mu">Belum ada jadwal.</td></tr>';
     const h = await api('GET', '/api/notifications?limit=30');
-    $('#hist').innerHTML = h.riwayat.map((n) => `<tr><td>${n.id}</td><td class="mu">${esc(lokal(n.created_at))}<div>${esc(n.source || '')}</div></td><td><b>${esc(n.title)}</b><div class="mu">${esc(n.body)}</div></td><td class="mu">${esc(tgtTxt(n.target))}</td><td>${n.sent} ✓ · ${n.failed} ✗${n.removed ? ` · ${n.removed} dihapus` : ''}</td></tr>`).join('') || '<tr><td colspan="5" class="mu">Belum ada.</td></tr>';
+    $('#hist').innerHTML = h.riwayat.map((n) => `<tr><td>${n.id}</td><td class="mu">${esc(lokal(n.created_at))}<div>${esc(n.source || '')}</div></td><td><b>${esc(n.title)}</b><div class="mu">${esc(n.body)}</div></td><td class="mu">${esc(tgtTxt(n.target))}</td><td>${n.sent} ✓ · ${n.failed} ✗${n.removed ? ` · ${n.removed} dihapus` : ''}${n.inapp ? `<div class="mu">${n.inapp} dalam aplikasi · ${n.inapp_ok || 0} sudah diambil</div>` : ''}</td></tr>`).join('') || '<tr><td colspan="5" class="mu">Belum ada.</td></tr>';
     jangkauan();
     await muatIssue().catch((e) => { $('#issInfo').textContent = 'Issue keluhan cabang belum bisa dimuat: ' + e.message; });
   }
@@ -291,7 +294,7 @@
       if (all && !later && !confirm('Kirim ke SEMUA perangkat sekarang?')) throw new Error('dibatalkan');
       const r = await api('POST', '/api/notifications', b);
       m.className = 'msg ok';
-      m.textContent = r.dijadwalkan ? `Dijadwalkan #${r.scheduledId} untuk ${lokal(r.sendAt)}` : `Terkirim ke ${r.sent} dari ${r.targets} perangkat` + (r.removed ? ` · ${r.removed} langganan kedaluwarsa dihapus` : '') + (r.failed ? ` · ${r.failed} gagal` : '');
+      m.textContent = r.dijadwalkan ? `Dijadwalkan #${r.scheduledId} untuk ${lokal(r.sendAt)}` : `Push: terkirim ke ${r.sent} dari ${r.targets} perangkat` + (r.removed ? ` · ${r.removed} langganan kedaluwarsa dihapus` : '') + (r.failed ? ` · ${r.failed} gagal` : '') + ` · Dalam aplikasi: ${r.inapp || 0} perangkat (tampil saat KITO dibuka)`;
       load();
     } catch (e) { m.className = 'msg err'; m.textContent = 'Gagal: ' + e.message; }
     $('#btnSend').disabled = false;

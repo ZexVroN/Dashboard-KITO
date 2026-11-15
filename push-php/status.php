@@ -22,6 +22,24 @@ kp_checklist([
 ]);
 echo '</div>';
 
+// deteksi alamat IP: dipakai untuk batas percobaan login/pendaftaran dan lokasi perangkat
+echo '<div class="cd"><h2>Deteksi alamat IP</h2>';
+$remote = (string)($_SERVER['REMOTE_ADDR'] ?? '?'); $xff = (string)($_SERVER['HTTP_X_FORWARDED_FOR'] ?? ''); $cfh = (string)($_SERVER['HTTP_CF_CONNECTING_IP'] ?? '');
+$tepercaya = filter_var($remote, FILTER_VALIDATE_IP) && kp_proxy_tepercaya(kp_ip_norm($remote));
+$cek = [['IP yang dipakai sistem: ' . kp_ip(), true, '']];
+$cek[] = ['Sambungan masuk (REMOTE_ADDR): ' . $remote . ($tepercaya ? ' · dikenali sebagai proxy tepercaya' : ' · langsung dari pengunjung'), true, ''];
+if ($xff !== '' || $cfh !== '') {
+    $cek[] = ['Header penerus: ' . trim(($xff !== '' ? 'X-Forwarded-For ' . $xff : '') . ($cfh !== '' ? ' · CF-Connecting-IP ' . $cfh : '')) . ($tepercaya ? '' : ' · DIABAIKAN (sambungan bukan dari proxy tepercaya)'), $tepercaya,
+        'Bila server ini berada di belakang CDN/proxy, tambahkan IP/CIDR proxy itu di data/config.php: \'trusted_proxies\' => [\'203.0.113.0/24\']. Cloudflare dan jaringan internal sudah otomatis dikenali.'];
+}
+try {   // semua perangkat terlihat berasal dari satu IP = proxy/CDN belum dikenali (batas per-IP jadi berlaku untuk semua orang)
+    $v = kp_db()->query("SELECT COUNT(DISTINCT device_id) d, COUNT(DISTINCT ip) i FROM visits WHERE last_seen > datetime('now', '-1 day')")->fetch();
+    if ($v && (int)$v['d'] >= 5) $cek[] = [(int)$v['d'] . ' perangkat aktif 24 jam terakhir terlihat dari ' . (int)$v['i'] . ' alamat IP', (int)$v['i'] > 1,
+        'Semua perangkat tercatat dari satu IP: kemungkinan IP milik proxy/CDN. Daftarkan di data/config.php › trusted_proxies agar batas percobaan login dan lokasi perangkat akurat.'];
+} catch (Throwable $e) { /* tabel pemantauan belum ada */ }
+kp_checklist($cek);
+echo '</div>';
+
 // cek rewrite .htaccess dari browser
 echo '<div class="cd"><h2>Alamat API</h2><ul class="ck"><li id="rw1">… memeriksa <code>/api/health</code></li><li id="rw2">… memeriksa <code>/index.php/api/health</code></li></ul>
 <p class="mu" id="rwk"></p></div>

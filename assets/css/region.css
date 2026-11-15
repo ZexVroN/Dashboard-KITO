@@ -13,7 +13,10 @@ body.mode-region .fl { grid-template-columns: 1fr; }
 .rx-cmp select { margin-top: 4px; padding: 8px 10px; border-radius: 10px; border: 1px solid var(--ln); background: var(--cd); color: var(--tx); font: inherit; font-size: 13px; font-weight: 600; }
 
 /* kartu skor per indikator */
-.rx-grid { display: grid; grid-template-columns: 1fr; gap: 0; }
+.rx-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 0; }
+/* isi kartu (mis. tabel Akuisisi versi mobile) tidak boleh melebarkan kolom grid: tanpa ini halaman Region
+   bisa melebar ±650px di ponsel setelah pembanding diganti */
+.rx-grid > * { min-width: 0; max-width: 100%; }
 /* satu kolom di semua lebar layar: kartu tetap lega dan tabel di dalamnya tidak bertumpuk */
 .rx-card-h { display: flex; gap: 10px; align-items: flex-start; }
 .rx-card-h h2 { margin-bottom: 2px; }

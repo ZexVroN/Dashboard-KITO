@@ -19,6 +19,12 @@
     atom: '24194830a2ecb9b2d9b384d0fe184d59c327e175bf59779d34551fb67794d7e0',
     bom: '4e88c3acbfdf57bd8a6634d2d4110a8a51b00b48fe3f0609815fb63a97ac1d50',
   };
+  // Pengaman password bawaan (diisi tools/amankan_password_bawaan.py, sama dengan KP_AKUN_BUKTI di push-php/lib/akun.php):
+  // SHA-256 dari bukti = PBKDF2-SHA256(password, "kito-akun-v2:<kode>", 150000) (hex). Nilai ini tidak bisa dipakai untuk login
+  // tanpa password asli. Jabatan yang terdaftar di sini tidak lagi memakai hash di KPI_AKUN.
+  const KPI_BUKTI = {
+  };
+  const BUKTI_ITERASI = 150000;
   // akses tab KPI per jabatan login: '*' = semua, selain itu daftar kunci jabatan (lihat kito.json [KITO_KPI])
   const AKSES = {
     roh: '*',
@@ -40,15 +46,28 @@
     try { return /^[0-9a-f]{64}$/.test(sessionStorage.getItem(KUNCI) || '') && !!sessionStorage.getItem('kito-kpi-jabatan'); } catch (e) { return false; }
   };
   // backend akun (push-php): login, ganti password, profil. Tanpa koneksi: cek lokal (hash terakhir yang berhasil / bawaan)
-  const API = (window.KITO_PUSH?.api || '').replace(/\/+$/, '');
+  // dibaca saat dipakai: push-config.js dimuat SETELAH file ini, jadi nilai yang dibaca saat file dimuat selalu kosong
+  const apiAkunDasar = () => (window.KITO_PUSH?.api || '').replace(/\/+$/, '');
   // akun per orang: BOM-BOS per kode cabang; ASM & SQO Area per area; SQO Region per region (kunci dari KITO_ASM).
   // Tanpa sub = akun jabatan (sesi lama).
   const JAB_ORANG = ['asm', 'sqoa', 'sqor'];
   const kunciAkun = (jab, sub) => ((jab === 'bom' || JAB_ORANG.includes(jab)) && sub ? jab + ':' + sub : jab);
-  const kredAkun = (jab, sub, h) => ({ jabatan: jab, cabang: jab === 'bom' && sub ? sub : undefined, area: JAB_ORANG.includes(jab) && sub ? sub : undefined, hash: h });
+  const kredAkun = (jab, sub, h, v) => ({ jabatan: jab, cabang: jab === 'bom' && sub ? sub : undefined, area: JAB_ORANG.includes(jab) && sub ? sub : undefined, hash: h, bukti: v || undefined });
+  const KUNCI_BUKTI = 'kito-kpi-bukti';
+  const hex = (buf) => Array.from(new Uint8Array(buf)).map((b) => b.toString(16).padStart(2, '0')).join('');
+  // bukti password bawaan (hanya dihitung bila jabatan sudah diamankan di KPI_BUKTI)
+  async function buktiPassword(jab, pw) {
+    if (!KPI_BUKTI[jab]) return '';
+    const kunci = await crypto.subtle.importKey('raw', new TextEncoder().encode(pw), 'PBKDF2', false, ['deriveBits']);
+    const bits = await crypto.subtle.deriveBits({ name: 'PBKDF2', hash: 'SHA-256', salt: new TextEncoder().encode('kito-akun-v2:' + jab), iterations: BUKTI_ITERASI }, kunci, 256);
+    return hex(bits);
+  }
+  // yang disimpan di perangkat untuk login offline: turunan hash (bukan hash yang dikirim ke server)
+  const jejakOffline = (h) => sha256('kito-offline:' + h);
   const lsBaca = (k, d) => { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch (e) { return d; } };
   const lsTulis = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} };
   async function apiAkun(jalur, body) {
+    const API = apiAkunDasar();
     if (!API) return { offline: true };
     let r;
     try { r = await fetch(API + '/api/akun/' + jalur, { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify(body) }); }
@@ -57,12 +76,17 @@
     if (r.status === 404 || r.status >= 500) return { offline: true };   // backend belum diperbarui / gangguan server
     return { status: r.status, ...j };
   }
-  async function verifikasi(jab, sub, h) {
+  async function verifikasi(jab, sub, h, v) {
     const kunci = kunciAkun(jab, sub);
-    const r = await apiAkun('login', kredAkun(jab, sub, h));
-    if (r.offline) return { ok: h === (lsBaca('kito-akun-h:' + kunci, null) || KPI_AKUN[jab]) };
+    const r = await apiAkun('login', kredAkun(jab, sub, h, v));
+    if (r.offline) {
+      const simpan = lsBaca('kito-akun-h:' + kunci, null);
+      if (simpan) return { ok: simpan === h || simpan === await jejakOffline(h) };   // format lama (hash) / baru (turunan)
+      if (KPI_BUKTI[jab]) return { ok: !!v && (await sha256(v)) === KPI_BUKTI[jab] };
+      return { ok: !!KPI_AKUN[jab] && h === KPI_AKUN[jab] };
+    }
     if (r.status === 200 && r.ok) {
-      lsTulis('kito-akun-h:' + kunci, h);
+      lsTulis('kito-akun-h:' + kunci, await jejakOffline(h));
       if (r.profil) lsTulis('kito-profil:' + kunci, r.profil);
       return { ok: true };
     }
@@ -236,10 +260,10 @@
         area = asm.value;
         if (!dataOrang(kode, area)) { const [jl, apa] = LABEL_ORANG[kode]; err.textContent = `Pilih nama ${jl} dan ${apa}nya.`; asm.focus(); return; }
       }
-      const h = await sha256(kode + ':' + p.value);
       const btn = form.querySelector('.kl-btn');
       btn.disabled = true; btn.textContent = 'Memeriksa…';
-      const v = await verifikasi(kode, iCab >= 0 ? String(D.B[iCab][0]) : area, h);
+      const h = await sha256(kode + ':' + p.value), bk = await buktiPassword(kode, p.value);
+      const v = await verifikasi(kode, iCab >= 0 ? String(D.B[iCab][0]) : area, h, bk);
       btn.disabled = false; btn.textContent = 'Masuk';
       if (!v.ok) {
         err.textContent = v.pesan || 'Jabatan atau password salah.';
@@ -250,7 +274,7 @@
         form.classList.add('kl-goyang');
         return;
       }
-      try { sessionStorage.setItem(KUNCI, h); } catch (e2) {}
+      try { sessionStorage.setItem(KUNCI, h); if (bk) sessionStorage.setItem(KUNCI_BUKTI, bk); else sessionStorage.removeItem(KUNCI_BUKTI); } catch (e2) {}
       simpanAkses(kode);
       try { sessionStorage.setItem('kito-kpi-jabatan', kode); } catch (e2) {}   // dibaca pantau.js (pemantauan perangkat)
       try { if (iCab >= 0) sessionStorage.setItem(KUNCI_CABANG, String(D.B[iCab][0])); else sessionStorage.removeItem(KUNCI_CABANG); } catch (e2) {}
@@ -262,7 +286,7 @@
     });
   }
 
-  let keluar = () => { try { sessionStorage.removeItem(KUNCI); sessionStorage.removeItem(KUNCI_AKSES); sessionStorage.removeItem('kito-kpi-jabatan'); } catch (e) {} render(); };
+  let keluar = () => { try { sessionStorage.removeItem(KUNCI); sessionStorage.removeItem(KUNCI_BUKTI); sessionStorage.removeItem(KUNCI_AKSES); sessionStorage.removeItem('kito-kpi-jabatan'); } catch (e) {} render(); };
   // ikon Keluar di header paling atas (.bar-atas), di sebelah tombol tema
   function pasangKeluar() {
     const bar = document.querySelector('header .bar-atas');
@@ -347,7 +371,7 @@
 
   // Keluar: kembali ke Cabang dan tampilkan gerbang login lagi
   keluar = () => {
-    try { [KUNCI, KUNCI_AKSES, KUNCI_LEWATI, KUNCI_CABANG, KUNCI_AREA, 'kito-kpi-jabatan'].forEach((k) => sessionStorage.removeItem(k)); } catch (e) {}
+    try { [KUNCI, KUNCI_BUKTI, KUNCI_AKSES, KUNCI_LEWATI, KUNCI_CABANG, KUNCI_AREA, 'kito-kpi-jabatan'].forEach((k) => sessionStorage.removeItem(k)); } catch (e) {}
     tutupProfil(); tampil = 'cabang'; render(); perbaruiProfil(); bukaGerbang();
   };
 
@@ -356,10 +380,10 @@
   const SVG_ORANG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-7 8-7s8 3 8 7"/></svg>';
   function akunKini() {
     if (!sudahMasuk()) return null;
-    let jab = '', cab = '', area = '', h = '';
+    let jab = '', cab = '', area = '', h = '', bk = '';
     try {
       jab = sessionStorage.getItem('kito-kpi-jabatan') || ''; cab = sessionStorage.getItem(KUNCI_CABANG) || '';
-      area = sessionStorage.getItem(KUNCI_AREA) || ''; h = sessionStorage.getItem(KUNCI) || '';
+      area = sessionStorage.getItem(KUNCI_AREA) || ''; h = sessionStorage.getItem(KUNCI) || ''; bk = sessionStorage.getItem(KUNCI_BUKTI) || '';
     } catch (e) {}
     const sub = jab === 'bom' ? cab : JAB_ORANG.includes(jab) ? area : '';
     const kunci = kunciAkun(jab, sub);
@@ -370,7 +394,7 @@
     const namaBawaan = jab === KODE_CABANG ? (b ? namaPengguna('bom', teksCabang(b)) : 'BOM-BOS') : xa ? xa.nama : namaPengguna(jab, '');
     const jabKpi = (window.KITO_KPI?.jabatan || []).find((x) => x.key === jab.toUpperCase());
     return {
-      jab, cab, area, sub, h, kunci, profil, kred: kredAkun(jab, sub, h),
+      jab, cab, area, sub, h, kunci, profil, kred: kredAkun(jab, sub, h, bk),
       orang: !!(b || xa),   // akun per orang (BOM-BOS per cabang / ASM & SQO Area per area / SQO Region per region)
       nama: profil.nama || namaBawaan, namaBawaan,
       jabatan: jab === KODE_CABANG && b ? `${label} · ${b[0]} ${b[1]}` : xa ? `${label} · ${xa.label}` : (jabKpi?.nama || label),
@@ -537,14 +561,14 @@
       if (baru !== ulang) { err.textContent = 'Ulangi password baru tidak sama.'; return; }
       if (baru === lama) { err.textContent = 'Password baru harus berbeda dari password saat ini.'; return; }
       if (!window.crypto || !crypto.subtle) { err.textContent = 'Browser tidak mendukung (butuh HTTPS).'; return; }
-      const hLama = await sha256(a.jab + ':' + lama), hBaru = await sha256(a.jab + ':' + baru);
       sibukForm(f, true, 'Menyimpan…');
-      const r = await apiAkun('password', { ...a.kred, hash: hLama, baru: hBaru });
+      const hLama = await sha256(a.jab + ':' + lama), hBaru = await sha256(a.jab + ':' + baru), bLama = await buktiPassword(a.jab, lama);
+      const r = await apiAkun('password', { ...a.kred, hash: hLama, bukti: bLama || undefined, baru: hBaru });
       sibukForm(f, false);
       if (r.offline) { err.textContent = 'Server tidak terhubung. Reset password butuh koneksi internet.'; return; }
       if (!(r.status === 200 && r.ok)) { err.textContent = r.status === 401 ? 'Password saat ini salah.' : (r.error || 'Gagal menyimpan password.'); return; }
-      try { sessionStorage.setItem(KUNCI, hBaru); } catch (x) {}
-      lsTulis('kito-akun-h:' + a.kunci, hBaru);
+      try { sessionStorage.setItem(KUNCI, hBaru); sessionStorage.removeItem(KUNCI_BUKTI); } catch (x) {}
+      lsTulis('kito-akun-h:' + a.kunci, await jejakOffline(hBaru));
       tutupDialog(); toast('Password berhasil diganti.');
     });
     f.querySelector('#kpf-lama').focus();

@@ -152,7 +152,7 @@
     web: 'Browser', pwa: 'PWA (dipasang)', apk: 'Aplikasi APK' };
   const nm = (s) => NAMA[s] || s;
   const perangkat = (r) => `${esc(nm(r.platform))} · ${esc(nm(r.browser))} <span class="pill">${esc(nm(r.app))}</span>`;
-  const lokasi = (r) => [r.city, r.region].filter(Boolean).join(', ') || (r.country ? r.country : '<span class="mu">belum diketahui</span>');
+  const lokasi = (r) => esc([r.city, r.region].filter(Boolean).join(', ')) || (r.country ? esc(r.country) : '<span class="mu">belum diketahui</span>');
   const tempat = (r) => [r.area, r.kode ? r.kode + (r.cabang ? ' ' + r.cabang : '') : ''].filter(Boolean).map(esc).join('<br>') || '<span class="mu">–</span>';
 
   /* ---------- periode: tanggal WIB dari..sampai (inklusif) ---------- */

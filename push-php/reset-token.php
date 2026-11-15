@@ -14,12 +14,19 @@ if (!$cfg) {
     echo '<div class="cd"><p class="bad">Backend belum disetel.</p><p><a class="btn" href="setup.php">Buka setup</a></p></div>';
     kp_page_end(); exit;
 }
+// berkas penanda hanya berlaku 30 menit sejak dibuat: penanda yang tertinggal (mis. ikut ter-deploy dari repo) tidak bisa dipakai orang lain
+const KP_RESET_MAKS_DETIK = 1800;
+$flagLama = is_file(KP_RESET_FLAG) && (time() - (int)@filemtime(KP_RESET_FLAG)) > KP_RESET_MAKS_DETIK;
+if ($flagLama) @unlink(KP_RESET_FLAG);
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && !kp_rate('reset:' . kp_ip(), 3)) {
+    echo '<div class="cd"><p class="bad">Terlalu banyak percobaan. Tunggu satu menit.</p></div>'; kp_page_end(); exit;
+}
 if (!is_file(KP_RESET_FLAG)) {
     echo '<div class="cd"><h2>Reset token admin</h2>
       <p>Demi keamanan, reset hanya bisa dilakukan oleh pemilik hosting:</p><ol>
       <li>Buka File Manager hosting › folder <code>push/data/</code>.</li>
       <li>Buat berkas kosong bernama <code>RESET-TOKEN</code> (tanpa ekstensi).</li>
-      <li>Muat ulang halaman ini, lalu klik <b>Buat token baru</b>.</li></ol>
+      <li>Dalam 30 menit, muat ulang halaman ini lalu klik <b>Buat token baru</b> (lewat 30 menit berkas dianggap kedaluwarsa dan dihapus otomatis).</li></ol>
       <p class="mu">Hanya token admin yang diganti. Kunci VAPID dan semua langganan tetap aman.</p></div>';
     kp_page_end(); exit;
 }

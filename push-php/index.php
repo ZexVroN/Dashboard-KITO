@@ -94,8 +94,10 @@ function kp_admin(): void {
     $h = $_SERVER['HTTP_AUTHORIZATION'] ?? $_SERVER['REDIRECT_HTTP_AUTHORIZATION'] ?? '';
     if ($h === '' && function_exists('getallheaders')) { foreach (getallheaders() as $k => $v) if (strtolower($k) === 'authorization') $h = $v; }
     $tok = preg_match('/^Bearer\s+(.+)$/i', $h, $m) ? trim($m[1]) : trim($_SERVER['HTTP_X_ADMIN_TOKEN'] ?? '');
-    if ($tok === '' || !hash_equals($cfg['admin_token'], $tok)) {
-        if (!kp_rate('adminfail:' . kp_ip(), 10)) kp_fail(429, 'terlalu banyak percobaan');
+    $batas = ['adminfail:' . kp_ip() => 10];
+    if (kp_gagal_lewat($batas)) kp_fail(429, 'terlalu banyak percobaan');
+    if ($tok === '' || !hash_equals((string)$cfg['admin_token'], $tok)) {
+        kp_gagal_catat($batas);
         kp_fail(401, 'token admin salah');
     }
 }

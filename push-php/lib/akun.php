@@ -16,6 +16,13 @@ const KP_AKUN_BAWAAN = [
     'atom' => '24194830a2ecb9b2d9b384d0fe184d59c327e175bf59779d34551fb67794d7e0',
     'bom'  => '4e88c3acbfdf57bd8a6634d2d4110a8a51b00b48fe3f0609815fb63a97ac1d50',
 ];
+/* Pengaman akun bawaan (belum pernah ganti password). Hash di atas juga tertulis di kpi-login.js yang bisa dibaca publik,
+   jadi siapa pun bisa mengirim hash itu tanpa tahu password-nya. Setelah tools/amankan_password_bawaan.py dijalankan,
+   jabatan yang terdaftar di sini wajib mengirim "bukti" = PBKDF2-SHA256(password, "kito-akun-v2:<jabatan>", 150000) (hex);
+   yang disimpan hanya SHA-256 dari bukti itu, sehingga nilai publik tidak bisa dipakai untuk login.
+   Hash bawaan lama jabatan tersebut dikosongkan oleh alat yang sama. */
+const KP_AKUN_BUKTI = [
+];
 const KP_AKUN_FOTO_MAKS = 60000;   // panjang data URL foto (±44 KB gambar; body JSON dibatasi 64 KB)
 
 function kp_akun_db(): PDO {
@@ -46,6 +53,21 @@ function kp_akun_kunci(array $b): ?array {
 
 function kp_akun_hash_ok($h): bool { return is_string($h) && preg_match('/^[0-9a-f]{64}$/', $h) === 1; }
 
+/** cocokkan kredensial dengan password bawaan jabatan (akun yang belum pernah ganti password) */
+function kp_akun_bawaan_ok(string $jab, array $b): bool {
+    if (!empty(KP_AKUN_BUKTI[$jab])) {
+        $v = $b['bukti'] ?? '';
+        return kp_akun_hash_ok($v) && hash_equals(KP_AKUN_BUKTI[$jab], hash('sha256', $v));
+    }
+    $bawaan = KP_AKUN_BAWAAN[$jab] ?? '';
+    return $bawaan !== '' && hash_equals($bawaan, (string)($b['hash'] ?? ''));
+}
+/** cek kredensial terhadap baris akun (password sudah diganti) atau password bawaan */
+function kp_akun_cocok(array $b, string $jab, ?array $row): bool {
+    if ($row && $row['hash']) return password_verify((string)$b['hash'], $row['hash']);
+    return kp_akun_bawaan_ok($jab, $b);
+}
+
 function kp_akun_baris(string $kunci): ?array {
     $q = kp_akun_db()->prepare('SELECT * FROM akun WHERE kunci = ?');
     $q->execute([$kunci]);
@@ -59,10 +81,12 @@ function kp_akun_cek(array $b): array {
     [$kunci, $jab] = $k;
     $h = $b['hash'] ?? '';
     if (!kp_akun_hash_ok($h)) kp_fail(400, 'password tidak valid');
+    // batas percobaan gagal per IP dan per akun (menahan tebakan dari banyak IP sekaligus); diperiksa sebelum password dicek
+    $batas = ['akunfail:' . kp_ip() => 10, 'akunfail-k:' . $kunci => 30];
+    if (kp_gagal_lewat($batas)) kp_fail(429, 'terlalu banyak percobaan, coba lagi sebentar lagi');
     $row = kp_akun_baris($kunci);
-    $ok = $row && $row['hash'] ? password_verify($h, $row['hash']) : hash_equals(KP_AKUN_BAWAAN[$jab], $h);
-    if (!$ok) {
-        if (!kp_rate('akunfail:' . kp_ip(), 10)) kp_fail(429, 'terlalu banyak percobaan, coba lagi sebentar lagi');
+    if (!kp_akun_cocok($b, $jab, $row)) {
+        kp_gagal_catat($batas);
         kp_fail(401, 'password salah');
     }
     return [$kunci, $row ?: []];
@@ -74,9 +98,7 @@ function kp_akun_valid($b): ?string {
     $k = kp_akun_kunci($b);
     if (!$k || !kp_akun_hash_ok($b['hash'] ?? '')) return null;
     [$kunci, $jab] = $k;
-    $row = kp_akun_baris($kunci);
-    $ok = $row && $row['hash'] ? password_verify($b['hash'], $row['hash']) : hash_equals(KP_AKUN_BAWAAN[$jab], $b['hash']);
-    return $ok ? $kunci : null;
+    return kp_akun_cocok($b, $jab, kp_akun_baris($kunci)) ? $kunci : null;
 }
 
 function kp_akun_profil(array $row): array {

@@ -87,9 +87,18 @@ function kp_host_allowed(string $endpoint): bool {
     return false;
 }
 
+/* IP klien. X-Forwarded-For hanya dipercaya bila permintaan datang dari proxy di jaringan internal (IP privat/loopback)
+   atau dari proxy yang didaftarkan di data/config.php ('trusted_proxies' => ['1.2.3.4']). Tanpa ini, penyerang bisa
+   mengarang header X-Forwarded-For untuk melewati batas percobaan login. */
 function kp_ip(): string {
-    $f = $_SERVER['HTTP_X_FORWARDED_FOR'] ?? '';
-    return trim(explode(',', $f)[0]) ?: ($_SERVER['REMOTE_ADDR'] ?? '?');
+    $remote = (string)($_SERVER['REMOTE_ADDR'] ?? '?');
+    $f = (string)($_SERVER['HTTP_X_FORWARDED_FOR'] ?? '');
+    if ($f === '') return $remote;
+    $c = kp_config() ?: [];
+    $internal = filter_var($remote, FILTER_VALIDATE_IP) && !filter_var($remote, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE);
+    if (!$internal && !in_array($remote, (array)($c['trusted_proxies'] ?? []), true)) return $remote;
+    $ip = trim(explode(',', $f)[0]);
+    return filter_var($ip, FILTER_VALIDATE_IP) ? $ip : $remote;
 }
 
 function kp_rate(string $key, int $perMinute): bool {
@@ -99,6 +108,19 @@ function kp_rate(string $key, int $perMinute): bool {
     if ((int)$q->fetchColumn() >= $perMinute) return false;
     $db->prepare('INSERT INTO hits (k, t) VALUES (?, ?)')->execute([$key, $now]);
     return true;
+}
+
+/* batas percobaan gagal (login akun / token admin): diperiksa SEBELUM kredensial dicek, sehingga setelah batas tercapai
+   tebakan yang benar pun ditolak sementara (brute force tidak bisa membedakan benar/salah). */
+function kp_gagal_lewat(array $batas): bool {
+    $db = kp_db(); $now = time();
+    $q = $db->prepare('SELECT COUNT(*) FROM hits WHERE k = ? AND t > ?');
+    foreach ($batas as $k => $n) { $q->execute([$k, $now - 60]); if ((int)$q->fetchColumn() >= $n) return true; }
+    return false;
+}
+function kp_gagal_catat(array $batas): void {
+    $ins = kp_db()->prepare('INSERT INTO hits (k, t) VALUES (?, ?)');
+    foreach (array_keys($batas) as $k) $ins->execute([$k, time()]);
 }
 
 function kp_now(): string { return gmdate('Y-m-d H:i:s'); }

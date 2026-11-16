@@ -2,7 +2,8 @@
    - Kartu notifikasi di paling atas halaman Cabang: ketuk = buka halaman informasi, geser kiri/kanan atau tombol × = tutup.
    - Notifikasi yang ditutup muncul kembali setelah halaman dimuat ulang.
    - Halaman informasi berbentuk daftar berita (array BERITA). Ketuk berita = pindah ke halaman detailnya:
-     "Penguatan Operasional" (7 kartu poin, array POIN) dan "Waspada Setor Angin" (objek SETOR).
+     "Penguatan Operasional" (7 kartu poin, array POIN), "Waspada Setor Angin" (objek SETOR) dan
+     "Saling Ingatkan Bahaya Penipuan Digital" (objek PENIPUAN, dengan tombol bagikan WhatsApp/salin).
    Tombol ‹ Kembali di halaman detail = kembali ke daftar informasi. Add-on non-destruktif: menyisipkan kartu ke URUTAN. */
 (()=>{'use strict';
 if(typeof URUTAN==='undefined'||typeof render!=='function')return;
@@ -103,6 +104,31 @@ const SETOR={
   sumber:'SOR Distribution & Consumer · PT Bank Mandiri (Persero) Tbk. · Untuk kalangan internal',
 };
 
+/* ----- berita "Saling Ingatkan Bahaya Penipuan Digital" (#GEBERPK) ----- */
+const PENIPUAN={
+  label:'Edukasi Nasabah · #GEBERPK',
+  judul:'Satu pesan kecil bisa menyelamatkan orang terdekat dari penipuan digital 💙',
+  intro:'Yuk, **saling mengingatkan**:',
+  tips:[
+    {ik:'gembokS', j:'Rahasiakan OTP, PIN & kata sandi', k:'Jangan bagikan **OTP, PIN, atau kata sandi** kepada siapa pun, termasuk yang mengaku petugas bank.'},
+    {ik:'peringatan', j:'Waspadai tautan & desakan transfer', k:'Waspadai **tautan asing** dan **permintaan transfer yang mendesak**.'},
+    {ik:'perisai', j:'Verifikasi lewat kanal resmi', k:'Selalu **verifikasi identitas pengirim** melalui kanal resmi.'},
+  ],
+  ajakan:'Teruskan pengingat ini ke keluarga dan teman terdekatmu. 📢',
+  tagar:['#GEBERPK','#KalauRaguStopDulu'],
+};
+/* teks yang dibagikan (WhatsApp / bagikan bawaan HP) */
+const PESAN_PENIPUAN=`Satu pesan kecil bisa menyelamatkan orang terdekat dari penipuan digital. 💙
+
+Yuk, saling mengingatkan:
+* Jangan bagikan OTP, PIN, atau kata sandi kepada siapa pun.
+* Waspadai tautan asing dan permintaan transfer yang mendesak.
+* Selalu verifikasi identitas pengirim melalui kanal resmi.
+
+Teruskan pengingat ini ke keluarga dan teman terdekatmu. 📢
+
+#GEBERPK #KalauRaguStopDulu`;
+
 /* ----- daftar berita di halaman Informasi Highlight Issue Operasional (paling baru di atas) ----- */
 const INFO={
   label:'Highlight Issue',
@@ -110,7 +136,10 @@ const INFO={
   intro:'Kumpulan informasi & pengingat kewaspadaan **operasional cabang**. Ketuk informasi untuk membaca selengkapnya.',
 };
 const BERITA=[
-  {id:'setor', ik:'angin', warna:'merah', baru:true, kat:'Reminder Kewaspadaan', tgl:'',
+  {id:'penipuan', ik:'pesan', warna:'biru', baru:true, kat:'Edukasi Nasabah', tgl:'16 Nov 2026',
+   judul:'Saling Ingatkan Bahaya Penipuan Digital',
+   ringkas:'Jangan bagikan OTP, PIN, atau kata sandi; waspadai tautan asing & permintaan transfer mendesak; verifikasi lewat kanal resmi. Teruskan ke keluarga & teman.'},
+  {id:'setor', ik:'angin', warna:'merah', kat:'Reminder Kewaspadaan', tgl:'',
    judul:'Waspada Transaksi “Setor Angin”',
    ringkas:'Modus fraud kas: posting setoran tunai tanpa fisik uang yang mengakibatkan selisih kas kurang. Kenali 4 modusnya & langkah pencegahan wajib.'},
   {id:'penguatan', ik:'perisai', warna:'navy', kat:'Penguatan Operasional', tgl:'',
@@ -145,6 +174,9 @@ const IKON={
   gedung:S('<path d="M3 10l9-6 9 6"/><path d="M5 10v9M19 10v9M9.5 10v9M14.5 10v9M3 20h18"/>'),
   bendera:S('<path d="M5 21V4"/><path d="M5 4h11l-2 4 2 4H5"/>'),
   panah:S('<path d="M9 6l6 6-6 6"/>'),
+  pesan:S('<path d="M4 5h16a1 1 0 011 1v10a1 1 0 01-1 1H9l-5 4V6a1 1 0 011-1z"/><path d="M12 14.2l-2.6-2.5a1.6 1.6 0 012.6-1.9 1.6 1.6 0 012.6 1.9L12 14.2z"/>'),
+  bagikan:S('<circle cx="18" cy="5" r="2.5"/><circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="19" r="2.5"/><path d="M8.2 10.8l7.6-4.4M8.2 13.2l7.6 4.4"/>'),
+  salin:S('<rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V6a2 2 0 00-2-2H6a2 2 0 00-2 2v8a2 2 0 002 2h2"/>'),
 };
 const tebal=t=>esc(t).replace(/\*\*(.+?)\*\*/g,'<b>$1</b>');
 
@@ -238,7 +270,40 @@ function isiSetor(){
     <div class="sa-zero"><strong>Zero<br>Tolerance</strong><p>${esc(s.zero)}</p></div>
     <p class="sa-src">${esc(s.sumber)}</p>`;
 }
-const HALAMAN={daftar:isiDaftar,penguatan:isiPenguatan,setor:isiSetor};
+/* halaman berita Saling Ingatkan Bahaya Penipuan Digital */
+function isiPenipuan(){
+  const s=PENIPUAN;
+  return `<div class="pgn-hero pn-hero">
+      <span class="pgn-hero-ik">${IKON.pesan}</span>
+      <span class="pgn-hero-lbl">${esc(s.label)}</span>
+      <h2 class="pgn-hero-j" id="pgn-judul" tabindex="-1">${esc(s.judul)}</h2>
+      <p class="pgn-hero-intro">${tebal(s.intro)}</p>
+    </div>
+    <div class="pn-list">${s.tips.map((t,i)=>`<article class="pn-tip"><span class="pn-tip-ik">${IKON[t.ik]}</span>
+      <div><span class="pn-tip-no">${i+1}</span><b>${esc(t.j)}</b><p>${tebal(t.k)}</p></div></article>`).join('')}</div>
+    <div class="pn-ajak"><span class="pn-ajak-ik">${IKON.bagikan}</span><div><b>${esc(s.ajakan)}</b>
+      <div class="pn-tagar">${s.tagar.map(t=>`<span>${esc(t)}</span>`).join('')}</div></div></div>
+    <div class="pn-aksi">
+      <button type="button" class="pn-btn pn-wa" data-pgn-bagikan="wa">${IKON.pesan}<span>Bagikan</span></button>
+      <button type="button" class="pn-btn" data-pgn-bagikan="salin">${IKON.salin}<span>Salin pesan</span></button>
+    </div>
+    <p class="pn-status" role="status" aria-live="polite"></p>`;
+}
+/* tombol bagikan: lembar bagikan bawaan HP bila ada, selain itu WhatsApp; "Salin pesan" ke papan klip */
+document.addEventListener('click',e=>{
+  const b=e.target.closest('[data-pgn-bagikan]');if(!b)return;
+  const st=b.closest('.pgn-panel,body').querySelector('.pn-status');
+  const lapor=t=>{if(st){st.textContent=t;clearTimeout(st._t);st._t=setTimeout(()=>{st.textContent='';},3500);}};
+  const salin=()=>{
+    const cadangan=()=>{const ta=document.createElement('textarea');ta.value=PESAN_PENIPUAN;ta.setAttribute('readonly','');ta.style.cssText='position:fixed;opacity:0';document.body.appendChild(ta);ta.select();
+      let ok=false;try{ok=document.execCommand('copy');}catch(_){}ta.remove();lapor(ok?'Pesan disalin. Tempel di WhatsApp atau aplikasi lain.':'Tidak bisa menyalin otomatis di perangkat ini.');};
+    if(navigator.clipboard&&window.isSecureContext)navigator.clipboard.writeText(PESAN_PENIPUAN).then(()=>lapor('Pesan disalin. Tempel di WhatsApp atau aplikasi lain.'),cadangan);else cadangan();
+  };
+  if(b.dataset.pgnBagikan==='salin'){salin();return;}
+  const wa=()=>{const w=window.open('https://wa.me/?text='+encodeURIComponent(PESAN_PENIPUAN),'_blank','noopener');if(!w)location.href='https://wa.me/?text='+encodeURIComponent(PESAN_PENIPUAN);};
+  if(navigator.share)navigator.share({text:PESAN_PENIPUAN}).catch(err=>{if(err&&err.name!=='AbortError')wa();});else wa();
+});
+const HALAMAN={daftar:isiDaftar,penguatan:isiPenguatan,setor:isiSetor,penipuan:isiPenipuan};
 function isiDetail(hal){
   const detail=hal!=='daftar';
   return `<div class="pgn-xbar">${detail?`<button type="button" class="pgn-back" data-pgn-kembali aria-label="Kembali ke Informasi Highlight Issue Operasional">${IKON.kembali}<span>Kembali</span></button>`:''}

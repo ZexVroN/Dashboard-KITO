@@ -24,9 +24,7 @@
 .pgn-n-x:hover,.pgn-n-x:focus-visible{background:rgba(255,255,255,.24);outline:none}
 
 /* ----- panel detail ----- */
-/* kunci scroll cukup di html (viewport): bila body juga overflow:hidden, body jadi scroll container
-   sehingga header sticky (style.css) melompat ke posisi awalnya dan hilang dari layar */
-html.pgn-kunci{overflow:hidden}
+html.pgn-kunci,html.pgn-kunci body{overflow:hidden}
 .pgn-latar{position:fixed;inset:0;z-index:1000;display:flex;align-items:flex-end;justify-content:center;background:rgba(6,16,40,.55);
   opacity:0;transition:opacity .32s ease,background-color .32s ease;padding:env(safe-area-inset-top,0) 0 0}
 .pgn-latar.buka{opacity:1}
@@ -212,3 +210,35 @@ html.pgn-kunci{overflow:hidden}
 [data-theme="dark"] .sa-ya>b{color:#6ee7a0}
 [data-theme="dark"] .sa-no>b{color:#ff8a80}
 @media (prefers-reduced-motion:reduce){.pgn-brt{transition:none}.pgn-brt-baru{animation:none}}
+
+/* ===== berita "Saling Ingatkan Bahaya Penipuan Digital" ===== */
+.pgn-brt-biru .pgn-brt-th{background:linear-gradient(160deg,#0ea5e9,#1d4ed8);color:#fff}
+.pgn-brt-biru .pgn-brt-kat{color:#1d4ed8}
+.pn-hero{background:linear-gradient(150deg,#0b3a8f,#1d4ed8 60%,#0ea5e9)}
+.pn-list{display:flex;flex-direction:column;gap:10px;margin-top:14px}
+.pn-tip{display:flex;gap:12px;align-items:flex-start;padding:14px;border-radius:14px;background:var(--cd,#fff);border:1px solid var(--ln,#dfe5ef)}
+.pn-tip-ik{flex:none;display:flex;align-items:center;justify-content:center;width:44px;height:44px;border-radius:12px;background:#e0efff;color:#1d4ed8}
+.pn-tip-ik svg{width:24px;height:24px}
+.pn-tip div{min-width:0}
+.pn-tip-no{display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;margin-right:6px;border-radius:50%;background:#1d4ed8;color:#fff;font-size:11px;font-weight:900;vertical-align:1px}
+.pn-tip b{font-size:15px;line-height:1.35}
+.pn-tip p{margin:4px 0 0;font-size:13.5px;line-height:1.55;color:#475569}
+.pn-ajak{display:flex;gap:12px;align-items:flex-start;margin-top:14px;padding:14px;border-radius:14px;background:#fff7e6;border:1px solid #f5d48a}
+.pn-ajak-ik{flex:none;display:flex;width:36px;height:36px;align-items:center;justify-content:center;border-radius:50%;background:#f59e0b;color:#fff}
+.pn-ajak-ik svg{width:20px;height:20px}
+.pn-ajak b{font-size:14.5px;line-height:1.45}
+.pn-tagar{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.pn-tagar span{padding:3px 10px;border-radius:999px;background:#0f2a5c;color:#fff;font-size:12px;font-weight:800}
+.pn-aksi{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;margin-top:14px}
+.pn-btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:46px;padding:10px 14px;border-radius:12px;border:1px solid var(--ln,#cfd8e6);background:var(--cd,#fff);color:inherit;font-weight:800;font-size:14px;cursor:pointer}
+.pn-btn svg{width:20px;height:20px}
+.pn-wa{background:#16a34a;border-color:#16a34a;color:#fff}
+.pn-btn:focus-visible{outline:3px solid var(--pgn-gold);outline-offset:2px}
+.pn-status{min-height:1.2em;margin:8px 0 0;font-size:13px;font-weight:700;color:#15803d;text-align:center}
+[data-theme="dark"] .pn-tip{background:var(--cd);border-color:var(--ln)}
+[data-theme="dark"] .pn-tip p{color:#cbd5e1}
+[data-theme="dark"] .pn-tip-ik{background:#16315f;color:#93c5fd}
+[data-theme="dark"] .pn-ajak{background:#3a2c0a;border-color:#7a5a12}
+[data-theme="dark"] .pn-btn:not(.pn-wa){background:var(--cd);border-color:var(--ln)}
+[data-theme="dark"] .pn-status{color:#4ade80}
+[data-theme="dark"] .pgn-brt-biru .pgn-brt-kat{color:#7cb7ff}

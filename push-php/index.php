@@ -255,7 +255,7 @@ try {
             if (!kp_rate('poll:' . kp_ip(), 1500)) kp_fail(429, 'terlalu banyak permintaan');
             $dev = kp_dev_id($_GET['device_id'] ?? ($_GET['deviceId'] ?? null));
             if (!$dev) kp_fail(400, 'device_id tidak valid');
-            kp_json(200, kp_inbox_riwayat($dev, max(1, min(50, (int)($_GET['limit'] ?? 20)))));
+            kp_json(200, kp_inbox_riwayat($dev, max(1, min(10, (int)($_GET['limit'] ?? 10)))));
         }
 
         /* ---------- pemantauan perangkat ---------- */

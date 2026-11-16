@@ -214,17 +214,20 @@
   });
 
   /* ---------- riwayat ---------- */
+  // daftar "Notifikasi terbaru": 10 terakhir, tanpa notifikasi tes (tes hanya tampil langsung kepada yang menekan "Kirim tes")
+  const MAKS_RIWAYAT = 10;
+  const bukanTes = (x) => !!x && x.tag !== 'kito-tes';
   const catatLog = (daftarBaru) => {
     const lama = LS.j(K.log) || [];
     const ids = new Set(daftarBaru.map((x) => x.id));
-    LS.sj(K.log, [...daftarBaru.slice().reverse(), ...lama.filter((x) => !ids.has(x.id))].slice(0, 20));
+    LS.sj(K.log, [...daftarBaru.filter(bukanTes).slice().reverse(), ...lama.filter((x) => !ids.has(x.id) && bukanTes(x))].slice(0, MAKS_RIWAYAT));
   };
   let muatSedang = null;
   function muatRiwayat(paksa) {
-    if (!deviceId || mati()) return Promise.resolve(LS.j(K.log) || []);
+    if (!deviceId || mati()) return Promise.resolve((LS.j(K.log) || []).filter(bukanTes).slice(0, MAKS_RIWAYAT));
     if (muatSedang && !paksa) return muatSedang;
-    muatSedang = http('GET', `/api/inbox?device_id=${enc(deviceId)}&limit=20`).then((r) => { if (r.terdaftar) LS.sj(K.log, r.riwayat || []); return r.riwayat || []; })
-      .catch(() => LS.j(K.log) || []).finally(() => { setTimeout(() => { muatSedang = null; }, 3000); });
+    muatSedang = http('GET', `/api/inbox?device_id=${enc(deviceId)}&limit=${MAKS_RIWAYAT}`).then((r) => { const l = (r.riwayat || []).filter(bukanTes).slice(0, MAKS_RIWAYAT); if (r.terdaftar) LS.sj(K.log, l); return l; })
+      .catch(() => (LS.j(K.log) || []).filter(bukanTes).slice(0, MAKS_RIWAYAT)).finally(() => { setTimeout(() => { muatSedang = null; }, 3000); });
     return muatSedang;
   }
 

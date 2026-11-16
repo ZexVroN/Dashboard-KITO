@@ -7,6 +7,7 @@
    - area-waktu     : dates, d/x per area & Region II, metricByDate, tanggal
    - region-data    : tglWaktu, waktu.d/n/p/w per region & nasional, queueMetricByDate, tanggal
    - kelompok area  : DtD = tanggal terakhir bulan terpilih (dari D.Q)
+   - Data Kelompok cabang (kuadran): D.KL[bulan] (Oktober 30 Sep -> 30 Okt, November 30 Okt -> 06 Nov; tools/build_kelompok_cabang.py)
    - O2O & Shifting : bulan lama memakai arsip akhir bulan (kito.json [KITO_ARSIP_BULAN])
    - MTD waktu antri: Oktober 2026 = P90 (laporan lama); mulai November 2026 = P95 (rata-rata P95 harian, kunci "mb"
      per bulan pada area-waktu & kelompok area); bulan tanpa data MTD tampil "–".
@@ -78,6 +79,13 @@
   });
   if (D.queueMetricByDate) D.queueMetricByDate = saringKunci(D.queueMetricByDate);
   if (!adaMtd && Array.isArray(D.QDM)) D.QDM = D.QDM.map(kosongkan);
+
+  /* ---------- Data Kelompok cabang (kuadran Teller & CS): acuan -> pembanding milik bulan terpilih (D.KL) ---------- */
+  var KL = D.KL && D.KL[pilih];
+  if (KL) {
+    D.kl = KL.kl;
+    D.B.forEach(function (b) { var v = KL.b[String(b[0])]; if (v) for (var k = 0; k < 6; k++) b[6 + k] = v[k]; });
+  }
 
   /* ---------- O2O & Shifting: arsip akhir bulan untuk bulan lama ---------- */
   var arsip = pilih !== terbaru && window.KITO_ARSIP_BULAN && window.KITO_ARSIP_BULAN[pilih];

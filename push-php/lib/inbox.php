@@ -134,12 +134,13 @@ function kp_inapp_poll(string $dev, int $since): array {
     return ['ok' => true, 'terdaftar' => true, 'notifications' => $kirim, 'lebih' => $lebih, 'latestId' => $kursor, 'jeda' => KP_INBOX_JEDA];
 }
 
-/* Riwayat: notifikasi terbaru (14 hari) yang cocok dengan topik perangkat, kanal apa pun. Tidak menggeser kursor dan tidak menghitung "terbaca". */
-function kp_inbox_riwayat(string $dev, int $batas = 20): array {
+/* Riwayat: notifikasi terbaru (14 hari) yang cocok dengan topik perangkat, kanal apa pun. Tidak menggeser kursor dan tidak menghitung "terbaca".
+   Notifikasi tes ("Kirim tes") tidak masuk riwayat: hanya tampil langsung kepada yang menekan tes, tidak kepada pengguna lain di perangkat yang sama. */
+function kp_inbox_riwayat(string $dev, int $batas = 10): array {
     $s = kp_inbox_perangkat($dev);
     $kosong = ['ok' => true, 'terdaftar' => (bool)$s, 'riwayat' => [], 'latestId' => kp_inbox_terbaru()];
     if (!$s) return $kosong;
-    $q = kp_db()->prepare('SELECT id, title, body, url, target, payload, created_at FROM notifications WHERE created_at > datetime(\'now\', \'-14 days\') ORDER BY id DESC LIMIT 150');
+    $q = kp_db()->prepare('SELECT id, title, body, url, target, payload, created_at FROM notifications WHERE created_at > datetime(\'now\', \'-14 days\') AND COALESCE(source, \'\') <> \'tes\' ORDER BY id DESC LIMIT 150');
     $q->execute();
     $hasil = [];
     foreach ($q->fetchAll() as $r) {

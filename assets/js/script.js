@@ -289,7 +289,7 @@ function kartuTren() {
 
 // Data Kelompok: kotak Teller dan CS, masing-masing dua periode
 function kartuKelompok() {
-  // tampil di semua periode bulan (Oktober, November, dst.); data kelompok tidak bergantung pada bulan terpilih
+  // acuan -> pembanding mengikuti bulan terpilih (D.KL, diterapkan periode-bulan.js); label periode di D.kl
   const b = D.B[st.b];
   return `<div class="cd"><h2>Data Kelompok</h2><div class="kel-grid">${[
     ["Teller", 6, 7, 8],

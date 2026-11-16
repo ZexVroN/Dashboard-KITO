@@ -312,7 +312,7 @@
     let h;
     if (riwayatNotif === null) h = '<p class="knp-note">Memuat notifikasi…</p>';
     else if (!riwayatNotif.length) h = `<p class="knp-kosong">${s0?.mode === 'mati' ? 'Notifikasi dimatikan di perangkat ini.' : 'Belum ada notifikasi untuk perangkat ini dalam 14 hari terakhir.'}</p>`;
-    else h = `<div class="knp-nl">${riwayatNotif.slice(0, 8).map(itemNotif).join('')}</div>`;
+    else h = `<div class="knp-nl">${riwayatNotif.slice(0, 10).map(itemNotif).join('')}</div>`;
     return '<p class="knp-g">Notifikasi terbaru</p>' + h;
   }
 
@@ -360,7 +360,7 @@
     body.querySelectorAll('[data-knp]').forEach((b) => { b.disabled = sibuk; });
     tandaiBell();
   }
-  const muatDaftarNotif = (paksa) => NT()?.riwayat(paksa).then((l) => { riwayatNotif = l || []; if (!sheet.hidden) gambar(); }).catch(() => {});
+  const muatDaftarNotif = (paksa) => NT()?.riwayat(paksa).then((l) => { riwayatNotif = (l || []).filter((x) => x && x.tag !== 'kito-tes').slice(0, 10); if (!sheet.hidden) gambar(); }).catch(() => {});
 
   async function aksi(jenis) {
     const n = NT();

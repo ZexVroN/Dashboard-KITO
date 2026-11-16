@@ -126,14 +126,20 @@
   const labelPerangkat = () => { const a = akun(); return String(a ? (a.jabatan || a.jab || '') : (cabangDipilih()?.nama || '')).slice(0, 120) || null; };
 
   /* ---------- keadaan ---------- */
-  const S = { mode: 'memulai', alasan: null, kanal: null, sub: null, reg: null, topik: [], jeda: 60 };
+  const S = { mode: 'memulai', alasan: null, kanal: null, sub: null, reg: null, topik: [], jeda: 60, terdaftar: null };   // terdaftar: null = belum diketahui, true = server mengenal perangkat ini, false = gagal
   const izinSekarang = () => ('Notification' in window ? Notification.permission : 'tidak-ada');
   function state() {
-    return { mode: S.mode, alasan: S.alasan, kanal: S.kanal, izin: izinSekarang(), app, ios: isIOS, android: isAndroid, standalone, bridge: !!bridge, pushDidukung, topik: S.topik.slice(), deviceId, mati: mati() };
+    return { mode: S.mode, alasan: S.alasan, kanal: S.kanal, izin: izinSekarang(), app, ios: isIOS, android: isAndroid, standalone, bridge: !!bridge, pushDidukung, topik: S.topik.slice(), deviceId, terdaftar: deviceId ? S.terdaftar : false, mati: mati() };
   }
   function setMode(mode, alasan) {
     if (S.mode === mode && S.alasan === (alasan || null)) return;
     S.mode = mode; S.alasan = alasan || null;
+    try { window.dispatchEvent(new CustomEvent('kito-notif', { detail: state() })); } catch (e) {}
+  }
+  // panel 🔔 menampilkan peringatan bila perangkat belum dikenal server (bukan "Aktif" padahal tidak menerima apa pun)
+  function tandaTerdaftar(v) {
+    if (S.terdaftar === v) return;
+    S.terdaftar = v;
     try { window.dispatchEvent(new CustomEvent('kito-notif', { detail: state() })); } catch (e) {}
   }
 
@@ -146,7 +152,7 @@
   async function daftar(kanal, sub, paksa) {
     if (!S.topik.length) S.topik = topikSaatIni();   // jangan pernah mendaftar tanpa topik (tidak akan menerima apa pun)
     const ep = kanal === 'push' ? sub.endpoint : 'inapp:' + deviceId;
-    if (!paksa && regSegar(kanal, ep)) return;
+    if (!paksa && regSegar(kanal, ep)) { if (S.terdaftar === null) tandaTerdaftar(true); return; }   // dipastikan lagi oleh hasil polling (terdaftar: false)
     const label = labelPerangkat();
     const j = kanal === 'push'
       ? await http('POST', '/api/subscriptions', { subscription: sub.toJSON(), topics: S.topik, standalone, deviceId: deviceId || undefined, app, label })
@@ -155,7 +161,7 @@
     if (kanal === 'inapp' && !LS.g(K.since)) LS.s(K.since, String(j.latestId || 0));   // perangkat baru: mulai dari notifikasi terbaru, riwayat lama tidak jadi banner
     if (kanal === 'inapp') kursorKeApk(parseInt(LS.g(K.since) || '0', 10) || j.latestId);
     if (j.jeda) S.jeda = Math.max(30, Math.min(600, +j.jeda || 60));
-    perluUlang = false;
+    perluUlang = false; tandaTerdaftar(true);
   }
 
   /* ---------- kanal PUSH ---------- */
@@ -198,7 +204,7 @@
     if (mati()) return;
     S.kanal = 'inapp'; S.sub = null; setMode('dalam-aplikasi', alasan);
     if (!deviceId) return;
-    try { await daftar('inapp'); } catch (e) { perluUlang = true; }
+    try { await daftar('inapp'); } catch (e) { perluUlang = true; tandaTerdaftar(false); }
     mulaiPoll();
     if (alasan === 'tidak-didukung' && isIOS && !standalone) petunjukIOS();
   }
@@ -216,8 +222,9 @@
       const r = await http('GET', `/api/inbox/poll?device_id=${enc(deviceId)}&since_id=${since}`);
       if (r.terdaftar === false) {   // server tidak mengenal baris dalam-aplikasi perangkat ini: dibersihkan, basis data direset, atau tab lain sudah beralih ke push
         if (pushDidukung && izinSekarang() === 'granted') { sedangPoll = false; return aktifPush(); }   // JANGAN mendaftar ulang dalam-aplikasi: itu menghapus langganan push tab lain
+        tandaTerdaftar(false);
         await daftar('inapp', null, true);
-      }
+      } else tandaTerdaftar(true);
       if (r.jeda) S.jeda = Math.max(30, Math.min(600, +r.jeda || 60));
       if (typeof r.latestId === 'number' && r.latestId !== since) LS.s(K.since, String(r.latestId));
       kursorKeApk(r.latestId);

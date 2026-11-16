@@ -12,7 +12,7 @@
 'use strict';
 const API = new URL(self.location).searchParams.get('api') || '';
 const ICON = 'assets/images/ios/icon-192.png';
-const VERSI = 'kito-v16';
+const VERSI = 'kito-v17';
 const SHELL = `${VERSI}-shell`, RUNTIME = `${VERSI}-runtime`, DATA = `${VERSI}-data`;
 const MAKS_RUNTIME = 180;
 const scope = () => self.registration.scope;
@@ -171,7 +171,10 @@ self.addEventListener('push', (event) => {
     data: { url: d.url || './', ...(d.data || {}) },
   };
   // notifikasi update data: sekalian perbarui cache agar data baru langsung tersedia offline
-  event.waitUntil(Promise.all([self.registration.showNotification(title, opt), d.tag === 'kito-update' ? segarkanData().catch(() => {}) : null]));
+  // aplikasi tertutup pun push WAJIB menampilkan notifikasi; bila opsi tambahan (gambar/tombol) ditolak perangkat, tampilkan versi sederhana
+  const tampil = self.registration.showNotification(title, opt)
+    .catch(() => self.registration.showNotification(title, { body: opt.body, icon: ICON, badge: ICON, tag: opt.tag, data: opt.data }));
+  event.waitUntil(Promise.all([tampil, d.tag === 'kito-update' ? segarkanData().catch(() => {}) : null]));
 });
 
 // ketuk notifikasi: fokus ke tab/aplikasi KITO yang sudah terbuka, atau buka baru

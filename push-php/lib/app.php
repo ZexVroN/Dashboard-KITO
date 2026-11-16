@@ -247,6 +247,11 @@ function kp_targets(array $target): array {
 }
 
 /* ---------- pengiriman ---------- */
+/* Header Urgency Web Push = prioritas pengantaran, bukan tampilan. "normal" ditahan Android saat HP hemat daya (Doze)
+   dan aplikasi tertutup, sehingga notifikasi baru muncul saat layar dinyalakan; karena itu dikirim "high" kecuali
+   admin sengaja memilih "low"/"very-low". Tampilan banner dalam aplikasi tetap memakai urgensi pilihan admin. */
+function kp_urgensi_kirim(string $u): string { return in_array($u, ['low', 'very-low'], true) ? $u : 'high'; }
+
 function kp_payload(array $n): string {
     $c = kp_config();
     $p = ['title' => mb_substr($n['title'], 0, 120), 'body' => mb_substr((string)($n['body'] ?? ''), 0, 500), 'url' => $n['url'] ?: ($c['default_url'] ?? './'),
@@ -289,7 +294,7 @@ function kp_dispatch(array $n, string $source = 'api'): array {
     $byId = []; $jobs = [];
     foreach ($subs as $s) {
         $byId[$s['id']] = $s;
-        try { $jobs[$s['id']] = wp_build_request($s, $payload, $vapid, ['ttl' => $n['ttl'] ?? 86400, 'urgency' => $n['urgency'] ?? 'normal']); }
+        try { $jobs[$s['id']] = wp_build_request($s, $payload, $vapid, ['ttl' => $n['ttl'] ?? 86400, 'urgency' => kp_urgensi_kirim($n['urgency'] ?? 'normal')]); }
         catch (Throwable $e) { $res['failed']++; }
     }
     for ($attempt = 0; $attempt < 2 && $jobs; $attempt++) {

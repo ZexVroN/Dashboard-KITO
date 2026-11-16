@@ -33,23 +33,42 @@
   const pushDidukung = !isWebView && 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window && window.isSecureContext !== false;
   const perluGesture = isIOS || isFirefox || isSafariDesktop;   // izin hanya boleh diminta dari ketukan pengguna
 
-  /* ---------- penyimpanan lokal (tahan terhadap mode privat) ---------- */
+  /* ---------- penyimpanan lokal (tahan terhadap mode privat & WebView tanpa DOM storage) ----------
+     APK 1.0 (WebView biasa) tidak mengaktifkan setDomStorageEnabled, sehingga window.localStorage = null. Tanpa cadangan, ID perangkat
+     tidak bisa disimpan dan perangkat tidak pernah terdaftar (tidak menerima notifikasi sama sekali). Cadangannya cookie (aktif di WebView
+     secara bawaan) untuk nilai kecil; riwayat (kito-notif-log, bisa > 4 KB) cukup di memori karena juga diambil dari server. */
+  const lsAda = (() => { try { localStorage.setItem('kito-notif-uji', '1'); localStorage.removeItem('kito-notif-uji'); return true; } catch (e) { return false; } })();
+  const mem = new Map();
+  const CK = 'kn_';   // awalan nama cookie
+  const ckNama = (k) => CK + k.replace(/[^A-Za-z0-9_-]/g, '_');
+  const ckAda = (() => { try { document.cookie = CK + 'uji=1; path=/; SameSite=Lax'; const ok = document.cookie.indexOf(CK + 'uji=1') >= 0; document.cookie = CK + 'uji=; path=/; max-age=0'; return ok; } catch (e) { return false; } })();
+  const ck = {
+    g(k) { try { const m = document.cookie.match(new RegExp('(?:^|;\\s*)' + ckNama(k) + '=([^;]*)')); return m ? decodeURIComponent(m[1]) : null; } catch (e) { return null; } },
+    s(k, v) { try { document.cookie = `${ckNama(k)}=${encodeURIComponent(v)}; path=/; max-age=${5 * 365 * 864e2}; SameSite=Lax${location.protocol === 'https:' ? '; Secure' : ''}`; return ck.g(k) === v; } catch (e) { return false; } },
+    d(k) { try { document.cookie = `${ckNama(k)}=; path=/; max-age=0`; } catch (e) {} },
+  };
+  const diCookie = (k) => !lsAda && ckAda && k !== 'kito-notif-log';
   const LS = {
-    g(k) { try { return localStorage.getItem(k); } catch (e) { return null; } },
-    s(k, v) { try { localStorage.setItem(k, v); return true; } catch (e) { return false; } },
-    d(k) { try { localStorage.removeItem(k); } catch (e) {} },
-    j(k) { try { return JSON.parse(localStorage.getItem(k) || 'null'); } catch (e) { return null; } },
+    g(k) { if (lsAda) { try { return localStorage.getItem(k); } catch (e) { return null; } } return diCookie(k) ? ck.g(k) : (mem.has(k) ? mem.get(k) : null); },
+    s(k, v) {
+      v = String(v);
+      if (lsAda) { try { localStorage.setItem(k, v); return true; } catch (e) { return false; } }
+      if (diCookie(k)) return ck.s(k, v);
+      mem.set(k, v); return true;
+    },
+    d(k) { if (lsAda) { try { localStorage.removeItem(k); } catch (e) {} return; } if (diCookie(k)) ck.d(k); mem.delete(k); },
+    j(k) { try { return JSON.parse(LS.g(k) || 'null'); } catch (e) { return null; } },
     sj(k, v) { return LS.s(k, JSON.stringify(v)); },
   };
-  const lsAda = (() => { try { localStorage.setItem('kito-notif-uji', '1'); localStorage.removeItem('kito-notif-uji'); return true; } catch (e) { return false; } })();
+  const simpanAda = lsAda || ckAda;   // ID perangkat bisa disimpan permanen
   const K = { mati: 'kito-notif-off', since: 'kito-notif-since', reg: 'kito-notif-reg', coba: 'kito-notif-coba', nanti: 'kito-notif-nanti', hint: 'kito-notif-hint', log: 'kito-notif-log' };
   const ID_OK = /^[A-Za-z0-9_-]{8,64}$/;
   const acak = () => (crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36) + Math.random().toString(36).slice(2, 12)).replace(/[^A-Za-z0-9-]/g, '');
   const deviceId = (() => {
     if (bridge) { try { const v = String(bridge.getDeviceId() || ''); if (ID_OK.test(v)) return v; } catch (e) {} }   // "wv-<uuid>": sama dengan yang dipakai worker APK
-    if (!lsAda) return null;   // tanpa penyimpanan ID berganti tiap halaman dibuka: jangan mendaftarkan perangkat
+    if (!simpanAda) return null;   // tanpa penyimpanan ID berganti tiap halaman dibuka: jangan mendaftarkan perangkat
     let v = LS.g('kito-device-id');
-    if (!v || !ID_OK.test(v)) { v = acak(); LS.s('kito-device-id', v); }
+    if (!v || !ID_OK.test(v)) { v = acak(); if (!LS.s('kito-device-id', v) || LS.g('kito-device-id') !== v) return null; }
     return v;
   })();
   const mati = () => LS.g(K.mati) === '1';
@@ -118,6 +137,9 @@
     try { window.dispatchEvent(new CustomEvent('kito-notif', { detail: state() })); } catch (e) {}
   }
 
+  // APK dengan jembatan: notifikasi yang sudah diambil halaman (tampil sebagai banner) tidak ditampilkan ulang oleh worker latar belakang
+  const kursorKeApk = (id) => { if (bridge && typeof bridge.setLastNotifId === 'function' && +id > 0) { try { bridge.setLastNotifId(String(+id)); } catch (e) {} } };
+
   /* ---------- pendaftaran ke server ---------- */
   let perluUlang = false;
   const regSegar = (kanal, ep) => { const r = LS.j(K.reg); return !!r && r.ch === kanal && r.ep === ep && r.top === S.topik.join(',') && Date.now() - r.ts < 7 * 864e5; };
@@ -131,6 +153,7 @@
       : await http('POST', '/api/inapp/register', { deviceId, topics: S.topik, standalone, app, label });
     LS.sj(K.reg, { ch: kanal, ep, top: S.topik.join(','), ts: Date.now() });
     if (kanal === 'inapp' && !LS.g(K.since)) LS.s(K.since, String(j.latestId || 0));   // perangkat baru: mulai dari notifikasi terbaru, riwayat lama tidak jadi banner
+    if (kanal === 'inapp') kursorKeApk(parseInt(LS.g(K.since) || '0', 10) || j.latestId);
     if (j.jeda) S.jeda = Math.max(30, Math.min(600, +j.jeda || 60));
     perluUlang = false;
   }
@@ -197,6 +220,7 @@
       }
       if (r.jeda) S.jeda = Math.max(30, Math.min(600, +r.jeda || 60));
       if (typeof r.latestId === 'number' && r.latestId !== since) LS.s(K.since, String(r.latestId));
+      kursorKeApk(r.latestId);
       if ((r.notifications || []).length) { catatLog(r.notifications); await siapUI(); tampilToast(r.notifications, r.lebih || 0); }
     } catch (e) { S.jeda = Math.min(300, S.jeda + 30); }   // gagal: perlambat sementara
     sedangPoll = false;

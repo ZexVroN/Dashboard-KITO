@@ -24,7 +24,9 @@
 .pgn-n-x:hover,.pgn-n-x:focus-visible{background:rgba(255,255,255,.24);outline:none}
 
 /* ----- panel detail ----- */
-html.pgn-kunci,html.pgn-kunci body{overflow:hidden}
+/* kunci scroll cukup di html (viewport): bila body juga overflow:hidden, body jadi scroll container
+   sehingga header sticky (style.css) melompat ke posisi awalnya dan hilang dari layar */
+html.pgn-kunci{overflow:hidden}
 .pgn-latar{position:fixed;inset:0;z-index:1000;display:flex;align-items:flex-end;justify-content:center;background:rgba(6,16,40,.55);
   opacity:0;transition:opacity .32s ease,background-color .32s ease;padding:env(safe-area-inset-top,0) 0 0}
 .pgn-latar.buka{opacity:1}

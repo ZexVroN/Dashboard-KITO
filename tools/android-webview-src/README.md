@@ -10,6 +10,7 @@ Semua ini berjalan dari situs dan server (`assets/js/notif-otomatis.js`, `push-p
 
 - Izin dan pendaftaran perangkat **otomatis saat aplikasi dibuka**, tidak lagi lewat ikon 🔔.
 - Satu input admin (`/admin`, `POST /api/notifications`, atau `tools/kirim_notifikasi.py`) menjangkau semua jalur sekaligus: Web Push (Chrome, Edge, Firefox, Safari/PWA, aplikasi TWA) dan perangkat dalam-aplikasi.
+- **APK 1.0 tidak mengaktifkan `setDomStorageEnabled`**, jadi `localStorage` bernilai `null` di dalamnya. `notif-otomatis.js` menyimpan ID perangkat dan kursor notifikasi di cookie sebagai cadangan; tanpa cadangan ini APK 1.0 tidak pernah terdaftar. APK baru dari sumber ini sudah mengaktifkan DOM storage.
 - **APK 1.0 (WebView)** terdaftar sebagai perangkat dalam-aplikasi. Android WebView tidak punya Push API, jadi notifikasi tampil sebagai **banner saat KITO terbuka** (dicek tiap ±60 detik, dan saat aplikasi kembali ke layar) dan tersimpan di daftar 🔔. Saat aplikasi ditutup, notifikasi sistem tidak bisa muncul dari APK 1.0.
 
 ## Yang ditambahkan APK baru dari sumber ini
@@ -20,6 +21,7 @@ Notifikasi sistem di status bar **walau aplikasi ditutup**, lewat dua bagian:
    - `getDeviceId()`: ID perangkat `wv-<uuid>`. Dipakai situs saat mendaftar, sehingga worker dan halaman memakai ID yang sama.
    - `requestPermission()`: dialog izin notifikasi Android 13+ (API 33+). Dipanggil otomatis saat aplikasi dibuka.
    - `saveTopics(topicsJson)`: topik terbaru (otomatis mengikuti login dan cabang).
+   - `setLastNotifId(id)`: kursor notifikasi yang sudah diambil halaman, supaya worker tidak menampilkan ulang notifikasi yang sudah tampil sebagai banner.
    - `showNotification(title, body, url)`, `isNotificationEnabled()`, `getAppVersion()`.
    - User-Agent aplikasi berakhiran `KITO-Android/1`.
 2. **Worker latar belakang** (`KitoNotificationWorker.kt`, `WorkManager`, tiap 15 menit): memanggil

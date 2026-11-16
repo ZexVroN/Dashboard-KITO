@@ -23,6 +23,7 @@ require __DIR__ . '/lib/masukan.php';
 const KP_FITUR_PENGGUNA = __DIR__ . '/lib/pengguna.php';
 if (is_file(KP_FITUR_PENGGUNA)) require KP_FITUR_PENGGUNA;
 require __DIR__ . '/lib/akun.php';
+require __DIR__ . '/lib/kontak.php';
 
 function kp_json(int $status, $data): void {
     http_response_code($status);
@@ -305,6 +306,12 @@ try {
         if ($route === '/api/akun/login') kp_json(200, kp_akun_login($b));
         if ($route === '/api/akun/password') kp_json(200, kp_akun_password($b));
         kp_json(200, kp_akun_simpan_profil($b));
+    }
+    /* ---------- nomor HP BOM/BOS: hanya ROH, SQO Region, ASM & SQO Area (sesuai area) ---------- */
+    if ($method === 'POST' && $route === '/api/kontak/bom') {
+        if (!kp_rate('kontak:' . kp_ip(), 30)) kp_fail(429, 'terlalu banyak permintaan, coba lagi sebentar lagi');
+        header('Cache-Control: no-store');
+        kp_json(200, kp_kontak_bom(kp_body()));
     }
     /* ---------- masukan: rating & keluhan dari halaman Cabang ---------- */
     if ($method === 'POST' && $route === '/api/feedback') {

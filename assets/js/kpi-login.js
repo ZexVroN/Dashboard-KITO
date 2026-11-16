@@ -138,6 +138,8 @@
   }
   // nama pengguna (hanya tampilan, tidak bisa diubah): BOM-BOS = nama BOM/BOS cabang dari [KITO_PIMPINAN];
   // jabatan lain = nama jabatan lengkap dari [KITO_KPI] (data nama orang per jabatan regional/area belum ada)
+  // nama pejabat regional (satu orang per jabatan): tampil "Nama — Nama jabatan" di kolom Nama pengguna & profil
+  const NAMA_ORANG = { ROH: 'Lenny Marlina', TOH: 'Widya Putra' };
   function namaPengguna(jab, teksCab, areaKey) {
     const k = String(jab || '').toUpperCase();
     if (!k) return '';
@@ -152,7 +154,7 @@
       return p?.[1] || `BOM/BOS ${kode} ${D.B[i][1]} (nama belum ada di data)`;
     }
     const j = (window.KITO_KPI?.jabatan || []).find((x) => x.key === k);
-    const label = (JABATAN.find((x) => x[0] === k) || [, k])[1];
+    const label = NAMA_ORANG[k] || (JABATAN.find((x) => x[0] === k) || [, k])[1];
     return j?.nama && j.nama !== label ? `${label} — ${j.nama}` : label;
   }
   function pilihCabang(i) {

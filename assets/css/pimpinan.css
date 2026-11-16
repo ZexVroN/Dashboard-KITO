@@ -6,3 +6,15 @@
 .hero .pm b.pm-kosong{font-weight:500;font-style:italic;color:rgba(255,255,255,.6)}
 @media(max-width:360px){.hero .pm-row{grid-template-columns:1fr}}
 @media print{.hero .pm{background:none;border-color:#ccd}}
+/* Nomor HP BOM/BOS (hanya akun ROH, SQO Region, ASM, SQO Area) */
+.hero .pm-hp{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px 12px;margin-top:8px;padding:9px 11px;border-radius:12px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.16)}
+.hero .pm-hp-no{min-width:0}
+.hero .pm-hp-no small{display:block;font-size:10.5px;font-weight:600;color:rgba(255,255,255,.72);overflow-wrap:anywhere}
+.hero .pm-hp-no b{display:block;margin-top:2px;font-size:15px;font-weight:800;color:#fff;letter-spacing:.3px;font-variant-numeric:tabular-nums}
+.hero .pm-hp-ak{display:flex;gap:8px}
+.hero .pm-btn{display:inline-flex;align-items:center;gap:6px;min-height:36px;padding:7px 12px;border-radius:10px;background:#fff;color:#0f2a5c;font-size:13px;font-weight:800;text-decoration:none}
+.hero .pm-btn svg{width:17px;height:17px}
+.hero .pm-wa{background:#16a34a;color:#fff}
+.hero .pm-btn:focus-visible{outline:3px solid #fbbf24;outline-offset:2px}
+.hero .pm-hp-info{display:block;font-size:12px;font-weight:600;color:rgba(255,255,255,.78)}
+@media print{.hero .pm-hp-ak{display:none}}

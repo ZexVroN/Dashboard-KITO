@@ -16,7 +16,8 @@
     {"nama": "RIKI MIHARTA", "dari": "17902", "catatan": "Take out Area Bengkulu 17 Nov 2026: Outbranch"},
     {"nama": "TALITHA ZAHRA MUMTAZ", "dari": "17903", "catatan": "Take out Area Bengkulu 17 Nov 2026: Outbranch"},
     {"nama": "ABRAM DIMAS HOSWANDI", "dari": "17952", "catatan": "Take out Area Bengkulu 17 Nov 2026: Outbranch"},
-    {"nama": "RETNO TIMOTY ANGGRAENY", "dari": "17953", "catatan": "Take out Area Bengkulu 17 Nov 2026: Outbranch"}
+    {"nama": "RETNO TIMOTY ANGGRAENY", "dari": "17953", "catatan": "Take out Area Bengkulu 17 Nov 2026: Outbranch"},
+    {"nama": "SAPRIANTO", "dari": "17901", "catatan": "17 Nov 2026: BOM/BOS KCP Bengkulu Ahmad Yani digantikan Kuntum Chairiyah Wulandia"}
   ],
   "pindah": [
     {"nama": "MARDIANA", "dari": "11315", "ke": "11388", "catatan": "KCP Sungai Lilin -> KCP Pangkalan Balai"},
@@ -33,7 +34,8 @@
     {"nama": "Sajena", "dari": "11325", "jabatan": "Teller", "catatan": "Customer Service Representative -> Teller"},
     {"nama": "NANDA ALYFIA CANDRA", "dari": "17903", "jabatan": "Teller", "catatan": "Customer Service Representative -> Teller (17 Nov 2026)"}
   ],
-  "_keterangan_pegawai": "Daftar induk pegawai inbranch (selain takeout & pindah), urut kode cabang. Hanya acuan: tidak menyaring data. Saat build, pegawai Excel yang tidak ada di daftar ini dan pegawai daftar yang tidak ada di Excel dicetak sebagai INFO.",
+  "_keterangan_pegawai": "Daftar induk pegawai inbranch (selain takeout & pindah), urut kode cabang. MENGIKAT bila induk_mengikat = true: cabang & jabatan pegawai mengikuti daftar ini (bukan Excel); pegawai Excel yang tidak ada di daftar tidak ditampilkan; pegawai daftar yang tidak ada di Excel tetap ditampilkan dengan akuisisi 0. Pencapaian tetap dari Excel. Pegawai baru: tambahkan ke daftar ini.",
+  "induk_mengikat": true,
   "pegawai": [
     {"nama": "AHMAD SYAHRUL RAMADHAN", "kode": "11000", "jabatan": "Customer Service Representative"},
     {"nama": "DIMAS FEBRIANUGRAH", "kode": "11000", "jabatan": "Customer Service Representative"},
@@ -987,7 +989,7 @@
     {"nama": "SALSA MANCA NABILA", "kode": "17900", "jabatan": "Customer Service Representative"},
     {"nama": "SITI HAZQIA AGUZHARINI", "kode": "17900", "jabatan": "Teller"},
     {"nama": "THEO FANDI WINSON", "kode": "17900", "jabatan": "Customer Service Officer"},
-    {"nama": "Kuntum Chairiyah Wulandia", "kode": "17901", "jabatan": "Customer Service Officer"},
+    {"nama": "Kuntum Chairiyah Wulandia", "kode": "17901", "jabatan": "Branch Operation Manager", "catatan": "17 Nov 2026: BOM/BOS menggantikan Saprianto"},
     {"nama": "M KHAIRUL INSANNY", "kode": "17901", "jabatan": "Customer Service Supervisor"},
     {"nama": "MAYA ASTRIDA", "kode": "17901", "jabatan": "Customer Service Supervisor"},
     {"nama": "MUTIA MUHARAMAH", "kode": "17901", "jabatan": "Customer Service Representative"},

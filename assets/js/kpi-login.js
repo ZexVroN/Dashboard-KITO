@@ -9,6 +9,10 @@
   if (typeof render !== 'function') return;
   // daftar jabatan di dropdown login: [kode, label]
   const JABATAN = [['ROH', 'ROH'], ['TOH', 'TOH'], ['SQOR', 'SQO Region'], ['ASM', 'ASM'], ['SQOA', 'SQO Area'], ['ATOM', 'ATOM'], ['BOM', 'BOM-BOS']];
+  // Administrator: akses semua halaman & data, TIDAK tampil di dropdown biasa. Login lewat link khusus: admin.html (atau index.html?admin)
+  const ADMIN = 'admin', LABEL_ADMIN = 'Administrator';
+  const modeAdmin = (() => { try { return /(^|[?&])admin(=|&|$)/.test(location.search.slice(1)) || location.hash === '#admin'; } catch (e) { return false; } })();
+  const labelJab = (jab) => (String(jab).toLowerCase() === ADMIN ? LABEL_ADMIN : (JABATAN.find((x) => x[0].toLowerCase() === String(jab).toLowerCase()) || [, String(jab).toUpperCase()])[1]);
   // hash SHA-256 "kode:password" per jabatan (kode huruf kecil)
   const KPI_AKUN = {
     roh: '032c695954206ed50b9a46b1fe48d9987ac7af6d74306f1f16d79b1391a76c20',
@@ -18,15 +22,18 @@
     sqoa: 'b7dd7515c6c06163d061e065370f011a0da221e46bcb2fe7b51cebf45f952f9d',
     atom: '24194830a2ecb9b2d9b384d0fe184d59c327e175bf59779d34551fb67794d7e0',
     bom: '4e88c3acbfdf57bd8a6634d2d4110a8a51b00b48fe3f0609815fb63a97ac1d50',
+    admin: '',
   };
   // Pengaman password bawaan (diisi tools/amankan_password_bawaan.py, sama dengan KP_AKUN_BUKTI di push-php/lib/akun.php):
   // SHA-256 dari bukti = PBKDF2-SHA256(password, "kito-akun-v2:<kode>", 150000) (hex). Nilai ini tidak bisa dipakai untuk login
   // tanpa password asli. Jabatan yang terdaftar di sini tidak lagi memakai hash di KPI_AKUN.
   const KPI_BUKTI = {
+    admin: 'cc34a20cc4eb210068325dd44c4c7fb3e60792779b95d2bf1ec1ac097d1c8eb0',
   };
   const BUKTI_ITERASI = 150000;
   // akses tab KPI per jabatan login: '*' = semua, selain itu daftar kunci jabatan (lihat kito.json [KITO_KPI])
   const AKSES = {
+    admin: '*',
     roh: '*',
     sqor: ['SQOR', 'SQOA'],
     toh: ['TOH', 'ATOM'],
@@ -154,7 +161,7 @@
       return p?.[1] || `BOM/BOS ${kode} ${D.B[i][1]} (nama belum ada di data)`;
     }
     const j = (window.KITO_KPI?.jabatan || []).find((x) => x.key === k);
-    const label = NAMA_ORANG[k] || (JABATAN.find((x) => x[0] === k) || [, k])[1];
+    const label = NAMA_ORANG[k] || labelJab(k);
     return j?.nama && j.nama !== label ? `${label} — ${j.nama}` : label;
   }
   function pilihCabang(i) {
@@ -175,12 +182,12 @@
         <img src="assets/images/splash-landscape.png" alt="" decoding="async" />
       </picture>
       <form class="kl-card" id="${p}-form" novalidate>
-        <h2>Login Aplikasi</h2>
-        <p>${gerbang ? 'Masuk dengan akun Anda untuk membuka semua halaman aplikasi, atau lanjut tanpa login untuk halaman Cabang.' : 'Login aplikasi untuk membuka halaman KPI: pilih jabatan lalu masukkan password.'}</p>
+        <h2>${modeAdmin ? 'Login Administrator' : 'Login Aplikasi'}</h2>
+        <p>${modeAdmin ? 'Khusus Administrator: akses ke semua halaman dan data aplikasi.' : gerbang ? 'Masuk dengan akun Anda untuk membuka semua halaman aplikasi, atau lanjut tanpa login untuk halaman Cabang.' : 'Login aplikasi untuk membuka halaman KPI: pilih jabatan lalu masukkan password.'}</p>
         <label>Jabatan
           <span class="kl-sel"><select id="${p}-u" autocomplete="username" required>
-            <option value="" selected disabled>— Pilih jabatan —</option>
-            ${JABATAN.map(([k, t]) => `<option value="${k}">${t}</option>`).join('')}
+            ${modeAdmin ? `<option value="ADMIN" selected>${LABEL_ADMIN}</option>` : `<option value="" selected disabled>— Pilih jabatan —</option>
+            ${JABATAN.map(([k, t]) => `<option value="${k}">${t}</option>`).join('')}`}
           </select></span>
         </label>
         <label class="kl-cab" hidden>Kode / nama cabang
@@ -191,14 +198,14 @@
           <span class="kl-sel"><select id="${p}-a"></select></span>
         </label>
         <label class="kl-nama">Nama pengguna
-          <input id="${p}-n" type="text" disabled placeholder="Terisi otomatis" aria-live="polite" />
+          <input id="${p}-n" type="text" disabled placeholder="Terisi otomatis" aria-live="polite"${modeAdmin ? ` value="${LABEL_ADMIN}"` : ''} />
         </label>
         <label>Password
           <span class="kl-pw"><input id="${p}-p" type="password" autocomplete="current-password" required /><button type="button" data-kl-lihat aria-label="Tampilkan password">👁</button></span>
         </label>
         <small class="kl-err" role="alert"></small>
         <button type="submit" class="kl-btn">Masuk</button>
-        ${gerbang ? '<button type="button" class="kl-lewati" data-kl-lewati>Lanjut tanpa login ›</button>' : ''}
+        ${gerbang ? `<button type="button" class="kl-lewati" data-kl-lewati>${modeAdmin ? 'Batal, ke login biasa ›' : 'Lanjut tanpa login ›'}</button>` : ''}
       </form>
     </section>`;
 
@@ -283,6 +290,7 @@
       try { if (area) sessionStorage.setItem(KUNCI_AREA, area); else sessionStorage.removeItem(KUNCI_AREA); } catch (e2) {}
       if (iCab >= 0) pilihCabang(iCab);
       if (area && kode !== 'sqor') pilihArea(area);
+      if (kode === ADMIN) try { history.replaceState(null, '', location.pathname.replace(/admin\.html$/, '') + (location.hash === '#admin' ? '' : location.hash)); } catch (e2) {}   // link admin selesai dipakai
       (berhasil || render)();
       perbaruiProfil();
     });
@@ -355,6 +363,7 @@
     };
     pasangLogin(g.querySelector('form'), () => { tutupGerbang(); render(); });
     g.querySelector('[data-kl-lewati]').addEventListener('click', () => {
+      if (modeAdmin) { location.href = location.pathname.replace(/admin\.html$/, ''); return; }   // keluar dari link admin ke login biasa
       try { sessionStorage.setItem(KUNCI_LEWATI, '1'); } catch (e) {}
       tutupGerbang();
       if (TAB_TERKUNCI.includes(tampil)) { tampil = 'cabang'; render(); }
@@ -392,7 +401,7 @@
     const xa = JAB_ORANG.includes(jab) && area ? dataOrang(jab, area) : null;
     const profil = lsBaca('kito-profil:' + kunci, {}) || {};
     const b = cab ? daftarCabang().find((x) => String(x[0]) === cab) : null;
-    const label = (JABATAN.find((x) => x[0].toLowerCase() === jab) || [, jab.toUpperCase()])[1];
+    const label = labelJab(jab);
     const namaBawaan = jab === KODE_CABANG ? (b ? namaPengguna('bom', teksCabang(b)) : 'BOM-BOS') : xa ? xa.nama : namaPengguna(jab, '');
     const jabKpi = (window.KITO_KPI?.jabatan || []).find((x) => x.key === jab.toUpperCase());
     return {
@@ -597,5 +606,8 @@
     if (ka && (kj === 'asm' || kj === 'sqoa') && dataOrang(kj, ka) && kunciArea(st.a) !== ka) { pilihArea(ka); render(); }
   }
   tandaiNav();
-  if (!sudahMasuk() && !sudahLewati()) bukaGerbang();
+  // link admin: selalu tampilkan form Administrator (juga bila sudah login akun lain atau tadi memilih "Lanjut tanpa login")
+  let jabKini = ''; try { jabKini = sessionStorage.getItem('kito-kpi-jabatan') || ''; } catch (e) {}
+  if (modeAdmin && !(sudahMasuk() && jabKini === ADMIN)) bukaGerbang()?.querySelector('input[type=password]')?.focus();
+  else if (!sudahMasuk() && !sudahLewati()) bukaGerbang();
 })();

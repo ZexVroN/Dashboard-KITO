@@ -1,0 +1,9 @@
+{
+  "_keterangan": "Koreksi manual nama pimpinan cabang. Diterapkan SETELAH data Excel dibaca oleh tools/build_pimpinan.py, jadi nilai di sini selalu dipertahankan (tidak ditimpa Excel). Kunci = kode cabang; isi 'bom' (BOM/BOS) dan/atau 'bm' (Branch Manager). Hapus entri bila Excel sudah benar.",
+  "17901": {
+    "cabang": "KCP BENGKULU AHMAD YANI",
+    "bom": "Kuntum Chairiyah Wulandia",
+    "diubah": "2026-11-17",
+    "catatan": "BOM/BOS menggantikan Saprianto"
+  }
+}

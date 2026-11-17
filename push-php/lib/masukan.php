@@ -280,7 +280,7 @@ function kp_fb_export(array $g): array {
             hanya jabatan KP_FB_PEMBALAS; password dicek lewat akun login (lib/akun.php).
    Cakupan: ROH & SQO Region = semua keluhan Region II; ASM & SQO Area = hanya keluhan dari cabang di areanya
             (area akun = kunci area KITO_ASM yang dipilih saat login, dicocokkan dengan kolom area keluhan). */
-const KP_FB_PEMBALAS = ['roh' => 'ROH', 'sqor' => 'SQO Region', 'sqoa' => 'SQO Area', 'asm' => 'ASM'];
+const KP_FB_PEMBALAS = ['admin' => 'Administrator', 'roh' => 'ROH', 'sqor' => 'SQO Region', 'sqoa' => 'SQO Area', 'asm' => 'ASM'];
 
 function kp_fb_balasan_db(): PDO {
     static $siap = false;
@@ -316,7 +316,7 @@ function kp_fb_cakupan(array $b): array {
     $jab = strtolower(trim((string)($b['jabatan'] ?? '')));
     if (!isset(KP_FB_PEMBALAS[$jab])) kp_fail(403, 'hanya ROH, SQO Region, SQO Area, dan ASM yang dapat membalas');
     [$kunci] = kp_akun_cek($b);   // gagal -> 401
-    if ($jab === 'roh' || $jab === 'sqor') return [$jab, null];
+    if ($jab === 'admin' || $jab === 'roh' || $jab === 'sqor') return [$jab, null];
     $area = strpos($kunci, ':') !== false ? substr($kunci, strpos($kunci, ':') + 1) : '';
     if ($area === '') kp_fail(403, 'login ulang dengan memilih nama dan area ' . KP_FB_PEMBALAS[$jab]);
     return [$jab, $area];
@@ -360,7 +360,7 @@ function kp_fb_rencana_cuti(array $b): array {
     [$kunci] = kp_akun_cek($b);   // gagal -> 401
     [$jab, $sub] = array_pad(explode(':', $kunci, 2), 2, '');
     $area = null; $milik = null;
-    if ($jab === 'roh' || $jab === 'sqor') { /* seluruh Region II */ }
+    if ($jab === 'admin' || $jab === 'roh' || $jab === 'sqor') { /* seluruh Region II */ }
     elseif (($jab === 'asm' || $jab === 'sqoa') && $sub !== '') $area = $sub;
     else $milik = $kunci;   // bukan penerima: hanya rencana yang dikirim akun ini
     $hariIni = gmdate('Y-m-d', time() + 7 * 3600); $batas = gmdate('Y-m-d', time() + 7 * 3600 + 60 * 86400);

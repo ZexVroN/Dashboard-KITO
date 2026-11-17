@@ -68,7 +68,8 @@
 
 
   /* ---------- keluhan & feedback cabang + tindak lanjut (balasan ROH / SQO Region / SQO Area / ASM) ---------- */
-  const PEMBALAS = ['roh', 'sqor', 'sqoa', 'asm'];
+  const PEMBALAS = ['admin', 'roh', 'sqor', 'sqoa', 'asm'];
+  const seRegion = (j) => j === 'admin' || j === 'roh' || j === 'sqor';   // cakupan seluruh Region II
   const NM_STATUS = { baru: 'Baru', diproses: 'Diproses', selesai: 'Selesai', ditolak: 'Ditolak' };
   const kel = { kode: null, list: null, err: '', muat: false, buka: null, kirim: false, pesanBalas: '' };
   const akun = () => { try { return window.KITO_AKUN?.kini() || null; } catch (e) { return null; } };
@@ -89,8 +90,8 @@
   }
   const areaCabang = () => { try { return D.B[st.b]?.[2] || ''; } catch (e) { return ''; } };
   // kotak masuk: pembalas yang login dengan cakupan jelas (ROH/SQO Region = Region II; ASM/SQO Area = areanya)
-  const modeMasuk = () => { const a = akun(); return !!a && PEMBALAS.includes(a.jab) && (a.jab === 'roh' || a.jab === 'sqor' || !!a.sub); };
-  const namaCakupan = (a) => (a.jab === 'roh' || a.jab === 'sqor' ? 'Region II' : 'Area ' + judulArea((window.KITO_ASM?.data?.[a.sub] || {}).area || a.sub));
+  const modeMasuk = () => { const a = akun(); return !!a && PEMBALAS.includes(a.jab) && (seRegion(a.jab) || !!a.sub); };
+  const namaCakupan = (a) => (seRegion(a.jab) ? 'Region II' : 'Area ' + judulArea((window.KITO_ASM?.data?.[a.sub] || {}).area || a.sub));
 
   async function muatKeluhan(paksa) {
     // pembalas: kotak masuk sesuai cakupan · akun lain (mis. BOM-BOS): hanya keluhan yang dikirim akun itu · tamu: tidak ada daftar
@@ -181,8 +182,8 @@
     const a = akun();
     if (!a) return '';
     // penerima: ROH & SQO Region (Region II), ASM & SQO Area (areanya); akun lain hanya melihat rencana yang dikirimnya
-    const penerimaCuti = a.jab === 'roh' || a.jab === 'sqor' || ((a.jab === 'asm' || a.jab === 'sqoa') && !!a.sub);
-    const cak = a.jab === 'roh' || a.jab === 'sqor' ? 'Region II' : penerimaCuti ? namaCakupan(a) : 'yang Anda kirim';
+    const penerimaCuti = seRegion(a.jab) || ((a.jab === 'asm' || a.jab === 'sqoa') && !!a.sub);
+    const cak = seRegion(a.jab) ? 'Region II' : penerimaCuti ? namaCakupan(a) : 'yang Anda kirim';
     const judul = `<p class="knp-g">📅 Rencana pegawai tidak masuk · ${esc(cak)}</p>`;
     if (!cu.list) return judul + '<p class="knp-note">Memuat…</p>';
     const infoPenerima = penerimaCuti ? '' : `<p class="knp-note knp-as">Rencana tidak masuk hanya terkirim ke ${esc(penerima(areaCabang()).join(', '))}.</p>`;

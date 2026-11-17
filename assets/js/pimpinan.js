@@ -10,7 +10,7 @@ if(!P||typeof URUTAN==='undefined'||typeof kartuCabang!=='function'||typeof D===
 const i=URUTAN.indexOf(kartuCabang);if(i<0)return;
 // dibaca saat dipakai: push-config.js dimuat setelah file ini
 const API=()=>(window.KITO_PUSH?.api||'').replace(/\/+$/,'');
-const BOLEH=['roh','sqor','sqoa','asm'];
+const BOLEH=['admin','roh','sqor','sqoa','asm'];
 const akun=()=>{try{return window.KITO_AKUN?.kini()||null;}catch(e){return null;}};
 const SVG=d=>`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
 const IK_TEL=SVG('<path d="M5 4h4l2 5-2.5 1.5a11 11 0 005 5L15 13l5 2v4a2 2 0 01-2 2A16 16 0 013 6a2 2 0 012-2"/>');

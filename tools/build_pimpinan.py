@@ -5,10 +5,12 @@ Pemakaian (dari folder Dashboard-KITO):
 
 Sheet pertama: kolom "Kode Cabang", "Nama Cabang", "Nama BOM BOS", "Branch Manager" (dicari dari judul kolom).
 Nama dirapikan ke huruf kapital di awal kata (data Excel bercampur huruf besar/kecil).
+Koreksi manual di tools/pimpinan_koreksi.json diterapkan terakhir dan selalu menimpa nama dari Excel.
 """
 import json
 import re
 import sys
+from pathlib import Path
 
 import openpyxl
 
@@ -40,6 +42,18 @@ for r in rows[hi + 1:]:
         continue
     kode = str(int(k)) if isinstance(k, float) else str(k).strip()
     data[kode] = [nama(r[c_bm]), nama(r[c_bom])]          # [Branch Manager, BOM/BOS]
+
+# koreksi manual (tools/pimpinan_koreksi.json) selalu menang atas Excel: update nama terbaru tidak tertimpa saat build ulang
+KOREKSI = Path(__file__).resolve().parent / "pimpinan_koreksi.json"
+koreksi = json.loads(KOREKSI.read_text(encoding="utf-8")) if KOREKSI.exists() else {}
+for kode, k in koreksi.items():
+    if kode.startswith("_") or not isinstance(k, dict):
+        continue
+    bm, bom = data.get(kode, ["", ""])
+    baru = [k.get("bm") or bm, k.get("bom") or bom]
+    if baru != [bm, bom]:
+        print(f"koreksi manual {kode}: {[bm, bom]} -> {baru}")
+    data[kode] = baru
 
 out = {"sumber": SRC.replace("\\", "/").split("/")[-1], "data": data}
 kito_data.tulis(OUT, out)

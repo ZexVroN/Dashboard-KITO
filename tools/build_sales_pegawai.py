@@ -206,11 +206,60 @@ for r in rows_peg:
         print(f"  jabatan: {nm} ({kd}) {p['id'][2]} -> {ATUR['jabatan'][ji]['jabatan']}")
         p["id"][2] = ATUR["jabatan"][ji]["jabatan"]
         p["ubah_jabatan"] = True
+        p["aturan_jabatan"] = True
     for key in ("e", "i"):
         b = BL[key]
         p[key] = {"seri": dict(zip(b["tgl"], (num(r[i]) for i in b["akuisisi"]))),
                   "sisa": [num(r[b["target"]]), num(r[b["bal"]]), num(r[b["tbal"]])]}
     pegawai.append(p)
+
+# ---------- daftar induk MENGIKAT (data pegawai update manual, tidak mengikuti Excel) ----------
+# "induk_mengikat": true di sales_penyesuaian.json -> susunan pegawai (cabang & jabatan) mengikuti daftar "pegawai" + "pindah":
+#   - pegawai Excel yang ada di daftar: kode cabang & jabatan diambil dari daftar (aturan "jabatan" tetap paling kuat);
+#   - pegawai Excel yang TIDAK ada di daftar: tidak ditampilkan (tambahkan ke daftar bila memang pegawai baru);
+#   - pegawai daftar yang tidak ada di Excel: tetap ditampilkan, akuisisi 0 & target standar jabatannya.
+# Pencapaian (akuisisi & balance) tetap dari Excel. Semua perubahan dicetak agar mudah diperiksa.
+if ATUR.get("pegawai") and ATUR.get("induk_mengikat"):
+    _induk = [{"nama": a["nama"].strip(), "kode": str(a["kode"]), "jabatan": a.get("jabatan")} for a in ATUR["pegawai"]]
+    _induk += [{"nama": a["nama"].strip(), "kode": str(a["ke"]), "jabatan": a.get("jabatan")} for a in ATUR["pindah"]]
+    _induk = [e for e in _induk if not any(_cocok(t, e["nama"], e["kode"]) for t in ATUR["takeout"])]   # takeout selalu dibuang
+    # entri cabang ASAL pegawai yang punya aturan "pindah" sudah digantikan entri cabang tujuan
+    _induk = [e for e in _induk if not any(a.get("dari") and str(a["dari"]) == e["kode"] and str(a["ke"]) != e["kode"]
+                                           and a["nama"].strip().upper() == e["nama"].upper() for a in ATUR["pindah"])]
+    _per_nama = {}
+    for e in _induk:
+        _per_nama.setdefault(e["nama"].upper(), []).append(e)
+    _terpakai, _hasil, _buang = set(), [], []
+    for p in pegawai:
+        calon = [e for e in _per_nama.get(p["id"][0].upper(), []) if id(e) not in _terpakai]
+        e = next((c for c in calon if c["kode"] == p["id"][4]), None) or (calon[0] if len(calon) == 1 else None)
+        if e is None:
+            _buang.append(p)
+            continue
+        _terpakai.add(id(e))
+        if e["kode"] != p["id"][4]:
+            print(f"  induk  : {p['id'][0]} cabang {p['id'][4]} -> {e['kode']}")
+            p["id"][4] = e["kode"]
+        if e["jabatan"] and not p.get("aturan_jabatan") and e["jabatan"].strip().upper() != p["id"][2].upper():
+            print(f"  induk  : {p['id'][0]} ({e['kode']}) jabatan {p['id'][2]} -> {e['jabatan']}")
+            p["id"][2] = e["jabatan"].strip()
+            p["ubah_jabatan"] = True
+        _hasil.append(p)
+    for p in _buang:
+        print(f"  induk  : {p['id'][0]} ({p['id'][4]}, {p['id'][2]}) ada di Excel tapi tidak di daftar induk -> tidak ditampilkan")
+    _area = {p["id"][4]: p["id"][3] for p in _hasil}
+    for e in _induk:
+        if id(e) in _terpakai or not e["jabatan"]:
+            continue
+        print(f"  induk  : {e['nama']} ({e['kode']}, {e['jabatan']}) tidak ada di Excel -> ditampilkan dengan akuisisi 0")
+        p = {"id": [e["nama"], "", e["jabatan"].strip(), _area.get(e["kode"], ""), e["kode"]], "ubah_jabatan": True}
+        for key in ("e", "i"):
+            p[key] = {"seri": {t: 0 for t in BL[key]["tgl"]}, "sisa": [None, 0, None]}
+        _hasil.append(p)
+    print(f"Daftar induk mengikat: {len(_hasil)} pegawai (Excel {len(pegawai)}, tidak ditampilkan {len(_buang)})")
+    pegawai = _hasil
+for p in pegawai:
+    p.pop("aturan_jabatan", None)
 # ubah jabatan: target & target balance ikut standar jabatan baru (nilai terbanyak pegawai lain dengan jabatan itu
 # di laporan yang sama); akuisisi & balance tetap pencapaian pegawai tersebut
 if any(p.get("ubah_jabatan") for p in pegawai):
@@ -234,7 +283,7 @@ for jenis in ("takeout", "pindah", "jabatan"):
             print(f"  PERINGATAN {jenis}: '{a['nama']}'" + (f" (cabang {a['dari']})" if a.get("dari") else "")
                   + " tidak ditemukan di laporan (sudah pindah/keluar di Excel? hapus dari daftar)")
 # daftar induk (hanya acuan, tidak menyaring): bandingkan dengan laporan setelah takeout/pindah
-if ATUR.get("pegawai"):
+if ATUR.get("pegawai") and not ATUR.get("induk_mengikat"):   # mode mengikat sudah mencetak perbedaannya sendiri
     induk = {(str(a["kode"]), a["nama"].strip().upper()) for a in ATUR["pegawai"]}
     induk |= {(str(a["ke"]), a["nama"].strip().upper()) for a in ATUR["pindah"]}
     lap = {(p["id"][4], p["id"][0].upper()) for p in pegawai}

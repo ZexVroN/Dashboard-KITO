@@ -1,6 +1,6 @@
 <?php
 /* Akun login dashboard (profil & password), dipakai ikon Profil di dashboard (assets/js/kpi-login.js).
-   Akun = jabatan (roh, toh, atom), ASM & SQO Area per area ("asm:<kunci area>", "sqoa:<kunci area>"), SQO Region per region ("sqor:<kunci region>") atau BOM-BOS per cabang ("bom:<kode cabang>").
+   Akun = jabatan (admin = Administrator, akses semua; roh, toh, atom), ASM & SQO Area per area ("asm:<kunci area>", "sqoa:<kunci area>"), SQO Region per region ("sqor:<kunci region>") atau BOM-BOS per cabang ("bom:<kode cabang>").
    Klien tidak pernah mengirim password asli: yang dikirim SHA-256("jabatan:password") seperti login KPI selama ini.
    Server menyimpan password baru sebagai password_hash() dari nilai itu. Akun yang belum pernah ganti password
    memakai hash bawaan (KP_AKUN_BAWAAN, harus sama dengan KPI_AKUN di kpi-login.js).
@@ -15,6 +15,7 @@ const KP_AKUN_BAWAAN = [
     'sqoa' => 'b7dd7515c6c06163d061e065370f011a0da221e46bcb2fe7b51cebf45f952f9d',
     'atom' => '24194830a2ecb9b2d9b384d0fe184d59c327e175bf59779d34551fb67794d7e0',
     'bom'  => '4e88c3acbfdf57bd8a6634d2d4110a8a51b00b48fe3f0609815fb63a97ac1d50',
+    'admin' => '',
 ];
 /* Pengaman akun bawaan (belum pernah ganti password). Hash di atas juga tertulis di kpi-login.js yang bisa dibaca publik,
    jadi siapa pun bisa mengirim hash itu tanpa tahu password-nya. Setelah tools/amankan_password_bawaan.py dijalankan,
@@ -22,6 +23,7 @@ const KP_AKUN_BAWAAN = [
    yang disimpan hanya SHA-256 dari bukti itu, sehingga nilai publik tidak bisa dipakai untuk login.
    Hash bawaan lama jabatan tersebut dikosongkan oleh alat yang sama. */
 const KP_AKUN_BUKTI = [
+    'admin' => 'cc34a20cc4eb210068325dd44c4c7fb3e60792779b95d2bf1ec1ac097d1c8eb0',
 ];
 const KP_AKUN_FOTO_MAKS = 60000;   // panjang data URL foto (±44 KB gambar; body JSON dibatasi 64 KB)
 

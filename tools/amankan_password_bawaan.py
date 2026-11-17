@@ -28,7 +28,7 @@ from pathlib import Path
 AKAR = Path(__file__).resolve().parent.parent
 JS = AKAR / 'assets' / 'js' / 'kpi-login.js'
 PHP = AKAR / 'push-php' / 'lib' / 'akun.php'
-JABATAN = ['roh', 'toh', 'sqor', 'asm', 'sqoa', 'atom', 'bom']
+JABATAN = ['roh', 'toh', 'sqor', 'asm', 'sqoa', 'atom', 'bom', 'admin']
 ITERASI = 150000
 
 

@@ -351,7 +351,7 @@ function catatan(){
   return `<section class="cd"><p class="rg-note" style="margin:0">Sumber: ${clean(R.sumber.waktu)} · ${clean(R.sumber.nbds)} · ${clean(R.sumber.o2o)}${emRegion.size?' · '+clean(EM.sumber):''}. Waktu antri DtD ${rentangP95} = P95; ${mtdTag()==='P95'?'MTD = rata-rata P95 harian bulan berjalan':'tanggal sebelumnya dan MTD historis = P90 (tidak sebanding langsung)'}; Utilisasi NBDS MTD = jumlah harian 1 s.d. tanggal laporan; Shifting Digital = (CSM + O2O) ÷ (CSM + O2O + Old BDS + New BDS) transaksi ganti kartu.</p></section>`;
 }
 
-const page=()=>hero()+`<div class="rx-grid">${GRUP.map(kartuGrup).join('')}${inbranch()}</div>`+versus()+antrian()+daftar()+tren()+rekap()+catatan();
+const page=()=>hero()+daftar()+tren()+`<div class="rx-grid">${GRUP.map(kartuGrup).join('')}${inbranch()}</div>`+versus()+antrian()+rekap()+catatan();
 
 /* ----- bungkus render() ----- */
 const sebelumnya=render;

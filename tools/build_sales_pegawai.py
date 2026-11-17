@@ -289,13 +289,20 @@ for v in cab_seri.values():
 for v in riwayat.values():
     semua |= set(v["e"]) | set(v["i"])
 # Sabtu/Minggu tidak ditampilkan (laporan seri harian memuat akhir pekan dengan nilai kumulatif yang sama),
-# kecuali hari kerja yang tersedia kurang dari jumlah tampil
-_kerja = sorted(t for t in semua if dt.date.fromisoformat(t).weekday() < 5)
+# kecuali hari kerja yang tersedia kurang dari jumlah tampil. Tanggal laporan (TGL_D) selalu ditampilkan walau akhir
+# pekan (mis. laporan 14 Nov 2026 hari Sabtu memuat akuisisi baru).
+_kerja = sorted(t for t in semua if dt.date.fromisoformat(t).weekday() < 5 or t == globals().get("TGL_D"))
 update = (_kerja if len(_kerja) >= A.tampil else sorted(semua))[-A.tampil:]
 tanpa_riwayat = 0
 data = []
+# riwayat per nama (cadangan untuk pegawai yang pindah cabang): hanya bila nama itu unik di riwayat
+_rw_nama = {}
+for (_k, _n), _v in riwayat.items():
+    _rw_nama.setdefault(_n, []).append(_v)
 for p in pegawai:
     h = riwayat.get((p["id"][4], p["id"][0].upper()))
+    if h is None and len(_rw_nama.get(p["id"][0].upper(), [])) == 1:
+        h = _rw_nama[p["id"][0].upper()][0]
     if h is None:
         tanpa_riwayat += 1
     row = list(p["id"])

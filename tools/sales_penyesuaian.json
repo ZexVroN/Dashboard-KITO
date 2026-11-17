@@ -4,15 +4,34 @@
     {"nama": "HARMAWAN PRANA YUDA"},
     {"nama": "LEDI ARYANA"},
     {"nama": "RAMA DENI"},
-    {"nama": "ASSYAHID HASAN ALBANA"}
+    {"nama": "ASSYAHID HASAN ALBANA"},
+    {"nama": "DWI TANTRIA PUSFITA", "dari": "17900", "catatan": "Take out Area Bengkulu 17 Nov 2026: Outbranch"},
+    {"nama": "HADI MULYA", "dari": "17900", "catatan": "Take out Area Bengkulu 17 Nov 2026: Mutasi ke TO"},
+    {"nama": "MUHAMMAD DENDY RANDITO", "dari": "17900", "catatan": "Take out Area Bengkulu 17 Nov 2026: Outbranch"},
+    {"nama": "PERLINA SUSANTI", "dari": "17900", "catatan": "Take out Area Bengkulu 17 Nov 2026: Outbranch"},
+    {"nama": "THEO FANDI WINSON", "dari": "17900", "catatan": "Take out Area Bengkulu 17 Nov 2026: Outbranch"},
+    {"nama": "MOCHAMMAD AGUNG SENO PAMBUDI", "dari": "17900", "catatan": "Take out Area Bengkulu 17 Nov 2026: Outbranch"},
+    {"nama": "SHANDY KRISASHARY", "dari": "17901", "catatan": "Take out Area Bengkulu 17 Nov 2026: Outbranch"},
+    {"nama": "ERIKA WIELIANI CHANDRA", "dari": "17902", "catatan": "Take out Area Bengkulu 17 Nov 2026: Outbranch"},
+    {"nama": "RIKI MIHARTA", "dari": "17902", "catatan": "Take out Area Bengkulu 17 Nov 2026: Outbranch"},
+    {"nama": "TALITHA ZAHRA MUMTAZ", "dari": "17903", "catatan": "Take out Area Bengkulu 17 Nov 2026: Outbranch"},
+    {"nama": "ABRAM DIMAS HOSWANDI", "dari": "17952", "catatan": "Take out Area Bengkulu 17 Nov 2026: Outbranch"},
+    {"nama": "RETNO TIMOTY ANGGRAENY", "dari": "17953", "catatan": "Take out Area Bengkulu 17 Nov 2026: Outbranch"}
   ],
   "pindah": [
     {"nama": "MARDIANA", "dari": "11315", "ke": "11388", "catatan": "KCP Sungai Lilin -> KCP Pangkalan Balai"},
-    {"nama": "M FADIL RIZQULLA", "dari": "11321", "ke": "11315", "catatan": "KCP Palembang R. Sukamto -> KCP Sungai Lilin"}
+    {"nama": "M FADIL RIZQULLA", "dari": "11321", "ke": "11315", "catatan": "KCP Palembang R. Sukamto -> KCP Sungai Lilin"},
+    {"nama": "NIA RAMADHANI", "dari": "17900", "ke": "17901", "catatan": "Take out Area Bengkulu 17 Nov 2026: seharusnya di 17901"},
+    {"nama": "NABILA", "dari": "17960", "ke": "17901", "catatan": "Take out Area Bengkulu 17 Nov 2026: seharusnya di 17901"},
+    {"nama": "ENDANG PUJI NOPIYANTI", "dari": "17954", "ke": "17902", "catatan": "Take out Area Bengkulu 17 Nov 2026: seharusnya di 17902"},
+    {"nama": "MAISY PANDU DWIPUTRA", "dari": "17962", "ke": "17953", "catatan": "Take out Area Bengkulu 17 Nov 2026: seharusnya di 17953"},
+    {"nama": "ANDHIKA PUTRA BUDI PRATAMA", "dari": "17959", "ke": "17955", "catatan": "Take out Area Bengkulu 17 Nov 2026: Excel: kode 17955, catatan 'tidak ada di Dashboard 17959'"},
+    {"nama": "HERI NOVIAN", "dari": "11298", "ke": "11293", "catatan": "Mutasi (NIP ******0514) 17 Nov 2026"}
   ],
   "_keterangan_jabatan": "Ganti jabatan pegawai; target & target balance Ekstensifikasi/Intensifikasi otomatis mengikuti standar jabatan baru (akuisisi & balance tetap).",
   "jabatan": [
-    {"nama": "Sajena", "dari": "11325", "jabatan": "Teller", "catatan": "Customer Service Representative -> Teller"}
+    {"nama": "Sajena", "dari": "11325", "jabatan": "Teller", "catatan": "Customer Service Representative -> Teller"},
+    {"nama": "NANDA ALYFIA CANDRA", "dari": "17903", "jabatan": "Teller", "catatan": "Customer Service Representative -> Teller (17 Nov 2026)"}
   ],
   "_keterangan_pegawai": "Daftar induk pegawai inbranch (selain takeout & pindah), urut kode cabang. Hanya acuan: tidak menyaring data. Saat build, pegawai Excel yang tidak ada di daftar ini dan pegawai daftar yang tidak ada di Excel dicetak sebagai INFO.",
   "pegawai": [
@@ -409,7 +428,7 @@
     {"nama": "AUDY MARSHANDA BEREMAU", "kode": "11222", "jabatan": "Teller"},
     {"nama": "Ayu Permani", "kode": "11222", "jabatan": "Teller"},
     {"nama": "DEWI ANGGRAINI", "kode": "11222", "jabatan": "Customer Service Representative"},
-    {"nama": "HILDA ANDRYANI", "kode": "11222", "jabatan": "Customer Service Supervisor"},
+    {"nama": "HILDA ANDRYANI", "kode": "11298", "jabatan": "Branch Operation Supervisor"},
     {"nama": "ELLYNDA SUSTRI DIANTY", "kode": "11224", "jabatan": "Teller"},
     {"nama": "MUHAMMAD IQBAL ALFIYAN", "kode": "11224", "jabatan": "Customer Service Representative"},
     {"nama": "MUHAMMAD RIZQI ARRAHMAN", "kode": "11224", "jabatan": "Teller"},
@@ -526,7 +545,7 @@
     {"nama": "MUHAMMAD MIZAN", "kode": "11297", "jabatan": "Teller"},
     {"nama": "SAPUAN", "kode": "11297", "jabatan": "Branch Operation Supervisor"},
     {"nama": "DINNI DWI PUTRI", "kode": "11298", "jabatan": "Customer Service Representative"},
-    {"nama": "HERI NOVIAN", "kode": "11298", "jabatan": "Branch Operation Supervisor"},
+    {"nama": "HERI NOVIAN", "kode": "11293", "jabatan": "Branch Operation Supervisor"},
     {"nama": "Jesica Amellia", "kode": "11298", "jabatan": "Customer Service Representative"},
     {"nama": "AKHMAD IMAM SUDRAJAT", "kode": "11299", "jabatan": "Branch Operation Supervisor"},
     {"nama": "FITRI RAHMADINI", "kode": "11299", "jabatan": "Customer Service Representative"},

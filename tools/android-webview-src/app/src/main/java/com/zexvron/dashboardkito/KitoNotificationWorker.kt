@@ -52,7 +52,11 @@ class KitoNotificationWorker(
                 val response = reader.use { it.readText() }
                 val json = JSONObject(response)
 
-                if (json.optBoolean("ok", false)) {
+                if (json.optBoolean("ok", false) && lastNotifId == 0) {
+                    // jalan pertama (halaman belum menyetel kursor): mulai dari notifikasi terbaru, riwayat 3 hari terakhir tidak dimunculkan
+                    val latest = json.optInt("latestId", 0)
+                    if (latest > 0) prefs.edit().putInt(KitoBridge.PREF_LAST_NOTIF_ID, latest).apply()
+                } else if (json.optBoolean("ok", false)) {
                     val notifs = json.optJSONArray("notifications")
                     var maxId = lastNotifId
 
@@ -70,7 +74,8 @@ class KitoNotificationWorker(
                     }
 
                     val latestId = json.optInt("latestId", maxId)
-                    if (latestId > lastNotifId) {
+                    // halaman bisa sudah memajukan kursor selama worker berjalan: jangan mundurkan
+                    if (latestId > prefs.getInt(KitoBridge.PREF_LAST_NOTIF_ID, 0)) {
                         prefs.edit().putInt(KitoBridge.PREF_LAST_NOTIF_ID, latestId).apply()
                     }
                 }

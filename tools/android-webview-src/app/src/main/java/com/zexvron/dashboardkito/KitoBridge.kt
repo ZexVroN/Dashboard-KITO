@@ -96,6 +96,18 @@ class KitoBridge(
     }
 
     /**
+     * Kursor notifikasi terakhir yang sudah diambil halaman (tampil sebagai banner saat aplikasi terbuka).
+     * Worker memakai kursor yang sama sehingga notifikasi itu tidak muncul lagi sebagai notifikasi sistem. Hanya maju, tidak mundur.
+     */
+    @JavascriptInterface
+    fun setLastNotifId(id: String) {
+        val baru = id.toIntOrNull() ?: return
+        synchronized(KitoBridge::class.java) {
+            if (baru > prefs.getInt(PREF_LAST_NOTIF_ID, 0)) prefs.edit().putInt(PREF_LAST_NOTIF_ID, baru).apply()
+        }
+    }
+
+    /**
      * Menampilkan notifikasi native di status bar Android
      */
     @JavascriptInterface

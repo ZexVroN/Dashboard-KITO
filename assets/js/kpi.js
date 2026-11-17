@@ -15,7 +15,7 @@ const ak=x=>String(x).toUpperCase().replace(/^AREA\s+/,'').replace(/\s+/g,'');  
 const AREAS2=new Set(D.B.map(b=>ak(b[2])));   // area Region II dari data cabang
 const CABANG=j=>j.lvl==='cabang';   // BOM-BOS: data hanya berisi cabang Region II
 const isR2=(j,u)=>CABANG(j)?true:REGIONAL.has(j.key)?u.n===K.fokus:AREAS2.has(ak(u.n));
-const LABEL={SQOR:'SQO Region',SQOA:'SQO Area',BOM:'BOM-BOS'};
+const LABEL={ROH:'Lenny Marlina',TOH:'Widya Putra',SQOR:'SQO Region',SQOA:'SQO Area',BOM:'BOM-BOS'};
 const titel=s=>s.replace(/^(REGION|AREA)\s+/,m=>m).replace(/\s*\/\s*/g,' · ').toLowerCase().replace(/(^|[\s·])([a-z])/g,(m,a,b)=>a+b.toUpperCase()).replace(/\b(Ii|Iii|Iv|Vi|Vii|Viii|Ix|Xi|Xii)\b/g,x=>x.toUpperCase());
 
 const ui={j:'ROH',unit:null,area:null,q:''};   // area: saringan papan BOM-BOS · q: kata kunci pencarian papan

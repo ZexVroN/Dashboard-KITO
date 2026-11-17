@@ -345,6 +345,16 @@
       if (s.alasan === 'menunggu' && s.pushDidukung && s.izin === 'default') tombolAksi += '<button type="button" class="knp-btn" data-knp="aktifkan">Aktifkan notifikasi sistem</button>';
       else if (s.alasan === 'push-gagal' || s.alasan === 'push-ditolak') tombolAksi += '<button type="button" class="knp-btn" data-knp="aktifkan">Coba lagi</button>';
       tombolAksi += tes + matikan;
+      // mode dalam-aplikasi tetapi server belum mengenal perangkat ini: jangan tampil "Aktif" (tidak akan menerima apa pun)
+      if (!s.deviceId) {
+        st = '⚠ Perangkat belum terdaftar'; ok = false;
+        info = 'Aplikasi ini tidak bisa menyimpan ID perangkat, jadi notifikasi belum bisa diterima. Tutup lalu buka kembali KITO. Bila tetap muncul, buka KITO lewat Chrome.';
+        tombolAksi = '<button type="button" class="knp-btn" data-knp="aktifkan">Coba lagi</button>';
+      } else if (s.terdaftar === false) {
+        st = '⚠ Belum terhubung ke server notifikasi'; ok = false;
+        info = 'Pendaftaran perangkat ini belum berhasil (jaringan atau server). Dicoba lagi otomatis saat online, atau ketuk Coba lagi.';
+        tombolAksi = '<button type="button" class="knp-btn" data-knp="aktifkan">Coba lagi</button>' + matikan;
+      }
     } else {
       st = '○ Menyiapkan notifikasi…';
     }

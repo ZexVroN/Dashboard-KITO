@@ -351,7 +351,8 @@ function catatan(){
   return `<section class="cd"><p class="rg-note" style="margin:0">Sumber: ${clean(R.sumber.waktu)} · ${clean(R.sumber.nbds)} · ${clean(R.sumber.o2o)}${emRegion.size?' · '+clean(EM.sumber):''}. Waktu antri DtD ${rentangP95} = P95; ${mtdTag()==='P95'?'MTD = rata-rata P95 harian bulan berjalan':'tanggal sebelumnya dan MTD historis = P90 (tidak sebanding langsung)'}; Utilisasi NBDS MTD = jumlah harian 1 s.d. tanggal laporan; Shifting Digital = (CSM + O2O) ÷ (CSM + O2O + Old BDS + New BDS) transaksi ganti kartu.</p></section>`;
 }
 
-const page=()=>hero()+daftar()+tren()+`<div class="rx-grid">${GRUP.map(kartuGrup).join('')}${inbranch()}</div>`+versus()+antrian()+rekap()+catatan();
+// urutan: kartu informasi dashboard dulu, lalu Perbandingan Region dan Tren Harian
+const page=()=>hero()+`<div class="rx-grid">${GRUP.map(kartuGrup).join('')}${inbranch()}</div>`+daftar()+tren()+versus()+antrian()+rekap()+catatan();
 
 /* ----- bungkus render() ----- */
 const sebelumnya=render;
@@ -386,7 +387,7 @@ app.addEventListener('click',e=>{
     document.querySelectorAll('[data-rx-dl]').forEach(l=>{const on=+l.dataset.rxDl===ui.tip;l.setAttribute('font-weight',on?700:400);l.setAttribute('fill',on?'var(--tx)':'var(--mu)');});
     if(box)box.innerHTML=tipHtml(m,ui.tip);return;
   }
-  if((x=a('m'))){ui.m=x.dataset.rxM;ui.tip=null;render();if(x.classList.contains('rx-sub'))document.getElementById('rx-daftar')?.scrollIntoView({behavior:'smooth',block:'start'});return;}
+  if((x=a('m'))){ui.m=x.dataset.rxM;ui.tip=null;render();if(x.classList.contains('rx-sub')){const ke=()=>{const d=document.getElementById('rx-daftar');if(d)window.scrollTo({top:Math.max(0,d.getBoundingClientRect().top+window.scrollY-12),behavior:'instant'});};requestAnimationFrame(ke);setTimeout(ke,250);}return;}
   if((x=a('pilih'))){const id=x.dataset.rxPilih;if(id!==FOKUS.id){ui.cmp=ui.cmp===id?'NASIONAL':id;render();}return;}
 });
 app.addEventListener('change',e=>{

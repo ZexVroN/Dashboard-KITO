@@ -340,7 +340,9 @@ for v in riwayat.values():
 # Sabtu/Minggu tidak ditampilkan (laporan seri harian memuat akhir pekan dengan nilai kumulatif yang sama),
 # kecuali hari kerja yang tersedia kurang dari jumlah tampil. Tanggal laporan (TGL_D) selalu ditampilkan walau akhir
 # pekan (mis. laporan 14 Nov 2026 hari Sabtu memuat akuisisi baru).
-_kerja = sorted(t for t in semua if dt.date.fromisoformat(t).weekday() < 5 or t == globals().get("TGL_D"))
+# Tanggal yang dimuat laporan itu sendiri (D-1 dan D) juga selalu tampil walau akhir pekan.
+_lap = set(BL["e"]["tgl"]) | set(BL["i"]["tgl"]) | {globals().get("TGL_D")}
+_kerja = sorted(t for t in semua if dt.date.fromisoformat(t).weekday() < 5 or t in _lap)
 update = (_kerja if len(_kerja) >= A.tampil else sorted(semua))[-A.tampil:]
 tanpa_riwayat = 0
 data = []

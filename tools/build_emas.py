@@ -131,7 +131,9 @@ for r in form[1:]:
 # ---------- pegawai Region II (sheet Data Pegawai) ----------
 daftar = []
 for r in wb["Data Pegawai"].iter_rows(min_row=3, values_only=True):
-    if len(r) < 9 or str(r[1]).strip() not in ("2", "2.0") or kode(r[2]) not in kode_r2:
+    # kolom Region: angka 2 (format lama) atau teks "REGION II / SUMATERA 2" (sejak laporan 16 Nov 2026)
+    if len(r) < 9 or not (str(r[1]).strip() in ("2", "2.0") or re.match(r"REGION\s+II\b", str(r[1]).strip().upper())) \
+            or kode(r[2]) not in kode_r2:
         continue
     daftar.append((nipn(r[6]), r))
 per_nip = {n: r for n, r in daftar}

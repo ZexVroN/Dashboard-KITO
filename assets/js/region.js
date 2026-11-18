@@ -160,6 +160,9 @@ function kartuGrup(g){
   const subs=MET.filter(m=>m.g===g.key),cmp=cmpEnt();
   const m=metOf(g.main),per=perOf(m,ui.per),rows=peringkat(m,ui.per),me=rows.find(r=>r.e===FOKUS);
   const v=m.val(FOKUS,per),ref=m.val(cmp,per),best=rows[0];
+  // tanggal DtD tanpa data indikator ini (mis. NBDS 13 Nov 2026 tidak dipakai): tampilkan keterangan, bukan kartu kosong
+  if(!rows.length)return `<section class="cd rx-card"><div class="rx-card-h"><span class="rx-ik">${g.ik}</span><div><h2>${clean(g.n)}</h2><p class="rg-sub">${clean(g.ket)} · ${perLabel(m,ui.per)}</p></div></div>
+    <p class="rg-warn">Data ${clean(g.n)} tidak tersedia untuk ${perLabel(m,ui.per)}. Pilih tanggal lain atau MTD.</p></section>`;
   const vsCmp=chipSel(selisih(m,v,ref),nama(cmp));
   const vsBest=me&&best&&best.e!==FOKUS?chipSel(selisih(m,v,best.v),`#1 ${nama(best.e)}`):(me?'<span class="chip ok">🥇 Terbaik bankwide</span>':'');
   const baris=subs.map(s=>{

@@ -5,6 +5,9 @@
    Utilisasi NBDS = New BDS ÷ (New BDS + Old BDS); target ≥ 98%. */
 (()=>{'use strict';
 const src=window.KITO_AREA_NBDS;
+// tanggal NBDS yang sengaja tidak ditampilkan (tools/nbds_kecuali.json), mis. {"2026-11-13":"data tidak ada dari OBO"}
+const KEC=()=>(src&&src.kecuali)||{};
+const notaKec=()=>Object.entries(KEC()).map(([t,a])=>`Data ${isoLong(t)} tidak ditampilkan: ${clean(a)}.`).join(' ');
 if(!src||typeof D==='undefined'||typeof st==='undefined'||typeof render!=='function')return;
 const views=(window.KITO_AREA_VIEWS=window.KITO_AREA_VIEWS||[]);
 
@@ -68,7 +71,7 @@ function hero(e,isRegion){
   const dtd=KEYS.map(k=>util(pairOf(e,'dtd',k)));
   const capai=dtd.filter(p=>p!=null&&p>=TGT).length,ada=dtd.filter(p=>p!=null).length;
   const chips=ada?`<span class="chip ${capai===ada?'ok':capai?'mid':'bad'}">${capai}/${ada} kanal capai target · DtD ${isoShort(dtdIso())}</span>`:'';
-  return `<section class="cd wt-hero"><span class="wt-eyebrow">DASHBOARD UTILISASI NBDS · ${isRegion?'REGION II':'AREA'}</span><h3>${clean(dispName(e,isRegion))}</h3><p class="wt-sub">Utilisasi = New BDS ÷ (New BDS + Old BDS) · target ≥ ${pct(TGT)} · update ${isoLong(src.tanggal)}</p><p class="wt-sub">Tanggal DtD mengikuti filter Tanggal di bagian atas.</p><div class="nb-chips">${chips}</div></section>`;
+  return `<section class="cd wt-hero"><span class="wt-eyebrow">DASHBOARD UTILISASI NBDS · ${isRegion?'REGION II':'AREA'}</span><h3>${clean(dispName(e,isRegion))}</h3><p class="wt-sub">Utilisasi = New BDS ÷ (New BDS + Old BDS) · target ≥ ${pct(TGT)} · update ${isoLong(src.tanggal)}</p><p class="wt-sub">Tanggal DtD mengikuti filter Tanggal di bagian atas.</p>${notaKec()?`<p class="wt-sub">ℹ️ ${notaKec()}</p>`:''}<div class="nb-chips">${chips}</div></section>`;
 }
 
 /* ----- 2. Kartu DtD dan MTD ----- */
@@ -92,7 +95,7 @@ function periodCard(per,e,isRegion){
   const title=per==='dtd'?`DtD · ${isoLong(dtdIso())}`:`MTD · ${BULAN}`;
   const tot=allPair(e,per),total=KEYS.reduce((s,k)=>s+need(pairOf(e,per,k)),0);
   const ringkas=tot?`<div class="nb-total"><span>Gabungan 3 kanal</span><b class="${tk(util(tot))}">${pct(util(tot))}</b><small>${num(tot[1])} transaksi masih lewat Old BDS${total?` · <b>${num(total)}</b> perlu dialihkan ke NBDS agar semua kanal ≥ ${pct(TGT)}`:''}</small></div>`:'';
-  return `<section class="cd wt-period"><h2>${title}</h2>${has?'':`<p class="wt-warn">Data utilisasi untuk tanggal ini belum ada di laporan. Pilih tanggal lain di filter atas (tersedia: ${src.dates.map(isoShort).join(', ')}).</p>`}<div class="wt-tiles">${KEYS.map(k=>tile(k,per,e,isRegion)).join('')}</div>${ringkas}</section>`;
+  return `<section class="cd wt-period"><h2>${title}</h2>${has?'':KEC()[dtdIso()]?`<p class="wt-warn">Data utilisasi ${isoLong(dtdIso())} tidak ditampilkan: ${clean(KEC()[dtdIso()])}. Pilih tanggal lain di filter atas atau lihat MTD.</p>`:`<p class="wt-warn">Data utilisasi untuk tanggal ini belum ada di laporan. Pilih tanggal lain di filter atas (tersedia: ${src.dates.map(isoShort).join(', ')}).</p>`}<div class="wt-tiles">${KEYS.map(k=>tile(k,per,e,isRegion)).join('')}</div>${ringkas}</section>`;
 }
 
 /* ----- 3. Ranking area ----- */

@@ -162,7 +162,7 @@ function kartuGrup(g){
   const v=m.val(FOKUS,per),ref=m.val(cmp,per),best=rows[0];
   // tanggal DtD tanpa data indikator ini (mis. NBDS 13 Nov 2026 tidak dipakai): tampilkan keterangan, bukan kartu kosong
   if(!rows.length)return `<section class="cd rx-card"><div class="rx-card-h"><span class="rx-ik">${g.ik}</span><div><h2>${clean(g.n)}</h2><p class="rg-sub">${clean(g.ket)} · ${perLabel(m,ui.per)}</p></div></div>
-    <p class="rg-warn">Data ${clean(g.n)} tidak tersedia untuk ${perLabel(m,ui.per)}. Pilih tanggal lain atau MTD.</p></section>`;
+    <p class="rg-warn">${g.key==='nbds'&&R.nbdsKecuali?.[iso()]?`Data ${clean(g.n)} ${perLabel(m,ui.per)} tidak ditampilkan: ${clean(R.nbdsKecuali[iso()])}.`:`Data ${clean(g.n)} tidak tersedia untuk ${perLabel(m,ui.per)}.`} Pilih tanggal lain atau MTD.</p></section>`;
   const vsCmp=chipSel(selisih(m,v,ref),nama(cmp));
   const vsBest=me&&best&&best.e!==FOKUS?chipSel(selisih(m,v,best.v),`#1 ${nama(best.e)}`):(me?'<span class="chip ok">🥇 Terbaik bankwide</span>':'');
   const baris=subs.map(s=>{
@@ -171,7 +171,7 @@ function kartuGrup(g){
   }).join('');
   return `<section class="cd rx-card"><div class="rx-card-h"><span class="rx-ik">${g.ik}</span><div><h2>${clean(g.n)}</h2><p class="rg-sub">${clean(g.ket)} · ${perLabel(m,ui.per)}</p></div></div>
     <div class="rx-big"><div><small>${clean(m.n)} · Region ${clean(FOKUS.no)}</small><b class="${kelas(m,v)}">${m.fmt(v)}</b></div><div class="rx-rank"><b>${me?'#'+me.rk:'–'}</b><small>dari ${rows.length} region</small></div></div>
-    <div class="rx-vs">${vsCmp}${vsBest}</div>${strip(rows,cmp,m)}
+    <div class="rx-vs">${vsCmp}${vsBest}</div>${strip(rows,cmp,m)}${g.key==='nbds'&&R.nbdsKecuali&&Object.keys(R.nbdsKecuali).length?`<p class="rg-sub">ℹ️ ${Object.entries(R.nbdsKecuali).map(([t,a])=>`Data ${clean(t.slice(8,10)+' '+['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'][+t.slice(5,7)-1])} tidak ditampilkan: ${clean(a)}.`).join(' ')}</p>`:''}
     <div class="rx-subs"><div class="rx-sub-h"><span>Indikator</span><span>Region ${clean(FOKUS.no)}</span><span>Rank</span><span>vs ${clean(nama(cmp))}</span></div>${baris}</div></section>`;
 }
 

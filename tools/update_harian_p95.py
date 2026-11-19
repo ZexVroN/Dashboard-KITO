@@ -421,6 +421,9 @@ def main():
     print(f"area-kelompok-data : DtD = P95 {tgl} untuk {len(K)} cabang")
     print(f"area-o2o-data.js   : {len(AO['areas'])} area, tanggal {AO['tanggal']}")
     print(f"region-data.js     : {len(R['regions'])} region + nasional · waktu {tgl} · NBDS s.d. {tgl_nbds[-1]} · O2O {R['tglO2O']}")
+    if a.nbds:
+        # tanggal NBDS yang dikecualikan (tools/nbds_kecuali.json), mis. 13 Nov 2026: data tidak ada dari OBO
+        subprocess.run([sys.executable, os.path.join("tools", "nbds_kecualikan.py")], check=True)
     print("Selesai. Data tersimpan di data/kito.json (index.html tidak perlu diubah).")
 
     # notifikasi push (opsional): hanya bila KITO_PUSH_URL & KITO_PUSH_TOKEN diisi

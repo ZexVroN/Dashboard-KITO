@@ -348,7 +348,7 @@ function kartuUtilisasi() {
   const N = window.KITO_AREA_NBDS,
     c = N?.cabang?.find((x) => String(x.kode) === String(D.B[st.b][0]));
   const mtd = perKartu.nb === "mtd";
-  let pasang, judul;
+  let pasang, judul, catKec = "";
   if (c) {
     let j = N.dates.indexOf(D.dates[st.d]);
     // laporan NBDS bisa terbit lebih lambat dari antrian/O2O: tanggal terpilih yang lebih baru memakai data NBDS terakhir
@@ -356,6 +356,9 @@ function kartuUtilisasi() {
     if (terakhir) j = N.dates.indexOf(N.tanggal);
     pasang = (k) => (mtd ? c.m[k] : j < 0 ? null : c.d[k]?.[j]) || [null, null];
     judul = mtd ? `MTD s.d. ${dlong(N.tanggal)}` : terakhir ? `${dlong(N.tanggal)} (data terakhir)` : dlong(D.dates[st.d]);
+    // tanggal yang sengaja tidak ditampilkan (tools/nbds_kecuali.json), mis. 13 & 18 Nov 2026: data tidak ada dari OBO
+    const alasan = !mtd && N.kecuali ? N.kecuali[D.dates[st.d]] : null;
+    if (alasan) catKec = `<div class="note">ℹ️ Data utilisasi ${dlong(D.dates[st.d])} tidak ditampilkan: ${esc(alasan)}.${terakhir ? ` Yang tampil adalah data terakhir (${dlong(N.tanggal)}).` : ""}</div>`;
   } else {
     // cadangan: D.M[4..9] = DtD tanggal laporan
     const m = D.M[st.b];
@@ -371,7 +374,7 @@ function kartuUtilisasi() {
     lblLalu = cLalu ? `MTD ${new Date(blnLalu + "-01T00:00").toLocaleDateString("id-ID", { month: "long" })}` : "",
     lalu = (k) => (cLalu?.m?.[k] ? { lbl: lblLalu, n: cLalu.m[k][0], o: cLalu.m[k][1] } : null);
   const catLalu = cLalu ? `<div class="note">Pembanding ${lblLalu}: akumulasi s.d. ${dlong(tglLalu)} (laporan NBDS terakhir bulan itu).</div>` : "";
-  return `<div class="cd"><h2>Utilisasi NBDS · ${judul}</h2>${segPer("nb", !c)}${util("Teller Perorangan", ...pasang("fp"), lalu("fp"))}${util("Teller Badan", ...pasang("fnp"), lalu("fnp"))}${util("Customer Service", ...pasang("nf"), lalu("nf"))}${catLalu}${ada ? "" : '<div class="note">Data utilisasi untuk tanggal ini belum ada di laporan.</div>'}</div>`;
+  return `<div class="cd"><h2>Utilisasi NBDS · ${judul}</h2>${segPer("nb", !c)}${util("Teller Perorangan", ...pasang("fp"), lalu("fp"))}${util("Teller Badan", ...pasang("fnp"), lalu("fnp"))}${util("Customer Service", ...pasang("nf"), lalu("nf"))}${catLalu}${catKec || (ada ? "" : '<div class="note">Data utilisasi untuk tanggal ini belum ada di laporan.</div>')}</div>`;
 }
 
 
@@ -621,7 +624,8 @@ const ft = $("#ft");
 if (ft) {
   ft.innerHTML =
     "Antrian s.d. <b>" + dlong(D.dates[D.dates.length - 1]) +
-    "</b> · Utilisasi per <b>" + dlong(D.mdate) +
+    "</b> · O2O per <b>" + dlong(D.mdate) +
+    "</b> · NBDS per <b>" + dlong((window.KITO_AREA_NBDS || {}).tanggal || D.mdate) +
     "</b><br>Dashboard Monitoring Inbranch · Region II" +
     '<span class="kredit"><span class="credit-property">Property of Operation Region II Sumatera</span><span class="credit-attribution">© Credits by <a href="https://assyahid.github.io/" target="_blank" rel="noopener noreferrer">Assyahid Hasan Albana</a> | Desigen By Deni</span></span>';
 }

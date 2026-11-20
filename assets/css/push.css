@@ -166,3 +166,9 @@ button.knp-n:active { transform: scale(.99); }
 [data-theme="dark"] .kn-btn { background: #3b6ad8; }
 [data-theme="dark"] .kn-btn.sec { background: transparent; }
 @media (prefers-reduced-motion: reduce) { .kn-kartu { animation: none; transition: none; } }
+
+/* kartu info data di lembar 🔔 (tanggal NBDS yang tidak ditampilkan, dll.) */
+.knp-info{display:flex;flex-direction:column;gap:3px;margin:0 0 10px;padding:10px 12px;border-radius:12px;background:#fff7e0;border:1px solid #f1d58a;color:#4a3b00}
+.knp-info .knp-ni{color:#5c4a08}
+[data-theme="dark"] .knp-info{background:#3a2f0b;border-color:#7a6213;color:#f5e6b3}
+[data-theme="dark"] .knp-info .knp-ni{color:#e9d9a0}

@@ -418,8 +418,34 @@
     return r;
   }
 
-  window.KITO_NOTIF = { state, aktifkan, matikan, tes, riwayat: muatRiwayat, bukaDaftar };
+  /* Info data dari dashboard (tanpa server): tanggal Utilisasi NBDS yang tidak ditampilkan (tools/nbds_kecuali.json →
+     KITO_AREA_NBDS.kecuali). Banner muncul sekali per perangkat setiap daftarnya berubah; isinya juga tampil sebagai kartu di lembar 🔔. */
+  const tglPanjang = (t) => { try { return new Date(t + 'T00:00').toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }); } catch (e) { return t; } };
+  function infoData() {
+    const kec = (window.KITO_AREA_NBDS && window.KITO_AREA_NBDS.kecuali) || {};
+    const tgl = Object.keys(kec).sort();
+    if (!tgl.length) return null;
+    const alasan = [...new Set(tgl.map((t) => kec[t]))];
+    const daftar = tgl.map(tglPanjang);
+    const gabung = daftar.length > 1 ? daftar.slice(0, -1).join(', ') + ' dan ' + daftar[daftar.length - 1] : daftar[0];
+    return { kunci: tgl.map((t) => t + ':' + kec[t]).join('|'), title: 'Info data Utilisasi NBDS',
+      body: `Data Utilisasi NBDS ${gabung} tidak ditampilkan: ${alasan.join('; ')}.` };
+  }
+  async function bannerInfoData() {
+    if (!window.KITO_AREA_NBDS) {   // data dashboard (kito.json) belum termuat: coba lagi
+      bannerInfoData.c = (bannerInfoData.c || 0) + 1;
+      if (bannerInfoData.c < 8) setTimeout(() => bannerInfoData().catch(() => {}), 2000);
+      return;
+    }
+    const n = infoData();
+    if (!n || LS.g('kito-info-data') === n.kunci) return;
+    await siapUI();
+    tampilToast([{ title: n.title, body: n.body, urgensi: 'normal', url: location.href }], 0);   // url = halaman ini: tanpa tombol Buka
+    LS.s('kito-info-data', n.kunci);
+  }
 
-  const awal = () => setTimeout(() => berurutan(mulai), 900 + Math.random() * 1200);   // jeda acak: banyak perangkat membuka aplikasi bersamaan
+  window.KITO_NOTIF = { state, aktifkan, matikan, tes, riwayat: muatRiwayat, bukaDaftar, infoData };
+
+  const awal = () => { setTimeout(() => berurutan(mulai), 900 + Math.random() * 1200); setTimeout(() => bannerInfoData().catch(() => {}), 2500); };   // jeda acak: banyak perangkat membuka aplikasi bersamaan
   document.readyState === 'complete' ? awal() : addEventListener('load', awal);
 })();

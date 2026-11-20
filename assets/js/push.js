@@ -314,7 +314,10 @@
     if (riwayatNotif === null) h = '<p class="knp-note">Memuat notifikasi…</p>';
     else if (!riwayatNotif.length) h = `<p class="knp-kosong">${s0?.mode === 'mati' ? 'Notifikasi dimatikan di perangkat ini.' : 'Belum ada notifikasi untuk perangkat ini dalam 14 hari terakhir.'}</p>`;
     else h = `<div class="knp-nl">${riwayatNotif.slice(0, 10).map(itemNotif).join('')}</div>`;
-    return '<p class="knp-g">Notifikasi terbaru</p>' + h;
+    // kartu info data dari dashboard (mis. tanggal NBDS yang tidak ditampilkan), selalu di atas daftar
+    const inf = NT()?.infoData?.();
+    const kartuInfo = inf ? `<div class="knp-info"><b class="knp-nj">ℹ️ ${esc(inf.title)}</b><span class="knp-ni">${esc(inf.body)}</span></div>` : '';
+    return '<p class="knp-g">Notifikasi terbaru</p>' + kartuInfo + h;
   }
 
   function bagianStatus() {

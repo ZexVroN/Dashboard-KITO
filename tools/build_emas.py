@@ -197,6 +197,50 @@ for a in ATUR["jabatan"]:
             lama = p[2]; teller = a["jabatan"].strip().lower() == "teller"
             p[2], p[4], p[6] = a["jabatan"], "T" if teller else "B", tgt["tabTeller"] if teller else tgt["tabBom"]
             geser(p, +1); ubah.append(f"jabatan {p[0]} ({p[3]}) {lama} -> {p[2]}")
+# daftar induk MENGIKAT ("induk_mengikat": true), sama dengan Informasi Sales Pegawai: susunan pegawai (cabang & jabatan)
+# mengikuti daftar "pegawai" + "pindah" di sales_penyesuaian.json; pegawai Excel di luar daftar tidak ditampilkan,
+# pegawai daftar yang tidak ada di Excel ditampilkan dengan transaksi 0. Transaksi tetap dari Excel.
+if ATUR.get("pegawai") and ATUR.get("induk_mengikat"):
+    sama = lambda x, y: x.strip().upper() == y.strip().upper()
+    induk = [{"nama": a["nama"].strip(), "kode": str(a["kode"]), "jabatan": a.get("jabatan")} for a in ATUR["pegawai"]]
+    induk += [{"nama": a["nama"].strip(), "kode": str(a["ke"]), "jabatan": a.get("jabatan")} for a in ATUR["pindah"]]
+    induk = [e for e in induk if not any(sama(t["nama"], e["nama"]) and (not t.get("dari") or str(t["dari"]) == e["kode"])
+                                         for t in ATUR["takeout"])]
+    induk = [e for e in induk if not any(a.get("dari") and str(a["dari"]) == e["kode"] and str(a["ke"]) != e["kode"]
+                                         and sama(a["nama"], e["nama"]) for a in ATUR["pindah"])]
+    jab_atur = {(a["nama"].strip().upper(), str(a.get("dari") or "")) for a in ATUR["jabatan"]}
+    per_nama = {}
+    for e in induk:
+        per_nama.setdefault(e["nama"].upper(), []).append(e)
+    terpakai, hasil, buang = set(), [], []
+    for p in pegawai:
+        calon = [e for e in per_nama.get(p[0].strip().upper(), []) if id(e) not in terpakai]
+        e = next((c for c in calon if c["kode"] == p[3]), None) or (calon[0] if len(calon) == 1 else None)
+        if e is None:
+            buang.append(p)
+            continue
+        terpakai.add(id(e))
+        if e["kode"] != p[3]:
+            geser(p, -1); ubah.append(f"induk {p[0]} cabang {p[3]} -> {e['kode']}"); p[3] = e["kode"]; geser(p, +1)
+        diatur = (p[0].strip().upper(), "") in jab_atur or (p[0].strip().upper(), p[3]) in jab_atur
+        if e["jabatan"] and not diatur and not sama(e["jabatan"], p[2]):
+            geser(p, -1)
+            teller = e["jabatan"].strip().lower() == "teller"
+            ubah.append(f"induk {p[0]} ({p[3]}) jabatan {p[2]} -> {e['jabatan']}")
+            p[2], p[4], p[6] = e["jabatan"].strip(), "T" if teller else "B", tgt["tabTeller"] if teller else tgt["tabBom"]
+            geser(p, +1)
+        hasil.append(p)
+    for p in buang:
+        geser(p, -1); ubah.append(f"induk {p[0]} ({p[3]}, {p[2]}) tidak di daftar induk -> tidak ditampilkan")
+    for e in induk:
+        if id(e) in terpakai or not e["jabatan"]:
+            continue
+        teller = e["jabatan"].strip().lower() == "teller"
+        p = [e["nama"], "", e["jabatan"].strip(), e["kode"], "T" if teller else "B", 0,
+             tgt["tabTeller"] if teller else tgt["tabBom"], 0, 0, tgt["cetak"], 0]
+        geser(p, +1); hasil.append(p); ubah.append(f"induk {e['nama']} ({e['kode']}) tidak ada di Excel -> transaksi 0")
+    print(f"Daftar induk mengikat: {len(hasil)} pegawai (Excel {len(pegawai)}, tidak ditampilkan {len(buang)})")
+    pegawai[:] = hasil
 for x in ubah:
     print("  penyesuaian:", x)
 

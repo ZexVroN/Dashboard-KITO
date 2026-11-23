@@ -314,6 +314,7 @@ function tipHtml(m,i){
    Tanpa kolom rata-rata dan tanpa peringkat gabungan; baris urut menaik menurut nomor region (I → XII);
    baris diambil berdasarkan kotak pencarian di header (nama / nomor region), kosong = semua 12 region. */
 const kataCari=()=>{const q=document.getElementById('q');return q?q.value.trim().toLowerCase().split(/\s+/).filter(Boolean):[];};
+const chipCari=()=>{const q=document.getElementById('q');const v=q?q.value.trim():'';return v?` · pencarian “<b>${clean(v)}</b>” <button type="button" class="rg-more" data-cari-hapus="1" style="margin:4px 0 0">✕ Hapus pencarian</button>`:'';};
 function rekap(){
   const cols=MET.map(m=>({m,rows:peringkat(m,ui.per)})).map(c=>({...c,map:new Map(c.rows.map(r=>[r.e,r])),n:c.rows.length}));
   // REG sudah berurutan Region I … XII; urutan itu dipakai apa adanya (naik menurut nomor region)
@@ -321,11 +322,13 @@ function rekap(){
   const cmp=cmpEnt();
   const q=(r,n)=>{const z=n>1?(r-1)/(n-1):0;return z<=.25?'q1':z<=.5?'q2':z<=.75?'q3':'q4';};
   const kata=kataCari(),cariAktif=kata.length>0;
-  const tbl=cariAktif?ents.filter(x=>{const t=(nama(x.e)+' '+x.e.nama).toLowerCase();return kata.every(w=>t.includes(w));}):ents;
+  const cocok=cariAktif?ents.filter(x=>{const t=(nama(x.e)+' '+x.e.nama).toLowerCase();return kata.every(w=>t.includes(w));}):ents;
+  // kata pencarian dari halaman Cabang (nama cabang) tidak cocok dengan region: tampilkan semua region, jangan tabel kosong
+  const abaikan=cariAktif&&!cocok.length, tbl=abaikan?ents:cocok;
   const head=`<tr><th class="rg-sticky2" style="left:0">Region</th>${cols.map(c=>`<th title="${clean(c.m.n)}">${clean(c.m.s)}</th>`).join('')}</tr>`;
   const body=tbl.map(x=>`<tr class="${x.e===FOKUS?'on':x.e===cmp?'rx-cmp-row':''}" data-rx-pilih="${clean(x.e.id)}"><td class="rg-sticky2" style="left:0"><b>${clean(nama(x.e))}</b><small>${clean(x.e.nama)}</small></td>${cols.map(c=>{const r=c.map.get(x.e);return r?`<td class="rg-c ${q(r.rk,c.n)}" title="${clean(c.m.n)}: ${clean(c.m.fmt(r.v))}">${r.rk}</td>`:'<td class="rg-na">–</td>';}).join('')}</tr>`).join('')
-    ||`<tr><td colspan="${cols.length+1}" class="rg-na" style="padding:16px;text-align:center">Tidak ada region yang cocok dengan pencarian.</td></tr>`;
-  const info=cariAktif?` Menampilkan <b>${tbl.length}</b> region sesuai pencarian.`:' Ketik nama/nomor region di kotak pencarian atas untuk menyaring tabel.';
+    ||`<tr><td colspan="${cols.length+1}" class="rg-na" style="padding:16px;text-align:center">Tidak ada region yang cocok dengan pencarian “${clean(kata.join(' '))}”. <button type="button" class="rg-more" data-cari-hapus="1">✕ Hapus pencarian</button></td></tr>`;
+  const info=abaikan?` Pencarian “<b>${clean(kata.join(' '))}</b>” tidak cocok dengan nama region, jadi semua region ditampilkan.`:cariAktif?` Menampilkan <b>${tbl.length}</b> region sesuai pencarian${chipCari()}.`:' Ketik nama/nomor region di kotak pencarian atas untuk menyaring tabel.';
   return `<section class="cd" id="rx-rekap"><h2>Rekap Peringkat 12 Region</h2><p class="rg-sub">${ui.per==='mtd'?`MTD ${BULAN}`:`DtD ${isoShort(iso())}`} (O2O & Shifting${emRegion.size?', Informasi Sales':''} MTD). Angka di sel = peringkat region pada indikator tersebut; baris diurutkan menurut nomor region (I → XII).${info}</p><div class="tw rg-tw"><table class="rg-tbl">${head}${body}</table></div><div class="rg-leg"><span><i class="q1"></i>25% teratas</span><span><i class="q2"></i>25–50%</span><span><i class="q3"></i>50–75%</span><span><i class="q4"></i>25% terbawah</span></div><p class="rg-note">Ketuk baris untuk menjadikan region tersebut pembanding.</p></section>`;
 }
 
@@ -404,6 +407,7 @@ app.addEventListener('change',e=>{
   const segarkan=()=>{if(tampil!=='region')return;const el=document.getElementById('rx-rekap');if(el)el.outerHTML=rekap();};
   qEl.addEventListener('input',segarkan);
   qEl.addEventListener('keydown',e=>{if(e.key==='Escape')setTimeout(segarkan,0);});
+  document.addEventListener('click',e=>{if(!e.target.closest('[data-cari-hapus]'))return;qEl.value='';qEl.dispatchEvent(new Event('input',{bubbles:true}));render();});
 })();
 
 render();

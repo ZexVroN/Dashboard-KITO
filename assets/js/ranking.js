@@ -293,6 +293,8 @@ function unduhPegawai(){
    - Baris diambil berdasarkan kotak pencarian di header (nama / kode cabang, atau nama area);
      bila pencarian kosong tampil 15 teratas (+ cabang terpilih) dan tombol "Tampilkan semua". */
 const kataCari=()=>{const q=document.getElementById('q');return q?q.value.trim().toLowerCase().split(/\s+/).filter(Boolean):[];};
+// kata pencarian yang sedang menyaring tabel + tombol hapus (kotak pencarian bisa tersembunyi saat header digulir)
+const chipCari=()=>{const q=document.getElementById('q');const v=q?q.value.trim():'';return v?` · pencarian “<b>${clean(v)}</b>” <button type="button" class="rg-more" data-cari-hapus="1" style="margin:4px 0 0">✕ Hapus pencarian</button>`:'';};
 function rekap(){
   const isArea=ui.level==='area'&&!ui.fokus;
   let cols,ada;
@@ -320,10 +322,10 @@ function rekap(){
   const sel=(c,e)=>{const x=c.map.get(e.id);if(!x)return '<td class="rg-na">–</td>';const q=c.n>1?(x.rk-1)/(c.n-1):0;const k=q<=.25?'q1':q<=.5?'q2':q<=.75?'q3':'q4';return `<td class="rg-c ${k}" title="${clean(c.m.n)}: ${clean(c.m.fmt(x.v))}">${x.rk}</td>`;};
   const head=`<tr><th class="rg-sticky">#</th><th class="rg-sticky2">${isArea?'Area':'Cabang'}</th>${cols.map(c=>`<th title="${clean(c.m.g+' · '+c.m.n)}">${clean(c.m.s)}</th>`).join('')}<th>Rata²</th></tr>`;
   const body=tbl.map(e=>`<tr class="${e.id===meId?'on':''}" ${isArea?`data-rg-area="${clean(e.id)}"`:`data-rg-code="${clean(e.id)}"`}><td class="rg-sticky"><b>${e.rk}</b></td><td class="rg-sticky2"><b>${clean(e.nama)}</b>${e.area&&isRegion()?`<small>${clean(e.area)}</small>`:''}</td>${cols.map(c=>sel(c,e)).join('')}<td><b>${e.avg.toLocaleString('id-ID',{maximumFractionDigits:1})}</b>${e.cnt<cols.length?`<small>${e.cnt}/${cols.length}</small>`:''}</td></tr>`).join('')
-    ||`<tr><td colspan="${cols.length+3}" class="rg-na" style="padding:16px;text-align:center">Tidak ada ${isArea?'area':'cabang'} yang cocok dengan pencarian.</td></tr>`;
+    ||`<tr><td colspan="${cols.length+3}" class="rg-na" style="padding:16px;text-align:center">Tidak ada ${isArea?'area':'cabang'} yang cocok dengan pencarian “${clean(kata.join(' '))}”. <button type="button" class="rg-more" data-cari-hapus="1">✕ Hapus pencarian</button></td></tr>`;
   const more=!isArea&&!cariAktif&&ada.length>LIM?`<button type="button" class="rg-more" data-rg-rekap="1">${ui.rekapSemua?`Tampilkan ${LIM} teratas`:`Tampilkan semua ${ada.length} cabang`}</button>`:'';
   const perTxt=ui.per==='mtd'?'MTD (waktu antri '+(window.KITO_BULAN?window.KITO_BULAN.mtdLabel:'MTD Oktober')+', NBDS MTD Oktober; O2O & Shifting'+(SP||EM?', Informasi Sales':'')+' per tanggal laporan)':`DtD ${isoShort(iso())} (O2O & Shifting per ${isoShort(D.mdate)}${SP?`, Ekstensifikasi & Intensifikasi per ${isoShort(tglSP)}`:''}${EM?`, Program Emas per ${isoShort(tglEM)}`:''})`;
-  const info=cariAktif?`Menampilkan <b>${tbl.length}</b> ${isArea?'area':'cabang'} sesuai pencarian`:`Cari nama/kode ${isArea?'area':'cabang'} di kotak pencarian atas untuk menyaring tabel`;
+  const info=cariAktif?`Menampilkan <b>${tbl.length}</b> ${isArea?'area':'cabang'} sesuai pencarian${chipCari()}`:`Cari nama/kode ${isArea?'area':'cabang'} di kotak pencarian atas untuk menyaring tabel`;
   return `<section class="cd" id="rg-rekap"><h2>Rekap Peringkat Semua Indikator</h2><p class="rg-sub">${perTxt}. Angka di sel = peringkat ${isArea?'area':'cabang'} pada indikator tersebut; kolom # = peringkat gabungan dan Rata² = rata-rata peringkat; diurutkan dari yang terkecil (naik). ${info}.</p><div class="tw rg-tw"><table class="rg-tbl">${head}${body}</table></div>${more}<div class="rg-leg"><span><i class="q1"></i>25% teratas</span><span><i class="q2"></i>25–50%</span><span><i class="q3"></i>50–75%</span><span><i class="q4"></i>25% terbawah</span><span><i class="rg-na-i"></i>tidak ada data</span></div><p class="rg-note">Peringkat gabungan memberi bobot sama pada ${cols.length} indikator. Kolom "Rata²" menampilkan x/${cols.length} bila sebagian indikator tidak tersedia. Ketuk baris untuk membuka ${isArea?'ranking cabang area tersebut':'dashboard cabang'}.</p></section>`;
 }
 
@@ -411,6 +413,7 @@ app.addEventListener('click',e=>{
   const segarkan=()=>{if(tampil!=='ranking')return;const el=document.getElementById('rg-rekap');if(el)el.outerHTML=rekap();};
   qEl.addEventListener('input',segarkan);
   qEl.addEventListener('keydown',e=>{if(e.key==='Escape')setTimeout(segarkan,0);});
+  document.addEventListener('click',e=>{if(!e.target.closest('[data-cari-hapus]'))return;qEl.value='';qEl.dispatchEvent(new Event('input',{bubbles:true}));render();});
 })();
 
 render();

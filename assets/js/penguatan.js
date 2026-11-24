@@ -117,8 +117,60 @@ const PENIPUAN={
   ajakan:'Teruskan pengingat ini ke keluarga dan teman terdekatmu. 📢',
   tagar:['#GEBERPK','#KalauRaguStopDulu'],
 };
+/* ----- berita "Sikap Akhir Layanan & Edukasi Klik Livin’ Food" (24 Nov 2026) ----- */
+const LIVIN={
+  label:'Customer Journey · wajib disampaikan pada Morning Briefing',
+  judul:'Sikap Akhir Layanan & Edukasi Klik Livin’ Food',
+  intro:'Setiap interaksi dengan nasabah adalah kesempatan memberi pengalaman layanan yang berkesan, termasuk saat nasabah selesai bertransaksi dan hendak meninggalkan cabang. Security tidak hanya memberi **salam penutup yang hangat**, tetapi juga **proaktif mengedukasi** kemudahan memesan makanan favorit lewat fitur **Livin’ Food** di Livin’ by Mandiri.',
+  poin:[
+    'Security **wajib** memberikan Sikap Akhir Layanan dengan ramah dan penuh senyum.',
+    '**Konfirmasi** apakah nasabah sudah menggunakan Livin’ by Mandiri.',
+    '**Informasikan** dan tawarkan bantuan kepada nasabah untuk mengakses fitur Livin’ Food.',
+    '**Pandu** nasabah untuk Klik Livin’ Food pada aplikasi Livin’ by Mandiri apabila berkenan.',
+    'Pastikan interaksi **ditutup** dengan ucapan terima kasih dan salam yang hangat.',
+  ],
+  perluasan:[
+    ['Selesai transaksi Ganti Kartu Debit O2O','Bagian dari edukasi layanan digital setelah penggantian kartu debit.'],
+    ['Nasabah menunggu antrean CS & Teller','Manfaatkan waktu tunggu untuk memperkenalkan dan memandu akses fitur Livin’ Food, tanpa membuat nasabah melewatkan panggilan.'],
+  ],
+  catatan:'Edukasi dilakukan secara ramah, proaktif, dan **tidak memaksa**, dengan tetap mengutamakan kenyamanan nasabah. Mohon dukungan Bapak/Ibu **BOM/BOS** meneruskan informasi ini ke seluruh cabang dan memastikan materi disampaikan pada Morning Briefing.',
+  penutup:'Security bukan sekadar menyambut dan melepas nasabah, tetapi bagian dari pengalaman layanan yang berkesan sekaligus menghadirkan kemudahan digital Bank Mandiri.',
+  tagar:['Service yang Me-Menangkan 💪🏻','#Salam1ServiceMandiri'],
+  gambar:'assets/images/livin-food-sikap-akhir.jpg',
+};
+const PESAN_LIVIN=`✨ Semangat pagi, Bapak, Ibu, dan Kakak-Kakak Leader Service yang Me-Menangkan.
+
+Terlampir panduan “Sikap Akhir Layanan & Edukasi Klik Livin’ Food” yang wajib disampaikan pada Morning Briefing di seluruh cabang.
+
+Setiap interaksi dengan nasabah adalah kesempatan untuk memberikan pengalaman layanan yang berkesan, termasuk saat nasabah selesai bertransaksi dan hendak meninggalkan cabang.
+
+Melalui Sikap Akhir Layanan, Security diharapkan tidak hanya memberikan salam penutup yang hangat, tetapi juga secara proaktif mengedukasi nasabah mengenai kemudahan memesan makanan favorit melalui fitur Livin’ Food pada aplikasi Livin’ by Mandiri.
+
+📌 Poin Penguatan:
+1. Security wajib memberikan Sikap Akhir Layanan dengan ramah dan penuh senyum.
+2. Konfirmasi apakah nasabah sudah menggunakan Livin’ by Mandiri.
+3. Informasikan dan tawarkan bantuan kepada nasabah untuk mengakses fitur Livin’ Food.
+4. Pandu nasabah untuk Klik Livin’ Food pada aplikasi Livin’ by Mandiri apabila berkenan.
+5. Pastikan interaksi ditutup dengan ucapan terima kasih dan salam yang hangat.
+
+📌 Perluasan Aktivitas Edukasi Klik Livin’ Food
+
+Selain pada saat Sikap Akhir Layanan, aktivitas edukasi Klik Livin’ Food juga dapat dilakukan kepada nasabah:
+1. Selesai Transaksi Ganti Kartu Debit O2O, sebagai bagian dari edukasi layanan digital setelah penggantian kartu debit.
+2. Nasabah yang sedang menunggu antrean CS dan Teller, dengan memanfaatkan waktu tunggu untuk memperkenalkan serta memandu nasabah mengakses fitur Livin’ Food.
+
+Pastikan edukasi dilakukan secara ramah, proaktif, dan tidak memaksa, dengan tetap mengutamakan kenyamanan nasabah.
+
+Mohon dukungan Bapak Ibu BOM/BOS untuk meneruskan informasi ini ke seluruh cabang dan memastikan materi disampaikan pada Morning Briefing.
+
+Security bukan sekadar menyambut dan melepas nasabah, tetapi menjadi bagian dari pengalaman layanan yang berkesan sekaligus menghadirkan kemudahan digital Bank Mandiri.
+
+Service yang Me-Menangkan 💪🏻
+
+#Salam1ServiceMandiri 🙏`;
+
 /* teks yang dibagikan (WhatsApp / bagikan bawaan HP) */
-const PESAN_PENIPUAN=`Satu pesan kecil bisa menyelamatkan orang terdekat dari penipuan digital. 💙
+const PESAN_PENIPUAN_ASLI=`Satu pesan kecil bisa menyelamatkan orang terdekat dari penipuan digital. 💙
 
 Yuk, saling mengingatkan:
 * Jangan bagikan OTP, PIN, atau kata sandi kepada siapa pun.
@@ -136,7 +188,10 @@ const INFO={
   intro:'Kumpulan informasi & pengingat kewaspadaan **operasional cabang**. Ketuk informasi untuk membaca selengkapnya.',
 };
 const BERITA=[
-  {id:'penipuan', ik:'pesan', warna:'biru', baru:true, kat:'Edukasi Nasabah', tgl:'16 Nov 2026',
+  {id:'livin', ik:'pesan', warna:'emas', baru:true, kat:'Customer Journey · Morning Briefing', tgl:'24 Nov 2026',
+   judul:'Sikap Akhir Layanan & Edukasi Klik Livin’ Food',
+   ringkas:'Panduan wajib Morning Briefing: Security menutup layanan dengan hangat dan mengedukasi nasabah fitur Livin’ Food, juga saat selesai ganti kartu O2O dan saat menunggu antrean CS/Teller.'},
+  {id:'penipuan', ik:'pesan', warna:'biru', kat:'Edukasi Nasabah', tgl:'16 Nov 2026',
    judul:'Saling Ingatkan Bahaya Penipuan Digital',
    ringkas:'Jangan bagikan OTP, PIN, atau kata sandi; waspadai tautan asing & permintaan transfer mendesak; verifikasi lewat kanal resmi. Teruskan ke keluarga & teman.'},
   {id:'setor', ik:'angin', warna:'merah', kat:'Reminder Kewaspadaan', tgl:'',
@@ -292,6 +347,7 @@ function isiPenipuan(){
 /* tombol bagikan: lembar bagikan bawaan HP bila ada, selain itu WhatsApp; "Salin pesan" ke papan klip */
 document.addEventListener('click',e=>{
   const b=e.target.closest('[data-pgn-bagikan]');if(!b)return;
+  const PESAN_PENIPUAN=b.dataset.pgnTeks==='livin'?PESAN_LIVIN:PESAN_PENIPUAN_ASLI;   // teks yang dibagikan sesuai beritanya
   const st=b.closest('.pgn-panel,body').querySelector('.pn-status');
   const lapor=t=>{if(st){st.textContent=t;clearTimeout(st._t);st._t=setTimeout(()=>{st.textContent='';},3500);}};
   const salin=()=>{
@@ -303,7 +359,29 @@ document.addEventListener('click',e=>{
   const wa=()=>{const w=window.open('https://wa.me/?text='+encodeURIComponent(PESAN_PENIPUAN),'_blank','noopener');if(!w)location.href='https://wa.me/?text='+encodeURIComponent(PESAN_PENIPUAN);};
   if(navigator.share)navigator.share({text:PESAN_PENIPUAN}).catch(err=>{if(err&&err.name!=='AbortError')wa();});else wa();
 });
-const HALAMAN={daftar:isiDaftar,penguatan:isiPenguatan,setor:isiSetor,penipuan:isiPenipuan};
+/* halaman berita Sikap Akhir Layanan & Edukasi Klik Livin’ Food */
+function isiLivin(){
+  const s=LIVIN;
+  return `<div class="pgn-hero lv-hero">
+      <span class="pgn-hero-ik">${IKON.pesan}</span>
+      <span class="pgn-hero-lbl">${esc(s.label)}</span>
+      <h2 class="pgn-hero-j" id="pgn-judul" tabindex="-1">${esc(s.judul)}</h2>
+      <p class="pgn-hero-intro">${tebal(s.intro)}</p>
+    </div>
+    <a class="lv-gbr" href="${s.gambar}" target="_blank" rel="noopener"><img src="${s.gambar}" alt="Infografis Customer Journey: Sikap Akhir Layanan dan Edukasi Klik Livin’ Food, 4 langkah dari skenario awal interaksi sampai sikap akhir layanan" loading="lazy" width="900" height="1600"><span>Ketuk untuk memperbesar infografis</span></a>
+    <h3 class="lv-j">📌 Poin Penguatan</h3>
+    <div class="pn-list">${s.poin.map((t,i)=>`<article class="pn-tip"><span class="pn-tip-no lv-no">${i+1}</span><div><p>${tebal(t)}</p></div></article>`).join('')}</div>
+    <h3 class="lv-j">📌 Perluasan Aktivitas Edukasi Klik Livin’ Food</h3>
+    <div class="pn-list">${s.perluasan.map((t,i)=>`<article class="pn-tip"><span class="pn-tip-no lv-no">${i+1}</span><div><b>${esc(t[0])}</b><p>${esc(t[1])}</p></div></article>`).join('')}</div>
+    <div class="pn-ajak"><span class="pn-ajak-ik">${IKON.bagikan}</span><div><p class="lv-p">${tebal(s.catatan)}</p><p class="lv-p"><b>${esc(s.penutup)}</b></p>
+      <div class="pn-tagar">${s.tagar.map(t=>`<span>${esc(t)}</span>`).join('')}</div></div></div>
+    <div class="pn-aksi">
+      <button type="button" class="pn-btn pn-wa" data-pgn-bagikan="wa" data-pgn-teks="livin">${IKON.pesan}<span>Bagikan</span></button>
+      <button type="button" class="pn-btn" data-pgn-bagikan="salin" data-pgn-teks="livin">${IKON.salin}<span>Salin pesan</span></button>
+    </div>
+    <p class="pn-status" role="status" aria-live="polite"></p>`;
+}
+const HALAMAN={daftar:isiDaftar,penguatan:isiPenguatan,setor:isiSetor,penipuan:isiPenipuan,livin:isiLivin};
 function isiDetail(hal){
   const detail=hal!=='daftar';
   return `<div class="pgn-xbar">${detail?`<button type="button" class="pgn-back" data-pgn-kembali aria-label="Kembali ke Informasi Highlight Issue Operasional">${IKON.kembali}<span>Kembali</span></button>`:''}

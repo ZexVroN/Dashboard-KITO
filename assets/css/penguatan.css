@@ -242,3 +242,17 @@ html.pgn-kunci,html.pgn-kunci body{overflow:hidden}
 [data-theme="dark"] .pn-btn:not(.pn-wa){background:var(--cd);border-color:var(--ln)}
 [data-theme="dark"] .pn-status{color:#4ade80}
 [data-theme="dark"] .pgn-brt-biru .pgn-brt-kat{color:#7cb7ff}
+
+/* ===== berita "Sikap Akhir Layanan & Edukasi Klik Livin’ Food" ===== */
+.pgn-brt-emas .pgn-brt-th{background:linear-gradient(160deg,#f5b800,#e08a00);color:#14213d}
+.pgn-brt-emas .pgn-brt-kat{color:#9a5b00}
+[data-theme="dark"] .pgn-brt-emas .pgn-brt-kat{color:#f5c84b}
+.lv-hero{background:linear-gradient(150deg,#0b3a8f,#1d4ed8 55%,#e0a100)}
+.lv-gbr{display:block;margin-top:14px;border-radius:16px;overflow:hidden;border:1px solid var(--ln,#dfe5ef);background:var(--cd,#fff);text-decoration:none;color:inherit}
+.lv-gbr img{display:block;width:100%;height:auto}
+.lv-gbr span{display:block;padding:8px 12px;font-size:12.5px;font-weight:700;color:#1d4ed8;text-align:center}
+.lv-j{margin:18px 0 0;font-size:15.5px;font-weight:800;color:var(--tx,#0f2a5c)}
+.lv-no{flex:none;width:28px;height:28px;font-size:13px;margin:0}
+.lv-p{margin:0 0 6px;font-size:13.5px;line-height:1.55}
+[data-theme="dark"] .lv-j{color:#e5edff}
+[data-theme="dark"] .lv-gbr span{color:#93c5fd}

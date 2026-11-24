@@ -229,8 +229,10 @@ const IKON={
   gedung:S('<path d="M3 10l9-6 9 6"/><path d="M5 10v9M19 10v9M9.5 10v9M14.5 10v9M3 20h18"/>'),
   bendera:S('<path d="M5 21V4"/><path d="M5 4h11l-2 4 2 4H5"/>'),
   panah:S('<path d="M9 6l6 6-6 6"/>'),
+  kiri:S('<path d="M15 6l-6 6 6 6"/>'),
   pesan:S('<path d="M4 5h16a1 1 0 011 1v10a1 1 0 01-1 1H9l-5 4V6a1 1 0 011-1z"/><path d="M12 14.2l-2.6-2.5a1.6 1.6 0 012.6-1.9 1.6 1.6 0 012.6 1.9L12 14.2z"/>'),
   bagikan:S('<circle cx="18" cy="5" r="2.5"/><circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="19" r="2.5"/><path d="M8.2 10.8l7.6-4.4M8.2 13.2l7.6 4.4"/>'),
+  unduh:S('<path d="M12 4v11"/><path d="M7 10l5 5 5-5"/><path d="M5 20h14"/>'),
   salin:S('<rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V6a2 2 0 00-2-2H6a2 2 0 00-2 2v8a2 2 0 002 2h2"/>'),
 };
 const tebal=t=>esc(t).replace(/\*\*(.+?)\*\*/g,'<b>$1</b>');
@@ -368,7 +370,7 @@ function isiLivin(){
       <h2 class="pgn-hero-j" id="pgn-judul" tabindex="-1">${esc(s.judul)}</h2>
       <p class="pgn-hero-intro">${tebal(s.intro)}</p>
     </div>
-    <a class="lv-gbr" href="${s.gambar}" target="_blank" rel="noopener"><img src="${s.gambar}" alt="Infografis Customer Journey: Sikap Akhir Layanan dan Edukasi Klik Livin’ Food, 4 langkah dari skenario awal interaksi sampai sikap akhir layanan" loading="lazy" width="900" height="1600"><span>Ketuk untuk memperbesar infografis</span></a>
+    <a class="lv-gbr" href="${s.gambar}" data-pgn-gambar="${s.gambar}" data-pgn-nama="Sikap-Akhir-Layanan-Livin-Food.jpg"><img src="${s.gambar}" alt="Infografis Customer Journey: Sikap Akhir Layanan dan Edukasi Klik Livin’ Food, 4 langkah dari skenario awal interaksi sampai sikap akhir layanan" loading="lazy" width="900" height="1600"><span>Ketuk untuk membuka, zoom &amp; unduh infografis</span></a>
     <h3 class="lv-j">📌 Poin Penguatan</h3>
     <div class="pn-list">${s.poin.map((t,i)=>`<article class="pn-tip"><span class="pn-tip-no lv-no">${i+1}</span><div><p>${tebal(t)}</p></div></article>`).join('')}</div>
     <h3 class="lv-j">📌 Perluasan Aktivitas Edukasi Klik Livin’ Food</h3>
@@ -475,6 +477,66 @@ function tutupDetail(digeser=false){
     }
   },durasi);
 }
+/* ----- penampil gambar: zoom (pas layar / 100% / + / −), unduh, kembali ----- */
+let lihat=null;
+function bukaGambar(src,nama,alt){
+  tutupGambar();
+  const el=document.createElement('div');
+  el.className='lg';el.setAttribute('role','dialog');el.setAttribute('aria-modal','true');el.setAttribute('aria-label','Pratinjau gambar');
+  el.innerHTML=`<div class="lg-bar">
+      <button type="button" class="lg-btn lg-kembali" data-lg="kembali" aria-label="Kembali ke halaman">${IKON.kiri}<span>Kembali</span></button>
+      <span class="lg-sp"></span>
+      <button type="button" class="lg-btn" data-lg="kecil" aria-label="Perkecil">−</button>
+      <button type="button" class="lg-btn lg-pct" data-lg="pas" aria-label="Pas layar / 100%">Pas</button>
+      <button type="button" class="lg-btn" data-lg="besar" aria-label="Perbesar">+</button>
+      <button type="button" class="lg-btn" data-lg="100" aria-label="Ukuran asli 100%">100%</button>
+      <a class="lg-btn lg-unduh" href="${src}" download="${esc(nama)}" aria-label="Unduh gambar">${IKON.unduh}<span>Unduh</span></a>
+    </div>
+    <div class="lg-area"><img src="${src}" alt="${esc(alt||'')}" draggable="false"></div>`;
+  document.body.appendChild(el);
+  const img=el.querySelector('img'),area=el.querySelector('.lg-area'),pct=el.querySelector('.lg-pct');
+  const st={z:0,pas:true};
+  const pasZ=()=>Math.min(1,(area.clientWidth-16)/img.naturalWidth,(area.clientHeight-16)/img.naturalHeight);
+  const atur=(z,pas)=>{
+    st.pas=!!pas; st.z=pas?pasZ():Math.max(.1,Math.min(4,z));
+    img.style.width=Math.round(img.naturalWidth*st.z)+'px';
+    pct.textContent=st.pas?'Pas':Math.round(st.z*100)+'%';
+    area.classList.toggle('lg-tengah',img.offsetWidth<=area.clientWidth);
+  };
+  const siap=()=>atur(0,true);
+  if(img.complete&&img.naturalWidth)siap();else img.addEventListener('load',siap,{once:true});
+  el.addEventListener('click',e=>{
+    const b=e.target.closest('[data-lg]');if(!b)return;
+    const k=b.dataset.lg;
+    if(k==='kembali')return tutupGambar();
+    if(k==='kecil')atur(st.z/1.25);
+    if(k==='besar')atur(st.z*1.25);
+    if(k==='100')atur(1);
+    if(k==='pas')st.pas?atur(1):atur(0,true);
+  });
+  img.addEventListener('dblclick',()=>st.pas?atur(1):atur(0,true));
+  // geser dengan mouse (sentuh: gulir bawaan)
+  let tarik=null;
+  area.addEventListener('mousedown',e=>{tarik={x:e.clientX,y:e.clientY,l:area.scrollLeft,t:area.scrollTop};area.classList.add('lg-tarik');e.preventDefault();});
+  window.addEventListener('mousemove',lihat_gerak=e=>{if(!tarik)return;area.scrollLeft=tarik.l-(e.clientX-tarik.x);area.scrollTop=tarik.t-(e.clientY-tarik.y);});
+  window.addEventListener('mouseup',lihat_lepas=()=>{tarik=null;area.classList.remove('lg-tarik');});
+  window.addEventListener('resize',lihat_ukur=()=>{if(st.pas)atur(0,true);});
+  lihat={el,fokus:document.activeElement};
+  document.documentElement.classList.add('lg-buka');
+  el.querySelector('.lg-kembali').focus();
+}
+let lihat_gerak,lihat_lepas,lihat_ukur;
+function tutupGambar(){
+  if(!lihat)return;
+  window.removeEventListener('mousemove',lihat_gerak);window.removeEventListener('mouseup',lihat_lepas);window.removeEventListener('resize',lihat_ukur);
+  const f=lihat.fokus;lihat.el.remove();lihat=null;document.documentElement.classList.remove('lg-buka');
+  if(f&&f.focus)f.focus();
+}
+document.addEventListener('click',e=>{
+  const a=e.target.closest('[data-pgn-gambar]');if(!a)return;
+  e.preventDefault();bukaGambar(a.dataset.pgnGambar,a.dataset.pgnNama||'gambar.jpg',a.querySelector('img')?.alt);
+});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&lihat){tutupGambar();e.stopImmediatePropagation();}},true);
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&panel)tutupDetail();});
 
 /* ===== tutup notifikasi (geser / tombol ×) =====

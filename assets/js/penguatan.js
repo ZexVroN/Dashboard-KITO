@@ -485,23 +485,33 @@ function bukaGambar(src,nama,alt){
   el.className='lg';el.setAttribute('role','dialog');el.setAttribute('aria-modal','true');el.setAttribute('aria-label','Pratinjau gambar');
   el.innerHTML=`<div class="lg-bar">
       <button type="button" class="lg-btn lg-kembali" data-lg="kembali" aria-label="Kembali ke halaman">${IKON.kiri}<span>Kembali</span></button>
-      <span class="lg-sp"></span>
-      <button type="button" class="lg-btn" data-lg="kecil" aria-label="Perkecil">−</button>
-      <button type="button" class="lg-btn lg-pct" data-lg="pas" aria-label="Pas layar / 100%">Pas</button>
-      <button type="button" class="lg-btn" data-lg="besar" aria-label="Perbesar">+</button>
-      <button type="button" class="lg-btn" data-lg="100" aria-label="Ukuran asli 100%">100%</button>
+      <span class="lg-judul">${esc(alt||'Infografis')}</span>
+      <div class="lg-zoom" role="group" aria-label="Zoom gambar">
+        <button type="button" class="lg-btn" data-lg="kecil" aria-label="Perkecil">−</button>
+        <button type="button" class="lg-btn lg-pct" data-lg="pas" aria-label="Pas layar / 100%">Pas</button>
+        <button type="button" class="lg-btn" data-lg="besar" aria-label="Perbesar">+</button>
+        <button type="button" class="lg-btn lg-100" data-lg="100" aria-label="Ukuran asli 100%">100%</button>
+      </div>
       <a class="lg-btn lg-unduh" href="${src}" download="${esc(nama)}" aria-label="Unduh gambar">${IKON.unduh}<span>Unduh</span></a>
     </div>
-    <div class="lg-area"><img src="${src}" alt="${esc(alt||'')}" draggable="false"></div>`;
+    <div class="lg-area"><img src="${src}" alt="${esc(alt||'')}" draggable="false"></div>
+    <div class="lg-tip" aria-hidden="true">Cubit 2 jari untuk zoom · ketuk 2x untuk perbesar</div>`;
   document.body.appendChild(el);
   const img=el.querySelector('img'),area=el.querySelector('.lg-area'),pct=el.querySelector('.lg-pct');
   const st={z:0,pas:true};
   const pasZ=()=>Math.min(1,(area.clientWidth-16)/img.naturalWidth,(area.clientHeight-16)/img.naturalHeight);
-  const atur=(z,pas)=>{
+  // atur(z, pas, titik) — titik {x,y} (koordinat layar) dipertahankan di bawah jari/kursor
+  const atur=(z,pas,titik)=>{
+    const ra=area.getBoundingClientRect(),ri=img.getBoundingClientRect();
+    const tx=titik?titik.x:ra.left+area.clientWidth/2, ty=titik?titik.y:ra.top+area.clientHeight/2;
+    const fx=ri.width?(tx-ri.left)/ri.width:.5, fy=ri.height?(ty-ri.top)/ri.height:.5;
     st.pas=!!pas; st.z=pas?pasZ():Math.max(.1,Math.min(4,z));
-    img.style.width=Math.round(img.naturalWidth*st.z)+'px';
+    const w=Math.round(img.naturalWidth*st.z),h=Math.round(img.naturalHeight*st.z);
+    img.style.width=w+'px';
     pct.textContent=st.pas?'Pas':Math.round(st.z*100)+'%';
     area.classList.toggle('lg-tengah',img.offsetWidth<=area.clientWidth);
+    area.scrollLeft=img.offsetLeft+fx*w-(tx-ra.left);
+    area.scrollTop=img.offsetTop+fy*h-(ty-ra.top);
   };
   const siap=()=>atur(0,true);
   if(img.complete&&img.naturalWidth)siap();else img.addEventListener('load',siap,{once:true});
@@ -509,18 +519,47 @@ function bukaGambar(src,nama,alt){
     const b=e.target.closest('[data-lg]');if(!b)return;
     const k=b.dataset.lg;
     if(k==='kembali')return tutupGambar();
-    if(k==='kecil')atur(st.z/1.25);
+    if(k==='kecil'){const z=st.z/1.25;z<pasZ()&&!st.pas&&st.z>pasZ()+.001?atur(0,true):atur(z);}
     if(k==='besar')atur(st.z*1.25);
     if(k==='100')atur(1);
     if(k==='pas')st.pas?atur(1):atur(0,true);
   });
-  img.addEventListener('dblclick',()=>st.pas?atur(1):atur(0,true));
-  // geser dengan mouse (sentuh: gulir bawaan)
+  const zoomKe=t=>st.pas?atur(Math.max(1,pasZ()*2.5),false,t):atur(0,true);
+  img.addEventListener('dblclick',e=>zoomKe({x:e.clientX,y:e.clientY}));
+  // khusus layar sentuh: cubit (2 jari) untuk zoom, ketuk 2x untuk perbesar/pas, 1 jari menggeser (gulir bawaan)
+  let cubit=null,ketukAkhir=0;
+  const jarak=t=>Math.hypot(t[0].clientX-t[1].clientX,t[0].clientY-t[1].clientY);
+  const tengah=t=>({x:(t[0].clientX+t[1].clientX)/2,y:(t[0].clientY+t[1].clientY)/2});
+  area.addEventListener('touchstart',e=>{
+    if(e.touches.length===2){cubit={d:jarak(e.touches),z:st.z};e.preventDefault();return;}
+    if(e.touches.length===1&&!cubit){
+      const now=Date.now(),t=e.touches[0];
+      if(now-ketukAkhir<300){e.preventDefault();ketukAkhir=0;zoomKe({x:t.clientX,y:t.clientY});}
+      else ketukAkhir=now;
+    }
+  },{passive:false});
+  area.addEventListener('touchmove',e=>{
+    if(!cubit||e.touches.length<2)return;
+    e.preventDefault();ketukAkhir=0;
+    const z=cubit.z*jarak(e.touches)/cubit.d;
+    if(Math.abs(z-st.z)>.004)atur(z,false,tengah(e.touches));
+  },{passive:false});
+  const akhirCubit=e=>{
+    if(!cubit||e.touches.length>=2)return;
+    cubit=null;
+    if(st.z<=pasZ()+.001)atur(0,true);   // terlalu kecil → kembali pas layar
+  };
+  area.addEventListener('touchend',akhirCubit);area.addEventListener('touchcancel',akhirCubit);
+  el.addEventListener('gesturestart',e=>e.preventDefault());   // iOS Safari: cegah zoom halaman
+  el.addEventListener('gesturechange',e=>e.preventDefault());
+  // geser dengan mouse
   let tarik=null;
   area.addEventListener('mousedown',e=>{tarik={x:e.clientX,y:e.clientY,l:area.scrollLeft,t:area.scrollTop};area.classList.add('lg-tarik');e.preventDefault();});
   window.addEventListener('mousemove',lihat_gerak=e=>{if(!tarik)return;area.scrollLeft=tarik.l-(e.clientX-tarik.x);area.scrollTop=tarik.t-(e.clientY-tarik.y);});
   window.addEventListener('mouseup',lihat_lepas=()=>{tarik=null;area.classList.remove('lg-tarik');});
   window.addEventListener('resize',lihat_ukur=()=>{if(st.pas)atur(0,true);});
+  const tip=el.querySelector('.lg-tip'),hilangTip=()=>tip&&tip.classList.add('lg-tip-hilang');
+  setTimeout(hilangTip,3500);area.addEventListener('touchstart',hilangTip,{passive:true,once:true});
   lihat={el,fokus:document.activeElement};
   document.documentElement.classList.add('lg-buka');
   el.querySelector('.lg-kembali').focus();

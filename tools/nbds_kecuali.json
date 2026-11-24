@@ -1,4 +1,5 @@
 {
   "_keterangan": "Tanggal Utilisasi NBDS yang TIDAK ditampilkan di dashboard (tanggal: alasan). Diterapkan otomatis oleh tools/update_harian_p95.py setiap --nbds, atau manual: python tools/nbds_kecualikan.py",
-  "2026-11-13": "data tidak ada dari OBO"
+  "2026-11-13": "data tidak ada dari OBO",
+  "2026-11-18": "data tidak ada dari OBO"
 }

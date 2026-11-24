@@ -265,7 +265,7 @@ def baca_nbds_region(path, bulan_pilih=None):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--antrian", required=True)
+    ap.add_argument("--antrian", help="kosongkan bila laporan antrian belum ada (waktu antri tetap memakai data terakhir)")
     ap.add_argument("--o2o", required=True)
     ap.add_argument("--nbds", help="kosongkan bila laporan NBDS belum ada (NBDS tetap memakai data terakhir)")
     ap.add_argument("--lewati-nbds-area", action="store_true", help="jangan jalankan convert_nbds_bankwide.py")
@@ -282,7 +282,11 @@ def main():
     if a.nbds and not a.lewati_nbds_area:
         subprocess.run([sys.executable, os.path.join("tools", "convert_nbds_bankwide.py"), a.nbds], check=True)
 
-    tgl, cab, area_q, reg_q = baca_antrian(a.antrian)
+    if a.antrian:
+        tgl, cab, area_q, reg_q = baca_antrian(a.antrian)
+    else:
+        tgl, cab, area_q, reg_q = None, {}, {}, {}
+        print("Antrian dilewati: waktu antri tetap memakai data terakhir.")
     O = baca_o2o(a.o2o)
     if a.nbds:
         nbds_reg, tgl_nbds, bulan, bulan_lalu = baca_nbds_region(a.nbds)
@@ -293,21 +297,22 @@ def main():
     # ===== data.js =====
     D, nl_d = baca_js(JS + "data.js", "const D = ")
     kode_ke_i = {str(b[0]): i for i, b in enumerate(D["B"])}
-    kurang = [k for k in kode_ke_i if k not in cab]
+    kurang = [k for k in kode_ke_i if k not in cab] if tgl else []
     if kurang:
         print("PERINGATAN: cabang tidak ada di laporan antrian:", kurang)
-    if tgl not in D["dates"]:
-        D["dates"].append(tgl)
-        D["dates"].sort()
-    j = D["dates"].index(tgl)
-    for i, b in enumerate(D["B"]):
-        v = cab.get(str(b[0]), {}).get("v", [None, None, None])
-        seri = D["Q"][i]
-        while len(seri) < len(D["dates"]):
-            seri.append(None)
-        seri[j] = v
-        D["Q"][i] = seri
-    D.setdefault("queueMetricByDate", {})[tgl] = "P95"
+    if tgl:
+        if tgl not in D["dates"]:
+            D["dates"].append(tgl)
+            D["dates"].sort()
+        j = D["dates"].index(tgl)
+        for i, b in enumerate(D["B"]):
+            v = cab.get(str(b[0]), {}).get("v", [None, None, None])
+            seri = D["Q"][i]
+            while len(seri) < len(D["dates"]):
+                seri.append(None)
+            seri[j] = v
+            D["Q"][i] = seri
+        D.setdefault("queueMetricByDate", {})[tgl] = "P95"
 
     beda_m = 0
     for kode, i in kode_ke_i.items():
@@ -328,33 +333,34 @@ def main():
     D["mdate"] = O["tgl"]
     tulis_js(JS + "data.js", "const D = ", D, nl_d)
 
-    # ===== area-waktu-data.js =====
-    W, nl_w = baca_js(JS + "area-waktu-data.js", "window.KITO_AREA_WAKTU=")
+    if tgl:
+        # ===== area-waktu-data.js =====
+        W, nl_w = baca_js(JS + "area-waktu-data.js", "window.KITO_AREA_WAKTU=")
 
-    def baris(v):  # urutan fields: T single, T multipel, Teller, CS single, CS multipel, CS, All Trx
-        return [None, None, v[0], None, None, v[1], v[2]]
-    for ent in W["areas"]:
-        v = area_q.get(norm(ent["name"]))
-        if v is None:
-            print("PERINGATAN: area tidak ditemukan di laporan antrian:", ent["name"])
-            continue
-        ent["d"][tgl] = baris(v)
-    r2v = reg_q[R2]["v"]
-    W["region"]["d"][tgl] = baris(r2v)
-    if tgl not in W["dates"]:
-        W["dates"].append(tgl)
-        W["dates"].sort()
-    W["tanggal"] = tgl
-    W.setdefault("metricByDate", {})[tgl] = "P95"
-    W["sumber"] = f"{nama_file(a.antrian)} · P95 {tgl}, historis P90"
+        def baris(v):  # urutan fields: T single, T multipel, Teller, CS single, CS multipel, CS, All Trx
+            return [None, None, v[0], None, None, v[1], v[2]]
+        for ent in W["areas"]:
+            v = area_q.get(norm(ent["name"]))
+            if v is None:
+                print("PERINGATAN: area tidak ditemukan di laporan antrian:", ent["name"])
+                continue
+            ent["d"][tgl] = baris(v)
+        r2v = reg_q[R2]["v"]
+        W["region"]["d"][tgl] = baris(r2v)
+        if tgl not in W["dates"]:
+            W["dates"].append(tgl)
+            W["dates"].sort()
+        W["tanggal"] = tgl
+        W.setdefault("metricByDate", {})[tgl] = "P95"
+        W["sumber"] = f"{nama_file(a.antrian)} · P95 {tgl}, historis P90"
 
-    # ===== area-kelompok-data.js: DtD = P95 tanggal baru =====
-    K, nl_k = baca_js(JS + "area-kelompok-data.js", "window.KITO_AREA_KELOMPOK=")
-    for r in K:
-        v = cab.get(str(r["kode"]), {}).get("v")
-        if v:
-            r["dtd"] = {"teller": v[0], "cs": v[1], "all": v[2]}
-    tulis_js(JS + "area-kelompok-data.js", "window.KITO_AREA_KELOMPOK=", K, nl_k)
+        # ===== area-kelompok-data.js: DtD = P95 tanggal baru =====
+        K, nl_k = baca_js(JS + "area-kelompok-data.js", "window.KITO_AREA_KELOMPOK=")
+        for r in K:
+            v = cab.get(str(r["kode"]), {}).get("v")
+            if v:
+                r["dtd"] = {"teller": v[0], "cs": v[1], "all": v[2]}
+        tulis_js(JS + "area-kelompok-data.js", "window.KITO_AREA_KELOMPOK=", K, nl_k)
 
     # ===== area-o2o-data.js =====
     AO, nl_o = baca_js(JS + "area-o2o-data.js", "window.KITO_AREA_O2O=")
@@ -372,7 +378,7 @@ def main():
         if q:
             e["waktu"]["d"][tgl] = q["v"]
             e["waktu"].setdefault("n", {})[tgl] = q["n"]
-        else:
+        elif tgl:
             print("PERINGATAN: region tidak ditemukan di laporan antrian:", key)
         if key in nbds_reg:
             e["nbds"] = nbds_reg[key]
@@ -380,47 +386,51 @@ def main():
             e["o2o"] = O["reg_o2o"][key]
         if key in O["reg_ch"]:
             e["ch"] = O["reg_ch"][key]
-    R["tglWaktu"] = sorted(set(R["tglWaktu"]) | {tgl})
+    if tgl:
+        R["tglWaktu"] = sorted(set(R["tglWaktu"]) | {tgl})
     if tgl_nbds:
         R["tglNbds"], R["bulan"], R["bulanLalu"] = tgl_nbds, bulan, bulan_lalu
     tgl_nbds = R["tglNbds"]
     R["tglO2O"] = O["tgl"]
-    R["tanggal"] = max(tgl, tgl_nbds[-1])
-    R.setdefault("queueMetricByDate", {})[tgl] = "P95"
+    R["tanggal"] = max(tgl or R["tglWaktu"][-1], tgl_nbds[-1])
+    if tgl:
+        R.setdefault("queueMetricByDate", {})[tgl] = "P95"
     R["sumber"] = {
-        "waktu": f"{nama_file(a.antrian)} · DtD {tgl} P95 seluruh 12 Region; MTD dan riwayat sampai 26 Okt P90",
+        "waktu": (f"{nama_file(a.antrian)} · DtD {tgl} P95 seluruh 12 Region; MTD dan riwayat sampai 26 Okt P90"
+                  if tgl else (R.get("sumber") or {}).get("waktu", "")),
         "nbds": (f"{nama_file(a.nbds)} · sheet Region · DtD dan MTD s.d. {tgl_nbds[-1]} · 12 Region + Bankwide"
                  if a.nbds else (R.get("sumber") or {}).get("nbds", "")),
         "o2o": nama_file(a.o2o),
     }
     tulis_js(JS + "region-data.js", "window.KITO_REGION=", R, nl_r)
 
-    # sinkronkan Region II di area-waktu dengan region-data (sumber sama: sheet Region laporan antrian)
-    r2e = semua[R2]["waktu"]["d"]
-    diperbaiki = []
-    for t, v in r2e.items():
-        cur = W["region"]["d"].get(t)
-        if cur and [cur[2], cur[5], cur[6]] != [v[0], v[1], v[2]]:
-            diperbaiki.append((t, [cur[2], cur[5], cur[6]], v))
-            W["region"]["d"][t] = baris(v)
-    tulis_js(JS + "area-waktu-data.js", "window.KITO_AREA_WAKTU=", W, nl_w)
+    if tgl:
+        # sinkronkan Region II di area-waktu dengan region-data (sumber sama: sheet Region laporan antrian)
+        r2e = semua[R2]["waktu"]["d"]
+        diperbaiki = []
+        for t, v in r2e.items():
+            cur = W["region"]["d"].get(t)
+            if cur and [cur[2], cur[5], cur[6]] != [v[0], v[1], v[2]]:
+                diperbaiki.append((t, [cur[2], cur[5], cur[6]], v))
+                W["region"]["d"][t] = baris(v)
+        tulis_js(JS + "area-waktu-data.js", "window.KITO_AREA_WAKTU=", W, nl_w)
 
-    # P100 dan jumlah Reservasi (kotak Waktu Antrian sejak 27 Okt 2026)
-    from update_p100_antrian import terapkan
-    terapkan(a.antrian)
+        # P100 dan jumlah Reservasi (kotak Waktu Antrian sejak 27 Okt 2026)
+        from update_p100_antrian import terapkan
+        terapkan(a.antrian)
 
-    # MTD P95 bulan berjalan (navigasi Area): rata-rata P95 harian per area + MTD per cabang dari laporan
-    from update_mtd_p95 import terapkan as terapkan_mtd
-    terapkan_mtd(a.antrian)
+        # MTD P95 bulan berjalan (navigasi Area): rata-rata P95 harian per area + MTD per cabang dari laporan
+        from update_mtd_p95 import terapkan as terapkan_mtd
+        terapkan_mtd(a.antrian)
 
-    print(f"data.js           : tanggal {tgl} ditambah (P95) · M O2O/CSM/OldBDS/NBDS-kanal berubah {beda_m} cabang · bw {D['bw']:.4%} · mdate {D['mdate']}")
-    print(f"area-waktu-data.js : {len(W['areas'])} area + Region II, tanggal {W['tanggal']}")
-    if diperbaiki:
+    print(f"data.js           : tanggal {tgl or '-'} ditambah (P95) · M O2O/CSM/OldBDS/NBDS-kanal berubah {beda_m} cabang · bw {D['bw']:.4%} · mdate {D['mdate']}")
+    if tgl:
+        print(f"area-waktu-data.js : {len(W['areas'])} area + Region II, tanggal {W['tanggal']}")
         for t, lama, baru in diperbaiki:
             print(f"  Region II {t} disinkronkan dengan region-data: [Teller, CS, All] {lama} -> {baru}")
-    print(f"area-kelompok-data : DtD = P95 {tgl} untuk {len(K)} cabang")
+        print(f"area-kelompok-data : DtD = P95 {tgl} untuk {len(K)} cabang")
     print(f"area-o2o-data.js   : {len(AO['areas'])} area, tanggal {AO['tanggal']}")
-    print(f"region-data.js     : {len(R['regions'])} region + nasional · waktu {tgl} · NBDS s.d. {tgl_nbds[-1]} · O2O {R['tglO2O']}")
+    print(f"region-data.js     : {len(R['regions'])} region + nasional · waktu {tgl or 'tetap'} · NBDS s.d. {tgl_nbds[-1]} · O2O {R['tglO2O']}")
     if a.nbds:
         # tanggal NBDS yang dikecualikan (tools/nbds_kecuali.json), mis. 13 Nov 2026: data tidak ada dari OBO
         subprocess.run([sys.executable, os.path.join("tools", "nbds_kecualikan.py")], check=True)
@@ -430,7 +440,7 @@ def main():
     if os.environ.get("KITO_PUSH_URL") and os.environ.get("KITO_PUSH_TOKEN"):
         try:
             from kirim_notifikasi import jalankan as kirim_notifikasi
-            kirim_notifikasi(tgl)
+            kirim_notifikasi(tgl or O["tgl"])
         except Exception as e:  # update data tetap dianggap berhasil
             print("PERINGATAN: notifikasi push gagal dikirim:", e)
 

@@ -59,13 +59,16 @@ function barProg(nama,p,ref,ket=''){
 function kartuProgres(c){
   const A=T.area[c.a]||{};
   const tot=o=>Object.values(o).reduce((s,p)=>[s[0]+(p[0]||0),s[1]+(p[1]||0)],[0,0]);
+  const bln=esc(T.bulan||'Oktober 2026'),tp=T.tetap||{};
+  // kolom yang kosong di laporan bulan ini memakai data sebelumnya -> beri keterangan
+  const kt=key=>tp[key]?` · <span class="dt-tetap">data ${esc(tp[key])}, belum diperbarui di laporan ${bln}</span>`:'';
   const kolom=(judul,sub,isi)=>`<div class="dt-col dt-col-${judul.toLowerCase()}"><div class="dt-col-h"><b>${judul}</b><small>${sub}</small></div>${isi}</div>`;
   return `<section class="cd dt-progres"><h2>Progres Perbaikan Data</h2>
     <div class="dt-cols">
-      ${kolom('NTB','Nasabah baru · Oktober 2026',barProg('Data Error CIF Dana',c.ntb.err,A.ntb?.err)+barProg('D01 Slik emas Reporting',c.ntb.slik,A.ntb?.slik)+barProg('Cendup Weekly',c.ntb.cd,A.ntb?.cd)+barProg('Total NTB',tot(c.ntb),A.ntb&&tot(A.ntb)))}
-      ${kolom('ETB','Nasabah lama · Oktober 2026',barProg('Data Error CIF Dana',c.etb.err,A.etb?.err)+barProg('Cendup Weekly',c.etb.cd,A.etb?.cd)+barProg('Total ETB',tot(c.etb),A.etb&&tot(A.etb))+barProg('User SSIM',c.ssim,A.ssim))}
+      ${kolom('NTB','Nasabah baru · '+bln,barProg('Data Error CIF Dana',c.ntb.err,A.ntb?.err,kt('ntb.err'))+barProg('D01 Slik emas Reporting',c.ntb.slik,A.ntb?.slik,kt('ntb.slik'))+barProg('Cendup Weekly',c.ntb.cd,A.ntb?.cd,kt('ntb.cd'))+barProg('Total NTB',tot(c.ntb),A.ntb&&tot(A.ntb)))}
+      ${kolom('ETB','Nasabah lama · '+bln,barProg('Data Error CIF Dana',c.etb.err,A.etb?.err,kt('etb.err'))+barProg('Cendup Weekly',c.etb.cd,A.etb?.cd,kt('etb.cd'))+barProg('Total ETB',tot(c.etb),A.etb&&tot(A.etb))+barProg('User SSIM',c.ssim,A.ssim))}
     </div>
-    <p class="dt-note">Selesai = status <i>Done</i> di data detail. Garis tipis pada bar = capaian rata-rata Area.</p></section>`;
+    <p class="dt-note">Selesai = status <i>Done</i> di data detail. Garis tipis pada bar = capaian rata-rata Area.${Object.keys(tp).length?` Kolom yang belum diisi pada laporan ${bln} tetap memakai data sebelumnya.`:''}</p></section>`;
 }
 
 /* ===== 3. Data Error CIF Dana ===== */

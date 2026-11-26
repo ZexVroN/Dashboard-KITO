@@ -22,6 +22,14 @@ kp_checklist([
 ]);
 echo '</div>';
 
+// data nomor HP pimpinan cabang (hanya jumlah, nomor tidak ditampilkan)
+if (!function_exists('kp_kontak_ringkas')) require_once __DIR__ . '/lib/kontak.php';
+echo '<div class="cd"><h2>Data nomor HP pimpinan cabang</h2>';
+kp_checklist(array_map(function ($x) {
+    return ['Nomor HP ' . $x[0] . ' · data/' . $x[1] . ': ' . ($x[2] ? $x[3] . ' cabang' : 'BELUM ADA'), $x[2] && $x[3] > 0, 'unggah berkas data/' . $x[1] . ' ke folder push-php/data/ di hosting'];
+}, kp_kontak_ringkas()));
+echo '</div>';
+
 // deteksi alamat IP: dipakai untuk batas percobaan login/pendaftaran dan lokasi perangkat
 echo '<div class="cd"><h2>Deteksi alamat IP</h2>';
 $remote = (string)($_SERVER['REMOTE_ADDR'] ?? '?'); $xff = (string)($_SERVER['HTTP_X_FORWARDED_FOR'] ?? ''); $cfh = (string)($_SERVER['HTTP_CF_CONNECTING_IP'] ?? '');

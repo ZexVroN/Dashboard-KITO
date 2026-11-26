@@ -18,24 +18,41 @@ const IK_TEL=SVG('<path d="M5 4h4l2 5-2.5 1.5a11 11 0 005 5L15 13l5 2v4a2 2 0 01
 const IK_WA=SVG('<path d="M3.5 20.5l1.3-4.2A8.5 8.5 0 1112 20.5a8.4 8.4 0 01-4.1-1.1L3.5 20.5z"/><path d="M9 8.5c0 3.3 2.6 6.4 6 6.5l1-1.6-2-1-1 .9c-1-.4-2.2-1.6-2.6-2.6l.9-1-1-2L9 8.5z"/>');
 
 /* nomor HP dari server, per akun login */
-let K={kunci:null,data:null,kc:null,err:'',muat:false};
+let K={kunci:null,data:null,kc:null,kcInfo:'',err:'',muat:false};
 async function muatKontak(){
   const a=akun();
   if(!a||!BOLEH.includes(a.jab)||!API()){if(K.kunci!==null){K={kunci:null,data:null,err:'',muat:false};}return;}
   if(K.kunci===a.kunci)return;
   K={kunci:a.kunci,data:null,err:'',muat:true};
-  const kunci=a.kunci;let data=null,kc=null,err='';
+  const kunci=a.kunci;let data=null,kc=null,kcInfo='',err='';
   try{
     const r=await fetch(API()+'/api/kontak/bom',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(a.kred),cache:'no-store'});
     const j=await r.json().catch(()=>({}));
     if(!r.ok)throw new Error(r.status===401?'Sesi login tidak berlaku lagi. Silakan logout lalu login ulang.':(j.error||'server tidak merespons ('+r.status+')'));
     data=j.kontak||{};kc=a.jab==='roh'&&j.kc?j.kc:null;
-  }catch(e){err=e.message||'server tidak bisa dihubungi';}
+    if(a.jab==='roh'&&!kc)kcInfo=!('kc' in j)?'Server belum diperbarui: unggah berkas push-php/lib/kontak.php terbaru ke hosting.'
+      :j.kcStatus==='kosong'?'Berkas push-php/data/kontak-kc.php di server kosong. Unggah ulang berkas terbaru.'
+      :'Berkas push-php/data/kontak-kc.php belum ada di server. Unggah ke folder push-php/data/ di hosting.';
+  }catch(e){err=e instanceof TypeError?'Nomor HP belum bisa dimuat: server tidak bisa dihubungi. Akan dicoba lagi otomatis.':(e.message||'server tidak bisa dihubungi');}
   if(K.kunci!==kunci)return;
-  K={kunci,data,kc,err,muat:false};
+  K={kunci,data,kc,kcInfo,err,muat:false};
   if(typeof tampil==='undefined'||tampil==='cabang')render();
 }
-window.addEventListener('kito-akun',()=>{K={kunci:null,data:null,err:'',muat:false};muatKontak();if(typeof tampil==='undefined'||tampil==='cabang')render();});
+window.addEventListener('kito-akun',()=>{K={kunci:null,data:null,kc:null,kcInfo:'',err:'',muat:false};muatKontak();if(typeof tampil==='undefined'||tampil==='cabang')render();});
+/* Setelah refresh, sesi login dipulihkan dari sessionStorage TANPA event 'kito-akun', dan push-config.js (alamat API)
+   baru dimuat di akhir halaman: render pertama belum punya API sehingga nomor HP tidak tampil. Muat ulang setelah
+   halaman siap, dan saat kembali online / tab aktif lagi bila sebelumnya gagal. */
+function pulihkan(){
+  const a=akun();
+  if(!a||!BOLEH.includes(a.jab)||!API())return;
+  if(K.kunci===a.kunci&&!K.err)return;
+  if(K.err)K.kunci=null;
+  muatKontak();
+  if(typeof tampil==='undefined'||tampil==='cabang')render();
+}
+if(document.readyState==='complete')setTimeout(pulihkan,0);else window.addEventListener('load',pulihkan);
+window.addEventListener('online',pulihkan);
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)pulihkan();});
 
 function blokKontak(kode,namaBom){
   const a=akun();
@@ -62,7 +79,7 @@ function blokKc(kode,namaBm){
   const a=akun();
   if(!a||a.jab!=='roh'||K.kunci!==a.kunci||K.muat||K.err||!K.data)return '';
   const k=K.kc&&K.kc[kode];
-  if(!K.kc)return `<div class="pm-hp pm-hp-info">Nomor HP Kepala Cabang belum diunggah ke server.</div>`;
+  if(!K.kc)return `<div class="pm-hp pm-hp-info">Nomor HP Kepala Cabang belum tampil. ${esc(K.kcInfo||'')}</div>`;
   if(!k)return `<div class="pm-hp pm-hp-info">Nomor HP Kepala Cabang cabang ini belum tersedia.</div>`;
   const nm=k.nama&&String(k.nama).toLowerCase()!==String(namaBm||'').toLowerCase()?' · '+esc(k.nama):'';
   return `<div class="pm-hp pm-hp-kc">

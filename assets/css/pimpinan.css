@@ -31,3 +31,17 @@
   .hero .pm-btn svg{width:21px;height:21px}
   .hero .pm-btn:active{transform:scale(.93)}
 }
+/* lembar nomor (aplikasi Android versi lama tidak bisa membuka tel:/WhatsApp) */
+.pm-lembar{position:fixed;inset:0;z-index:2147482900;display:flex;align-items:flex-end;justify-content:center;background:rgba(2,8,23,.55);padding:12px;padding-bottom:calc(12px + env(safe-area-inset-bottom))}
+.pm-lembar-k{width:100%;max-width:420px;background:#fff;color:#0f172a;border-radius:18px;padding:16px;box-shadow:0 12px 40px rgba(0,0,0,.35)}
+.pm-lembar-j{display:flex;align-items:center;gap:8px;font-size:14px}
+.pm-lembar-j svg{width:20px;height:20px}
+.pm-lembar-no{margin:10px 0 6px;font-size:24px;font-weight:800;letter-spacing:.5px;user-select:all;-webkit-user-select:all}
+.pm-lembar-k p{margin:0 0 12px;font-size:13px;color:#475569;line-height:1.45}
+.pm-lembar-ak{display:flex;gap:8px}
+.pm-lembar-ak .pm-btn{flex:1;justify-content:center;min-height:44px;border:1px solid #cbd5e1;font-size:14px}
+.pm-lembar-st{display:block;margin-top:8px;font-size:12px;font-weight:700;color:#15803d;min-height:1em}
+html.dark .pm-lembar-k,.dark .pm-lembar-k{background:#0f1b33;color:#e2e8f0}
+html.dark .pm-lembar-k p,.dark .pm-lembar-k p{color:#94a3b8}
+.pm-lembar .pm-btn{display:inline-flex;align-items:center;gap:6px;border-radius:12px;background:#fff;color:#0f172a;font-weight:800;cursor:pointer;font-family:inherit}
+.pm-lembar .pm-btn.pm-wa{background:#16a34a;border-color:#16a34a;color:#fff}

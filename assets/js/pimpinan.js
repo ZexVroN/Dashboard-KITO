@@ -54,6 +54,54 @@ if(document.readyState==='complete')setTimeout(pulihkan,0);else window.addEventL
 window.addEventListener('online',pulihkan);
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)pulihkan();});
 
+/* Aplikasi Android KITO (WebView): APK 1.0 tidak bisa membuka tel: / whatsapp:// (wa.me dialihkan ke whatsapp://)
+   sehingga muncul "net::ERR_UNKNOWN_URL_SCHEME". Di dalam APK:
+   - APK baru (jembatan KitoAndroid.openExternal): dibuka langsung ke aplikasi Telepon / WhatsApp;
+   - APK 1.0: tampil lembar kecil berisi nomor + tombol Salin, lalu pengguna menempelkannya di WhatsApp/Telepon.
+   Browser biasa (Chrome, Safari, PWA) tidak terpengaruh. */
+const DI_WEBVIEW=(()=>{const ua=navigator.userAgent||'';return /Android/.test(ua)&&/; wv\)|KITO-Android/.test(ua);})();
+function jembatanBuka(){try{const b=window.KitoAndroid;return b&&typeof b.openExternal==='function'?b:null;}catch(e){return null;}}
+async function salinTeks(t){
+  try{if(navigator.clipboard&&window.isSecureContext){await navigator.clipboard.writeText(t);return true;}}catch(e){}
+  try{const ta=document.createElement('textarea');ta.value=t;ta.setAttribute('readonly','');ta.style.cssText='position:fixed;top:-9999px;opacity:0';
+    document.body.appendChild(ta);ta.select();ta.setSelectionRange(0,t.length);const ok=document.execCommand('copy');ta.remove();return ok;}catch(e){return false;}
+}
+function lembarNomor(jenis,hp,wa,nama){
+  document.querySelector('.pm-lembar')?.remove();
+  const el=document.createElement('div');el.className='pm-lembar';el.setAttribute('role','dialog');el.setAttribute('aria-modal','true');
+  const app=jenis==='wa'?'WhatsApp':'Telepon';
+  el.innerHTML=`<div class="pm-lembar-k">
+    <b class="pm-lembar-j">${jenis==='wa'?IK_WA:IK_TEL}<span>${app} ${esc(nama||'')}</span></b>
+    <div class="pm-lembar-no">${esc(hp)}</div>
+    <p>Aplikasi KITO versi ini belum bisa membuka ${app} langsung. Salin nomornya, lalu tempel di ${app}.</p>
+    <div class="pm-lembar-ak">
+      <button type="button" class="pm-btn pm-wa" data-pml="salin">Salin nomor</button>
+      <button type="button" class="pm-btn" data-pml="tutup">Tutup</button>
+    </div>
+    <small class="pm-lembar-st" aria-live="polite"></small>
+  </div>`;
+  el.addEventListener('click',async e=>{
+    const b=e.target.closest('[data-pml]');
+    if(e.target===el||b?.dataset.pml==='tutup'){el.remove();return;}
+    if(b?.dataset.pml==='salin'){
+      const ok=await salinTeks(jenis==='wa'?'+'+wa:hp.replace(/-/g,''));
+      el.querySelector('.pm-lembar-st').textContent=ok?`Nomor disalin. Buka ${app} lalu tempel.`:'Tidak bisa menyalin otomatis: tekan lama nomor di atas untuk menyalin.';
+      b.textContent=ok?'Tersalin ✓':'Salin nomor';
+    }
+  });
+  document.body.appendChild(el);
+  el.querySelector('[data-pml="salin"]').focus();
+}
+document.addEventListener('click',e=>{
+  const a=e.target.closest('a.pm-btn[data-pm-jenis]');
+  if(!a||!DI_WEBVIEW)return;
+  e.preventDefault();
+  const j=a.dataset.pmJenis,wa=a.dataset.pmWa,br=jembatanBuka();
+  if(br){try{br.openExternal(j==='wa'?'https://wa.me/'+wa:'tel:+'+wa);return;}catch(x){}}
+  lembarNomor(j,a.dataset.pmHp,wa,(a.getAttribute('aria-label')||'').replace(/^(Telepon|WhatsApp)\s*/,''));
+});
+document.addEventListener('keydown',e=>{if(e.key==='Escape')document.querySelector('.pm-lembar')?.remove();});
+
 function blokKontak(kode,namaBom){
   const a=akun();
   if(!a||!BOLEH.includes(a.jab)||!API())return '';
@@ -68,8 +116,8 @@ function blokKontak(kode,namaBom){
   return `<div class="pm-hp">
     <span class="pm-hp-no"><small>No. HP BOM / BOS${k.nama&&String(k.nama).toLowerCase()!==String(namaBom||'').toLowerCase()?' · '+esc(k.nama):''}</small><b>${esc(k.hp)}</b></span>
     <span class="pm-hp-ak">
-      <a class="pm-btn" href="tel:+${esc(k.wa)}" aria-label="Telepon ${esc(k.nama||'BOM/BOS')}">${IK_TEL}<span>Telepon</span></a>
-      <a class="pm-btn pm-wa" href="https://wa.me/${esc(k.wa)}" target="_blank" rel="noopener" aria-label="WhatsApp ${esc(k.nama||'BOM/BOS')}">${IK_WA}<span>WhatsApp</span></a>
+      <a class="pm-btn" data-pm-jenis="tel" data-pm-hp="${esc(k.hp)}" data-pm-wa="${esc(k.wa)}" href="tel:+${esc(k.wa)}" aria-label="Telepon ${esc(k.nama||'BOM/BOS')}">${IK_TEL}<span>Telepon</span></a>
+      <a class="pm-btn pm-wa" data-pm-jenis="wa" data-pm-hp="${esc(k.hp)}" data-pm-wa="${esc(k.wa)}" href="https://wa.me/${esc(k.wa)}" target="_blank" rel="noopener" aria-label="WhatsApp ${esc(k.nama||'BOM/BOS')}">${IK_WA}<span>WhatsApp</span></a>
     </span>
   </div>`;
 }
@@ -85,8 +133,8 @@ function blokKc(kode,namaBm){
   return `<div class="pm-hp pm-hp-kc">
     <span class="pm-hp-no"><small>No. HP Kepala Cabang${nm}</small><b>${esc(k.hp)}</b></span>
     <span class="pm-hp-ak">
-      <a class="pm-btn" href="tel:+${esc(k.wa)}" aria-label="Telepon Kepala Cabang ${esc(k.nama||'')}">${IK_TEL}<span>Telepon</span></a>
-      <a class="pm-btn pm-wa" href="https://wa.me/${esc(k.wa)}" target="_blank" rel="noopener" aria-label="WhatsApp Kepala Cabang ${esc(k.nama||'')}">${IK_WA}<span>WhatsApp</span></a>
+      <a class="pm-btn" data-pm-jenis="tel" data-pm-hp="${esc(k.hp)}" data-pm-wa="${esc(k.wa)}" href="tel:+${esc(k.wa)}" aria-label="Telepon Kepala Cabang ${esc(k.nama||'')}">${IK_TEL}<span>Telepon</span></a>
+      <a class="pm-btn pm-wa" data-pm-jenis="wa" data-pm-hp="${esc(k.hp)}" data-pm-wa="${esc(k.wa)}" href="https://wa.me/${esc(k.wa)}" target="_blank" rel="noopener" aria-label="WhatsApp Kepala Cabang ${esc(k.nama||'')}">${IK_WA}<span>WhatsApp</span></a>
     </span>
   </div>`;
 }

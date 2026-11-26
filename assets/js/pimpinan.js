@@ -3,6 +3,7 @@
    Nomor HP BOM/BOS + tombol Telepon & WhatsApp: hanya untuk akun login ROH & SQO Region (semua cabang) serta
    ASM & SQO Area (hanya cabang di areanya). Nomor TIDAK ada di data publik: diambil dari server (POST /api/kontak/bom,
    push-php/lib/kontak.php) memakai kredensial akun login, disimpan di memori saja, hilang saat logout/muat ulang.
+   Nomor HP/WhatsApp Kepala Cabang: HANYA akun ROH (server mengirim field "kc" khusus ROH; data/kontak-kc.php).
    Add-on non-destruktif: membungkus kartuCabang di URUTAN, tidak mengubah script.js. */
 (()=>{'use strict';
 const P=window.KITO_PIMPINAN;
@@ -17,21 +18,21 @@ const IK_TEL=SVG('<path d="M5 4h4l2 5-2.5 1.5a11 11 0 005 5L15 13l5 2v4a2 2 0 01
 const IK_WA=SVG('<path d="M3.5 20.5l1.3-4.2A8.5 8.5 0 1112 20.5a8.4 8.4 0 01-4.1-1.1L3.5 20.5z"/><path d="M9 8.5c0 3.3 2.6 6.4 6 6.5l1-1.6-2-1-1 .9c-1-.4-2.2-1.6-2.6-2.6l.9-1-1-2L9 8.5z"/>');
 
 /* nomor HP dari server, per akun login */
-let K={kunci:null,data:null,err:'',muat:false};
+let K={kunci:null,data:null,kc:null,err:'',muat:false};
 async function muatKontak(){
   const a=akun();
   if(!a||!BOLEH.includes(a.jab)||!API()){if(K.kunci!==null){K={kunci:null,data:null,err:'',muat:false};}return;}
   if(K.kunci===a.kunci)return;
   K={kunci:a.kunci,data:null,err:'',muat:true};
-  const kunci=a.kunci;let data=null,err='';
+  const kunci=a.kunci;let data=null,kc=null,err='';
   try{
     const r=await fetch(API()+'/api/kontak/bom',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(a.kred),cache:'no-store'});
     const j=await r.json().catch(()=>({}));
     if(!r.ok)throw new Error(r.status===401?'Sesi login tidak berlaku lagi. Silakan logout lalu login ulang.':(j.error||'server tidak merespons ('+r.status+')'));
-    data=j.kontak||{};
+    data=j.kontak||{};kc=a.jab==='roh'&&j.kc?j.kc:null;
   }catch(e){err=e.message||'server tidak bisa dihubungi';}
   if(K.kunci!==kunci)return;
-  K={kunci,data,err,muat:false};
+  K={kunci,data,kc,err,muat:false};
   if(typeof tampil==='undefined'||tampil==='cabang')render();
 }
 window.addEventListener('kito-akun',()=>{K={kunci:null,data:null,err:'',muat:false};muatKontak();if(typeof tampil==='undefined'||tampil==='cabang')render();});
@@ -56,12 +57,29 @@ function blokKontak(kode,namaBom){
   </div>`;
 }
 
+/* nomor Kepala Cabang: khusus akun ROH */
+function blokKc(kode,namaBm){
+  const a=akun();
+  if(!a||a.jab!=='roh'||K.kunci!==a.kunci||K.muat||K.err||!K.data)return '';
+  const k=K.kc&&K.kc[kode];
+  if(!K.kc)return `<div class="pm-hp pm-hp-info">Nomor HP Kepala Cabang belum diunggah ke server.</div>`;
+  if(!k)return `<div class="pm-hp pm-hp-info">Nomor HP Kepala Cabang cabang ini belum tersedia.</div>`;
+  const nm=k.nama&&String(k.nama).toLowerCase()!==String(namaBm||'').toLowerCase()?' · '+esc(k.nama):'';
+  return `<div class="pm-hp pm-hp-kc">
+    <span class="pm-hp-no"><small>No. HP Kepala Cabang${nm}</small><b>${esc(k.hp)}</b></span>
+    <span class="pm-hp-ak">
+      <a class="pm-btn" href="tel:+${esc(k.wa)}" aria-label="Telepon Kepala Cabang ${esc(k.nama||'')}">${IK_TEL}<span>Telepon</span></a>
+      <a class="pm-btn pm-wa" href="https://wa.me/${esc(k.wa)}" target="_blank" rel="noopener" aria-label="WhatsApp Kepala Cabang ${esc(k.nama||'')}">${IK_WA}<span>WhatsApp</span></a>
+    </span>
+  </div>`;
+}
+
 const orang=(jabatan,nama)=>`<div class="pm"><small>${jabatan}</small><b class="${nama?'':'pm-kosong'}">${nama?esc(nama):'Belum ada data'}</b></div>`;
 function kartuCabangPimpinan(){
   const html=kartuCabang();
   const b=D.B[st.b];if(!b)return html;
   const p=P.data[String(b[0])];if(!p)return html;
-  const blok=`<div class="pm-row">${orang('Branch Manager',p[0])}${orang('BOM / BOS',p[1])}</div>${blokKontak(String(b[0]),p[1])}`;
+  const blok=`<div class="pm-row">${orang('Branch Manager',p[0])}${orang('BOM / BOS',p[1])}</div>${blokKc(String(b[0]),p[0])}${blokKontak(String(b[0]),p[1])}`;
   const j=html.lastIndexOf('</div>');            // sisipkan di dalam kartu hero, sebelum penutupnya
   return j<0?html:html.slice(0,j)+blok+html.slice(j);
 }

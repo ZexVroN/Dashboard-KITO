@@ -18,3 +18,16 @@
 .hero .pm-btn:focus-visible{outline:3px solid #fbbf24;outline-offset:2px}
 .hero .pm-hp-info{display:block;font-size:12px;font-weight:600;color:rgba(255,255,255,.78)}
 @media print{.hero .pm-hp-ak{display:none}}
+.hero .pm-hp-kc{border-color:rgba(253,224,71,.45)}
+/* HP: nomor di kiri, tombol ikon Telepon & WhatsApp (bulat) di kanan dalam satu baris */
+@media(max-width:759px){
+  .hero .pm-hp:not(.pm-hp-info){flex-wrap:nowrap;gap:10px;padding:8px 8px 8px 11px}
+  .hero .pm-hp-no{flex:1}
+  .hero .pm-hp-no small{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .hero .pm-hp-no b{font-size:14.5px;white-space:nowrap}
+  .hero .pm-hp-ak{flex:none;gap:8px}
+  .hero .pm-btn{justify-content:center;width:44px;height:44px;min-height:0;padding:0;border-radius:50%;box-shadow:0 2px 8px rgba(0,0,0,.18);-webkit-tap-highlight-color:transparent}
+  .hero .pm-btn span{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+  .hero .pm-btn svg{width:21px;height:21px}
+  .hero .pm-btn:active{transform:scale(.93)}
+}

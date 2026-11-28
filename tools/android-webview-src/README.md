@@ -29,6 +29,18 @@ Notifikasi sistem di status bar **walau aplikasi ditutup**, lewat dua bagian:
 
 Kontrak endpoint (sudah ada di backend): `{ "ok": true, "notifications": [{ "id", "title", "body", "url" }], "latestId": 123 }`.
 
+## Blokir screenshot untuk pengguna tanpa login (APK 1.1)
+
+- `MainActivity.kt` memasang `FLAG_SECURE` **sejak aplikasi dibuka**: screenshot & rekam layar menghasilkan layar hitam,
+  dan pratinjau di daftar aplikasi terbaru ikut hitam.
+- `KitoBridge.setSecure(aktif)` dipanggil `assets/js/tamu-aman.js`: tetap aktif selama tanpa login, dilepas setelah login,
+  aktif lagi setelah logout.
+- **APK 1.0 tidak punya fitur ini**, dan halaman web tidak bisa memblokir screenshot sistem Android. Pemblokiran baru
+  berlaku setelah pengguna memasang APK 1.1.
+- `app/proguard-rules.pro` menjaga method `@JavascriptInterface` agar tidak dibuang R8 pada build release.
+- Tanda tangani dengan **keystore yang sama dengan APK 1.0** supaya bisa dipasang menimpa versi lama. Keystore berbeda =
+  Android menolak pembaruan, pengguna harus uninstall APK lama dulu.
+
 ---
 
 ## Panduan build APK di Android Studio

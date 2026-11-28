@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex">
+<title>KITO · Kontak Cabang</title>
+<style>
+:root{--bg:#f4f7fc;--cd:#fff;--tx:#182842;--mu:#64748b;--ln:#e2e9f3;--c1:#245bd7}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--tx);font:14px/1.65 system-ui,sans-serif}
+header,main{max-width:1240px;margin:auto;padding:24px}h1{margin:0}h2{font-size:14px}p{color:var(--mu)}
+.cd{padding:24px;background:var(--cd);border:1px solid var(--ln);border-radius:18px;margin-bottom:18px}
+button{border:0;border-radius:10px;background:var(--c1);color:white;padding:11px 18px;font:inherit;cursor:pointer}button:disabled{opacity:.6;cursor:wait}
+button.sec{background:transparent;color:var(--tx);border:1px solid var(--ln)}button.kecil{padding:5px 10px;font-size:12.5px;white-space:nowrap}
+input,select{padding:11px;border:1px solid var(--ln);border-radius:10px;font:inherit;background:#fff;color:var(--tx)}label{display:block;margin-bottom:6px}
+#login{max-width:460px}#tok{width:100%;margin-bottom:12px}.tools{display:flex;flex-wrap:wrap;gap:12px;align-items:end}.tools label{margin:0}.tools input{width:min(360px,100%)}
+.tw{overflow:auto}table{width:100%;border-collapse:collapse;text-align:left;font-size:13px}th,td{padding:11px 12px;border-bottom:1px solid var(--ln)}th{white-space:nowrap;color:var(--mu);position:sticky;top:0;background:var(--cd)}td{vertical-align:top}
+.hidden{display:none!important}.err{color:#c43636}#msg{display:block;margin-top:10px}#info{margin-top:16px}
+.mu{color:var(--mu);font-size:12px}
+.kt{display:flex;flex-direction:column;gap:2px;min-width:190px}.kt b{font-size:13.5px}.kt .no{font-variant-numeric:tabular-nums;font-weight:700;color:#0f2a5c}
+.kt .kosong{color:#b45309;font-weight:600}.kt .aksi{display:flex;gap:6px;flex-wrap:wrap;margin-top:4px}
+.ubah{display:inline-block;margin-left:4px;border-radius:999px;padding:0 7px;background:#fef3c7;color:#92400e;font-size:11px;font-weight:700;vertical-align:1px}
+.wa{color:#15803d;text-decoration:none;font-size:12px;font-weight:700}
+.peringatan{padding:12px 14px;border-radius:12px;background:#fff7e6;border:1px solid #f5d48a;color:#7a5a12;margin:0 0 14px}
+dialog{border:0;border-radius:18px;padding:0;width:min(460px,calc(100vw - 24px));box-shadow:0 20px 60px rgba(0,16,60,.3)}dialog::backdrop{background:rgba(7,14,33,.45)}
+dialog form{padding:22px}dialog h2{margin:0 0 4px;font-size:17px}dialog .who{margin:0 0 10px;font-size:13px}
+dialog label{font-weight:600;font-size:13px;margin:12px 0 4px}dialog input{width:100%}
+.dact{display:flex;justify-content:flex-end;gap:8px;margin-top:16px;flex-wrap:wrap}.dact .kiri{margin-right:auto}#eErr{display:block;min-height:18px;margin-top:8px;font-size:12.5px}
+</style>
+</head>
+<body>
+<!--KP_MENU-->
+<header><h1>Kontak Cabang</h1><p>Nomor HP <b>Kepala Cabang</b> dan <b>BOM/BOS</b> per cabang. Nomor ini tampil di kartu cabang dashboard: BOM/BOS untuk ROH, SQO Region, ASM &amp; SQO Area (sesuai area); Kepala Cabang khusus ROH &amp; SQO Region. Perubahan di sini langsung berlaku di dashboard.</p></header>
+<main>
+<form class="cd" id="login"><h2>Masuk backend</h2><label for="tok">Token admin</label><input id="tok" type="password" autocomplete="current-password" required><button id="masuk" type="submit">Masuk</button><span id="msg" role="status" aria-live="polite"></span></form>
+<section class="cd hidden" id="isi" aria-label="Daftar kontak cabang">
+<p class="peringatan hidden" id="berkas"></p>
+<div class="tools">
+  <label>Area<br><select id="area"><option value="">Semua area</option></select></label>
+  <label>Tampilkan<br><select id="filter"><option value="">Semua cabang</option><option value="kurang">Nomor belum lengkap</option><option value="ubah">Sudah diedit</option></select></label>
+  <label>Cari<br><input id="cari" type="search" placeholder="Kode, cabang, nama, atau nomor HP"></label>
+  <button id="ulang" type="button">Muat ulang</button>
+</div>
+<p id="info" role="status" aria-live="polite"></p>
+<div class="tw"><table><thead><tr><th>Kode</th><th>Cabang</th><th>Area</th><th>Kepala Cabang</th><th>BOM / BOS</th></tr></thead><tbody id="list"></tbody></table></div>
+<p>Nomor dari berkas server (<code>data/kontak-kc.php</code>, <code>data/kontak-bom.php</code>) tidak diubah; hasil edit disimpan terpisah dan menimpa nomor berkas. <b>Pulihkan</b> = kembali ke nomor dari berkas. Nomor yang diedit dari dashboard (oleh ROH / SQO Region / ASM / SQO Area) juga ditandai <span class="ubah">diedit</span>.</p>
+</section>
+</main>
+
+<dialog id="dEdit"><form method="dialog" id="fEdit"><h2 id="eJudul">Edit nomor HP</h2><p class="who" id="eWho"></p>
+<label for="eNama">Nama <small class="mu">(opsional)</small></label><input id="eNama" maxlength="80" autocomplete="off">
+<label for="eHp">Nomor HP / WhatsApp</label><input id="eHp" inputmode="tel" maxlength="20" autocomplete="off" placeholder="0812-3456-7890">
+<p class="mu" id="eAsal"></p>
+<small id="eErr" class="err" role="alert"></small>
+<div class="dact"><button type="button" class="sec kiri hidden" id="ePulih">↺ Pulihkan dari berkas</button><button type="button" class="sec" data-tutup>Batal</button><button type="submit" id="eSimpan">Simpan</button></div></form></dialog>
+
+<script>
+(() => {
+  'use strict';
+  const base = '__KP_API_BASE__', $ = s => document.querySelector(s);
+  const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const wib = s => { if (!s) return ''; const d = new Date(String(s).replace(' ', 'T') + 'Z'); return isNaN(d) ? s : d.toLocaleString('id-ID', {timeZone:'Asia/Jakarta', day:'numeric', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit'}) + ' WIB'; };
+  const judulArea = s => String(s || '').replace(/^AREA\s+/i, '').toLowerCase().replace(/(^|\s)([a-z])/g, (m, a, b) => a + b.toUpperCase());
+  const JENIS = {kc: 'Kepala Cabang', bom: 'BOM/BOS'};
+  let token = '', rows = [], pilih = null;
+  try { token = sessionStorage.getItem('kitoPushToken') || ''; } catch (e) {}
+  const api = async (method, path, body) => {
+    const r = await fetch(base + path, {method, headers:{Authorization:'Bearer '+token,'X-Admin-Token':token,'Content-Type':'application/json'}, body: body ? JSON.stringify(body) : undefined, cache:'no-store'});
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok) throw Object.assign(new Error(j.error || 'permintaan gagal (' + r.status + ')'), {status: r.status});
+    return j;
+  };
+  const namaDefault = (r, j) => j === 'kc' ? r.bm : r.bomNama;
+  function sel(r, j) {
+    const k = r[j], nm = (k && k.nama) || namaDefault(r, j) || '';
+    return `<div class="kt">
+      <b>${esc(nm || '—')}${k && k.ubah ? `<span class="ubah" title="${esc((k.ubah.oleh || '') + ' · ' + wib(k.ubah.at))}">diedit</span>` : ''}</b>
+      ${k ? `<span class="no">${esc(k.hp)}</span><a class="wa" href="https://wa.me/${esc(k.wa)}" target="_blank" rel="noopener">WhatsApp ↗</a>` : '<span class="kosong">Belum ada nomor</span>'}
+      ${k && k.ubah ? `<span class="mu">${esc(k.ubah.oleh || '')} · ${esc(wib(k.ubah.at))}</span>` : ''}
+      <span class="aksi"><button type="button" class="kecil sec" data-edit="${esc(r.kode)}" data-jenis="${j}">✏️ Edit</button></span>
+    </div>`;
+  }
+  function render() {
+    const q = $('#cari').value.trim().toLocaleLowerCase('id-ID'), area = $('#area').value, f = $('#filter').value;
+    const cocok = rows.filter(r => (!area || r.area === area)
+      && (!f || (f === 'kurang' ? !r.kc || !r.bom : (r.kc && r.kc.ubah) || (r.bom && r.bom.ubah)))
+      && [r.kode, r.cabang, r.area, r.bm, r.bomNama, r.kc?.nama, r.kc?.hp, r.bom?.nama, r.bom?.hp].join(' ').toLocaleLowerCase('id-ID').includes(q));
+    $('#list').innerHTML = cocok.map(r => `<tr><td><b>${esc(r.kode)}</b></td><td>${esc(r.cabang)}</td><td>${esc(judulArea(r.area))}</td><td>${sel(r, 'kc')}</td><td>${sel(r, 'bom')}</td></tr>`).join('')
+      || '<tr><td colspan="5">Tidak ada cabang yang sesuai.</td></tr>';
+    $('#info').textContent = `${cocok.length} dari ${rows.length} cabang · nomor Kepala Cabang ${rows.filter(r => r.kc).length}/${rows.length} · nomor BOM/BOS ${rows.filter(r => r.bom).length}/${rows.length} · `
+      + `${rows.filter(r => (r.kc && r.kc.ubah) || (r.bom && r.bom.ubah)).length} cabang sudah diedit.`;
+  }
+  async function load() {
+    $('#masuk').disabled = $('#ulang').disabled = true;
+    $('#msg').textContent = 'Memuat kontak…'; $('#msg').className = '';
+    try {
+      const data = await api('GET', '/api/kontak/admin');
+      rows = data.kontak || [];
+      const a = $('#area').value, areas = [...new Set(rows.map(r => r.area))].sort();
+      $('#area').innerHTML = '<option value="">Semua area</option>' + areas.map(v => `<option value="${esc(v)}">${esc(judulArea(v))}</option>`).join('');
+      $('#area').value = a;
+      const kurang = [!data.berkas?.kc && 'data/kontak-kc.php', !data.berkas?.bom && 'data/kontak-bom.php'].filter(Boolean);
+      $('#berkas').classList.toggle('hidden', !kurang.length);
+      $('#berkas').textContent = kurang.length ? `Berkas ${kurang.join(' dan ')} belum ada di server. Nomor tetap bisa diisi manual lewat Edit.` : '';
+      try { sessionStorage.setItem('kitoPushToken', token); } catch(e) {}
+      $('#login').classList.add('hidden'); $('#isi').classList.remove('hidden'); render();
+    } catch(e) {
+      if (e.status === 401) { $('#isi').classList.add('hidden'); rows = []; $('#list').textContent = ''; try { sessionStorage.removeItem('kitoPushToken'); } catch(x) {} }
+      $('#login').classList.remove('hidden'); $('#msg').className = 'err'; $('#msg').textContent = e.message;
+    } finally { $('#masuk').disabled = $('#ulang').disabled = false; }
+  }
+
+  function bukaEdit(r, j) {
+    pilih = {r, j}; const k = r[j], asal = r[j + 'Asal'];
+    $('#eJudul').textContent = 'Edit nomor HP ' + JENIS[j];
+    $('#eWho').textContent = `${r.kode} ${r.cabang} · ${judulArea(r.area)}`;
+    $('#eNama').value = (k && k.nama) || ''; $('#eNama').placeholder = namaDefault(r, j) || '';
+    $('#eHp').value = k ? k.hp : '';
+    $('#eAsal').textContent = asal ? `Nomor dari berkas: ${asal.hp}${asal.nama ? ' (' + asal.nama + ')' : ''}. Kosongkan nomor untuk menghapus.` : 'Belum ada nomor di berkas. Kosongkan nomor untuk menghapus.';
+    $('#ePulih').classList.toggle('hidden', !(k && k.ubah) && !(asal && !k));
+    $('#eErr').textContent = ''; $('#dEdit').showModal(); $('#eHp').focus();
+  }
+  async function simpan(body, pesan) {
+    $('#eErr').textContent = ''; $('#eSimpan').disabled = $('#ePulih').disabled = true;
+    try {
+      const res = await api('PUT', '/api/kontak/admin', {jenis: pilih.j, kode: pilih.r.kode, ...body});
+      pilih.r[pilih.j] = res.kontak || null;
+      $('#dEdit').close(); render();
+      $('#info').textContent = `${pesan} ${JENIS[pilih.j]} ${pilih.r.kode} ${pilih.r.cabang}${res.kontak ? ': ' + res.kontak.hp : ''}.`;
+    } catch (x) { $('#eErr').textContent = x.message; }
+    $('#eSimpan').disabled = $('#ePulih').disabled = false;
+  }
+  $('#fEdit').addEventListener('submit', e => {
+    e.preventDefault();
+    const hp = $('#eHp').value.trim();
+    if (!hp && !confirm(`Hapus nomor ${JENIS[pilih.j]} ${pilih.r.kode} ${pilih.r.cabang}?`)) return;
+    simpan({hp, nama: $('#eNama').value.trim()}, hp ? 'Nomor disimpan:' : 'Nomor dihapus:');
+  });
+  $('#ePulih').addEventListener('click', () => { if (confirm('Kembalikan ke nomor dari berkas server?')) simpan({pulihkan: true}, 'Dipulihkan dari berkas:'); });
+
+  document.addEventListener('click', e => {
+    const t = e.target.closest('[data-tutup]'); if (t) { t.closest('dialog').close(); return; }
+    const ed = e.target.closest('[data-edit]'); if (ed) { const r = rows.find(x => x.kode === ed.dataset.edit); if (r) bukaEdit(r, ed.dataset.jenis); }
+  });
+  $('#login').addEventListener('submit', e => { e.preventDefault(); token = $('#tok').value.trim(); load(); });
+  ['#cari'].forEach(s => $(s).addEventListener('input', render));
+  ['#area', '#filter'].forEach(s => $(s).addEventListener('change', render));
+  $('#ulang').addEventListener('click', load);
+  if (token) load();
+})();
+</script>
+</body>
+</html>

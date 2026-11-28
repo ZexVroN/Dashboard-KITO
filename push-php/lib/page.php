@@ -12,7 +12,7 @@ function kp_base_url(): string {
 
 /**
  * Menu bar bersama untuk semua halaman backend (admin notifikasi, perangkat, masukan).
- * $aktif: notifikasi | perangkat | masukan
+ * $aktif: notifikasi | perangkat | masukan | kontak | pengguna
  * $app:   alamat rute aplikasi (index.php). Default "<folder>/index.php" yang selalu berfungsi, dengan atau tanpa rewrite.
  * status.php dan setup.php tidak ada di menu (hanya untuk pemasangan/diagnosis lewat alamat langsung).
  */
@@ -26,6 +26,7 @@ function kp_menu(string $aktif, ?string $app = null): string {
         'notifikasi' => ['<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9Z"/><path d="M10 21h4"/></svg>', 'Notifikasi', $app . '/admin'],
         'perangkat'  => ['<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><rect x="6" y="2" width="12" height="20" rx="3"/><path d="M10 18h4"/></svg>', 'Perangkat & Lokasi', $app . '/admin/perangkat'],
         'masukan'    => ['<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M21 11a9 9 0 0 1-9 9H3l2-5a9 9 0 1 1 16-4Z"/><path d="M8 10h8M8 14h5"/></svg>', 'Masukan', $app . '/admin/masukan'],
+        'kontak'     => ['<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2"/></svg>', 'Kontak Cabang', $app . '/admin/kontak'],
     ] : [];   // belum disetel: menu kosong, halaman setup tetap bisa dibuka langsung
     if ($cfg && function_exists('kp_pengguna')) $item['pengguna'] = ['<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><circle cx="9" cy="7" r="4"/><path d="M2 21v-3a7 7 0 0 1 14 0v3M17 3a4 4 0 0 1 0 8M22 21v-3a7 7 0 0 0-4-6"/></svg>', 'Pengguna', $app . '/admin/pengguna'];
     $dash = KP_DASHBOARD_URL;

@@ -45,3 +45,27 @@ html.dark .pm-lembar-k,.dark .pm-lembar-k{background:#0f1b33;color:#e2e8f0}
 html.dark .pm-lembar-k p,.dark .pm-lembar-k p{color:#94a3b8}
 .pm-lembar .pm-btn{display:inline-flex;align-items:center;gap:6px;border-radius:12px;background:#fff;color:#0f172a;font-weight:800;cursor:pointer;font-family:inherit}
 .pm-lembar .pm-btn.pm-wa{background:#16a34a;border-color:#16a34a;color:#fff}
+
+/* ===== edit nomor HP Kepala Cabang / BOM-BOS (tombol ✏️ di kartu cabang + dialog) ===== */
+.hero .pm-edit{border:0;cursor:pointer;font-family:inherit;background:rgba(255,255,255,.18);color:#fff;box-shadow:none}
+.hero .pm-edit:hover{background:rgba(255,255,255,.28)}
+.hero .pm-hp-tambah{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px 12px}
+.hero .pm-hp-tambah .pm-tambah{background:#fff;color:#0f2a5c}
+@media (max-width:640px){
+  .hero .pm-hp-tambah .pm-tambah{width:auto;height:auto;min-height:36px;padding:7px 12px;border-radius:10px}
+  .hero .pm-hp-tambah .pm-tambah span{position:static;width:auto;height:auto;overflow:visible;clip:auto}
+}
+.pm-ubah form{display:flex;flex-direction:column;gap:10px}
+.pm-ubah .pm-ubah-cab{margin:-4px 0 0;font-size:12.5px;font-weight:700;color:#475569}
+.pm-ubah label{display:flex;flex-direction:column;gap:4px;font-size:12.5px;font-weight:700;color:#334155}
+.pm-ubah label small{font-weight:500;color:#64748b}
+.pm-ubah input{width:100%;box-sizing:border-box;padding:10px 12px;border:1px solid #cbd5e1;border-radius:10px;font:15px/1.3 inherit;font-family:inherit;color:#0f172a;background:#fff}
+.pm-ubah input:focus{outline:2px solid #2563eb;outline-offset:1px}
+.pm-ubah .pm-ubah-tip{font-size:11.5px;line-height:1.45;color:#64748b}
+.pm-ubah .pm-ubah-err{color:#b42318;margin:0}
+.pm-ubah .pm-ubah-err:empty{display:none}
+.pm-ubah button[disabled]{opacity:.65;cursor:wait}
+html.dark .pm-ubah label,.dark .pm-ubah label,[data-theme="dark"] .pm-ubah label{color:#cbd5e1}
+html.dark .pm-ubah input,.dark .pm-ubah input,[data-theme="dark"] .pm-ubah input{background:#16243f;border-color:#334155;color:#e2e8f0}
+[data-theme="dark"] .pm-lembar-k{background:#0f1b33;color:#e2e8f0}
+@media print{.hero .pm-edit,.hero .pm-tambah{display:none}}

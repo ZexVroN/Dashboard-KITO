@@ -218,9 +218,17 @@
     // ASM / SQO Area / SQO Region: pilih nama pengguna & area/region
     const asmWrap = form.querySelector('.kl-asm'), asm = asmWrap.querySelector('select');
     let asmJab = '';
+    // nama sama dengan yang tampil di aplikasi (profil & header): nama hasil "Edit profil" akun ini bila pernah diubah,
+    // selain itu nama bawaan (data pimpinan / ASM / jabatan)
     const isiNama = () => {
       const j = u.value.toLowerCase();
-      nama.value = JAB_ORANG.includes(j) ? namaPengguna(j, '', asm.value) : namaPengguna(u.value, cab.value);
+      const bawaan = JAB_ORANG.includes(j) ? namaPengguna(j, '', asm.value) : namaPengguna(u.value, cab.value);
+      let sub = '';
+      if (j === KODE_CABANG) { const i = cariCabang(cab.value); sub = i >= 0 ? String(D.B[i][0]) : ''; }
+      else if (JAB_ORANG.includes(j)) sub = asm.value || '';
+      const perlu = (j === KODE_CABANG || JAB_ORANG.includes(j)) && !sub;   // akun per orang belum dipilih cabang/areanya
+      const profil = j && !perlu ? lsBaca('kito-profil:' + kunciAkun(j, sub), null) : null;
+      nama.value = (profil && String(profil.nama || '').trim()) || bawaan;
     };
     asm.addEventListener('change', () => { isiNama(); if (asm.value) p.focus(); });
     cab.addEventListener('input', isiNama);

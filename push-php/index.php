@@ -9,7 +9,7 @@
  *   /api/stats · /api/scheduled (GET) · /api/scheduled/<id> (DELETE) · /admin
  *   Pemantauan perangkat: /api/presence/ping (POST, publik) · /api/presence/summary · /api/presence/devices (GET, admin)
  *   /api/presence/devices/<id> (PUT label · DELETE, admin) · /api/presence/export?jenis=perangkat|sesi|lokasi&days=30 (CSV, admin)
- *   /admin/perangkat
+ *   /admin/perangkat · /admin/kontak (nomor HP Kepala Cabang & BOM/BOS: /api/kontak/admin GET/PUT, admin)
  *   Kanal dalam-aplikasi (WebView / tanpa Web Push): /api/inapp/register (POST) · /api/inbox/poll?device_id=&since_id= (GET, alias /api/webview/poll)
  *   /api/inbox?device_id= (GET, riwayat notifikasi perangkat). Satu POST /api/notifications menjangkau Web Push DAN dalam-aplikasi.
  * Tanpa rewrite .htaccess, rute juga bisa dipanggil sebagai index.php/api/...
@@ -66,7 +66,7 @@ if ($method === 'OPTIONS') { http_response_code(204); exit; }
 
 // halaman admin (notifikasi & perangkat), keduanya dengan menu bar bersama dari lib/page.php
 if ($route === '/') { header('Location: index.php/admin'); exit; } // selalu berfungsi, dengan atau tanpa rewrite
-$halamanAdmin = ['/admin' => ['admin.html', 'notifikasi'], '/admin/perangkat' => ['perangkat.html', 'perangkat'], '/admin/masukan' => ['masukan.html', 'masukan']];
+$halamanAdmin = ['/admin' => ['admin.html', 'notifikasi'], '/admin/perangkat' => ['perangkat.html', 'perangkat'], '/admin/masukan' => ['masukan.html', 'masukan'], '/admin/kontak' => ['kontak.html', 'kontak']];
 if (function_exists('kp_pengguna') && is_file(__DIR__ . '/lib/pengguna.html')) $halamanAdmin['/admin/pengguna'] = ['pengguna.html', 'pengguna'];
 if (isset($halamanAdmin[$route])) {
     require_once __DIR__ . '/lib/page.php';
@@ -312,6 +312,18 @@ try {
         if (!kp_rate('kontak:' . kp_ip(), 30)) kp_fail(429, 'terlalu banyak permintaan, coba lagi sebentar lagi');
         header('Cache-Control: no-store');
         kp_json(200, kp_kontak_bom(kp_body()));
+    }
+    /* ---------- edit nomor HP Kepala Cabang / BOM/BOS dari kartu cabang dashboard (cakupan sama dengan lihat) ---------- */
+    if ($method === 'POST' && $route === '/api/kontak/ubah') {
+        if (!kp_rate('kontakubah:' . kp_ip(), 20)) kp_fail(429, 'terlalu banyak permintaan, coba lagi sebentar lagi');
+        header('Cache-Control: no-store');
+        kp_json(200, kp_kontak_ubah(kp_body()));
+    }
+    /* ---------- backend admin: daftar & edit kontak pimpinan cabang ---------- */
+    if ($route === '/api/kontak/admin' && ($method === 'GET' || $method === 'PUT')) {
+        kp_admin();
+        header('Cache-Control: no-store');
+        kp_json(200, $method === 'GET' ? kp_kontak_admin_list() : kp_kontak_admin_ubah(kp_body()));
     }
     /* ---------- masukan: rating & keluhan dari halaman Cabang ---------- */
     if ($method === 'POST' && $route === '/api/feedback') {

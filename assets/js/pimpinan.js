@@ -4,6 +4,7 @@
    ASM & SQO Area (hanya cabang di areanya). Nomor TIDAK ada di data publik: diambil dari server (POST /api/kontak/bom,
    push-php/lib/kontak.php) memakai kredensial akun login, disimpan di memori saja, hilang saat logout/muat ulang.
    Nomor HP/WhatsApp Kepala Cabang: HANYA akun ROH & SQO Region (server mengirim field "kc" khusus keduanya; data/kontak-kc.php).
+   Tombol Edit / Tambah nomor: akun yang melihat nomor dapat mengubahnya (POST /api/kontak/ubah; cakupan sama dengan lihat).
    Add-on non-destruktif: membungkus kartuCabang di URUTAN, tidak mengubah script.js. */
 (()=>{'use strict';
 const P=window.KITO_PIMPINAN;
@@ -17,6 +18,7 @@ const akun=()=>{try{return window.KITO_AKUN?.kini()||null;}catch(e){return null;
 const SVG=d=>`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
 const IK_TEL=SVG('<path d="M5 4h4l2 5-2.5 1.5a11 11 0 005 5L15 13l5 2v4a2 2 0 01-2 2A16 16 0 013 6a2 2 0 012-2"/>');
 const IK_WA=SVG('<path d="M3.5 20.5l1.3-4.2A8.5 8.5 0 1112 20.5a8.4 8.4 0 01-4.1-1.1L3.5 20.5z"/><path d="M9 8.5c0 3.3 2.6 6.4 6 6.5l1-1.6-2-1-1 .9c-1-.4-2.2-1.6-2.6-2.6l.9-1-1-2L9 8.5z"/>');
+const IK_EDIT=SVG('<path d="M4 20h4L19 9l-4-4L4 16v4z"/><path d="M13.5 6.5l4 4"/>');
 
 /* nomor HP dari server, per akun login */
 let K={kunci:null,data:null,kc:null,kcInfo:'',err:'',muat:false};
@@ -103,6 +105,63 @@ document.addEventListener('click',e=>{
 });
 document.addEventListener('keydown',e=>{if(e.key==='Escape')document.querySelector('.pm-lembar')?.remove();});
 
+/* ----- edit nomor HP (Kepala Cabang: ROH & SQO Region; BOM/BOS: semua akun yang melihat nomor, sesuai cakupan).
+   Disimpan di server (POST /api/kontak/ubah, tabel kontak_ubah) dan langsung berlaku untuk semua pengguna. ----- */
+const JENIS_NM={bom:'BOM/BOS',kc:'Kepala Cabang'};
+const kunciAreaPm=s=>String(s||'').toUpperCase().replace(/^\s*AREA\s+/,'').replace(/[^A-Z0-9]/g,'');
+function dalamArea(kode){
+  const a=akun();if(!a||(a.jab!=='asm'&&a.jab!=='sqoa'))return true;
+  const b=D.B.find(x=>String(x[0])===String(kode));
+  return !!b&&kunciAreaPm(b[2])===a.sub;
+}
+function tombolUbah(jenis,kode,hp,nama,mode){
+  const tambah=mode==='tambah';
+  return `<button type="button" class="pm-btn pm-edit${tambah?' pm-tambah':''}" data-pm-ubah="${jenis}" data-pm-kode="${esc(kode)}" data-pm-hpv="${esc(hp||'')}" data-pm-nama="${esc(nama||'')}" aria-label="${tambah?'Tambah':'Edit'} nomor HP ${JENIS_NM[jenis]}">${IK_EDIT}<span>${tambah?'Tambah nomor':'Edit'}</span></button>`;
+}
+function dialogUbah(jenis,kode,hp,nama){
+  document.querySelector('.pm-ubah')?.remove();
+  const b=D.B.find(x=>String(x[0])===String(kode));
+  const el=document.createElement('div');el.className='pm-lembar pm-ubah';el.setAttribute('role','dialog');el.setAttribute('aria-modal','true');el.setAttribute('aria-labelledby','pm-ubah-j');
+  el.innerHTML=`<form class="pm-lembar-k" novalidate>
+    <b class="pm-lembar-j" id="pm-ubah-j">${IK_EDIT}<span>${hp?'Edit':'Tambah'} nomor HP ${JENIS_NM[jenis]}</span></b>
+    <p class="pm-ubah-cab">${esc(kode)} ${esc(b?b[1]:'')}</p>
+    <label>Nama ${JENIS_NM[jenis]} <small>(opsional)</small><input name="nama" maxlength="80" autocomplete="off" value="${esc(nama||'')}"></label>
+    <label>Nomor HP / WhatsApp<input name="hp" inputmode="tel" maxlength="20" autocomplete="off" placeholder="0812-3456-7890" value="${esc(hp||'')}"></label>
+    <small class="pm-ubah-tip">Kosongkan nomor untuk menghapus. Perubahan langsung berlaku untuk semua pengguna yang dapat melihat nomor ini.</small>
+    <small class="pm-lembar-st pm-ubah-err" role="alert"></small>
+    <div class="pm-lembar-ak">
+      <button type="submit" class="pm-btn pm-wa">Simpan</button>
+      <button type="button" class="pm-btn" data-pml="tutup">Batal</button>
+    </div>
+  </form>`;
+  const f=el.querySelector('form'),err=el.querySelector('.pm-ubah-err'),btn=f.querySelector('[type=submit]');
+  el.addEventListener('click',e=>{if(e.target===el||e.target.closest('[data-pml="tutup"]'))el.remove();});
+  f.addEventListener('submit',async e=>{
+    e.preventDefault();err.textContent='';
+    const nilaiHp=f.hp.value.trim(),d=nilaiHp.replace(/\D/g,'').replace(/^62/,'0').replace(/^8/,'08');
+    if(nilaiHp&&!/^08\d{7,11}$/.test(d)){err.textContent='Nomor HP tidak valid. Contoh: 0812-3456-7890';f.hp.focus();return;}
+    if(!nilaiHp&&!confirm(`Hapus nomor HP ${JENIS_NM[jenis]} cabang ${kode}?`))return;
+    const a=akun();if(!a){err.textContent='Sesi login berakhir. Silakan login ulang.';return;}
+    btn.disabled=true;btn.textContent='Menyimpan…';
+    try{
+      const r=await fetch(API()+'/api/kontak/ubah',{method:'POST',headers:{'Content-Type':'application/json'},cache:'no-store',
+        body:JSON.stringify({...a.kred,jenis,kode:String(kode),hp:nilaiHp,nama:f.nama.value.trim()})});
+      const j=await r.json().catch(()=>({}));
+      if(!r.ok)throw new Error(r.status===401?'Sesi login tidak berlaku lagi. Silakan logout lalu login ulang.':(j.error||'Gagal menyimpan ('+r.status+')'));
+      const tujuan=jenis==='kc'?(K.kc=K.kc||{}):(K.data=K.data||{});
+      if(j.kontak)tujuan[String(kode)]=j.kontak;else delete tujuan[String(kode)];
+      el.remove();render();
+    }catch(x){err.textContent=x instanceof TypeError?'Server tidak bisa dihubungi. Coba lagi.':x.message;btn.disabled=false;btn.textContent='Simpan';}
+  });
+  document.body.appendChild(el);
+  f.hp.focus();
+}
+document.addEventListener('click',e=>{
+  const t=e.target.closest('[data-pm-ubah]');if(!t)return;
+  e.preventDefault();dialogUbah(t.dataset.pmUbah,t.dataset.pmKode,t.dataset.pmHpv,t.dataset.pmNama);
+});
+document.addEventListener('keydown',e=>{if(e.key==='Escape')document.querySelector('.pm-ubah')?.remove();});
+
 function blokKontak(kode,namaBom){
   const a=akun();
   if(!a||!BOLEH.includes(a.jab)||!API())return '';
@@ -111,14 +170,16 @@ function blokKontak(kode,namaBom){
   if(K.err)return `<div class="pm-hp pm-hp-info">${esc(K.err)}</div>`;
   const k=K.data&&K.data[kode];
   if(!k){
-    const luar=(a.jab==='asm'||a.jab==='sqoa');
-    return `<div class="pm-hp pm-hp-info">${luar&&Object.keys(K.data||{}).length?'Nomor HP hanya ditampilkan untuk cabang di area Anda.':'Nomor HP BOM/BOS cabang ini belum tersedia.'}</div>`;
+    // ASM / SQO Area: data hanya berisi cabang di areanya; cabang lain tidak bisa dilihat maupun diedit
+    if(!dalamArea(kode))return `<div class="pm-hp pm-hp-info">Nomor HP hanya ditampilkan untuk cabang di area Anda.</div>`;
+    return `<div class="pm-hp pm-hp-info pm-hp-tambah"><span>Nomor HP BOM/BOS cabang ini belum tersedia.</span>${tombolUbah('bom',kode,'',namaBom,'tambah')}</div>`;
   }
   return `<div class="pm-hp">
     <span class="pm-hp-no"><small>No. HP BOM / BOS${k.nama&&String(k.nama).toLowerCase()!==String(namaBom||'').toLowerCase()?' · '+esc(k.nama):''}</small><b>${esc(k.hp)}</b></span>
     <span class="pm-hp-ak">
       <a class="pm-btn" data-pm-jenis="tel" data-pm-hp="${esc(k.hp)}" data-pm-wa="${esc(k.wa)}" href="tel:+${esc(k.wa)}" aria-label="Telepon ${esc(k.nama||'BOM/BOS')}">${IK_TEL}<span>Telepon</span></a>
       <a class="pm-btn pm-wa" data-pm-jenis="wa" data-pm-hp="${esc(k.hp)}" data-pm-wa="${esc(k.wa)}" href="https://wa.me/${esc(k.wa)}" target="_blank" rel="noopener" aria-label="WhatsApp ${esc(k.nama||'BOM/BOS')}">${IK_WA}<span>WhatsApp</span></a>
+      ${tombolUbah('bom',kode,k.hp,k.nama||namaBom)}
     </span>
   </div>`;
 }
@@ -128,14 +189,14 @@ function blokKc(kode,namaBm){
   const a=akun();
   if(!a||!BOLEH_KC.includes(a.jab)||K.kunci!==a.kunci||K.muat||K.err||!K.data)return '';
   const k=K.kc&&K.kc[kode];
-  if(!K.kc)return `<div class="pm-hp pm-hp-info">Nomor HP Kepala Cabang belum tampil. ${esc(K.kcInfo||'')}</div>`;
-  if(!k)return `<div class="pm-hp pm-hp-info">Nomor HP Kepala Cabang cabang ini belum tersedia.</div>`;
+  if(!k)return `<div class="pm-hp pm-hp-info pm-hp-tambah pm-hp-kc"><span>Nomor HP Kepala Cabang cabang ini belum tersedia.${!K.kc&&K.kcInfo?' '+esc(K.kcInfo):''}</span>${tombolUbah('kc',kode,'',namaBm,'tambah')}</div>`;
   const nm=k.nama&&String(k.nama).toLowerCase()!==String(namaBm||'').toLowerCase()?' · '+esc(k.nama):'';
   return `<div class="pm-hp pm-hp-kc">
     <span class="pm-hp-no"><small>No. HP Kepala Cabang${nm}</small><b>${esc(k.hp)}</b></span>
     <span class="pm-hp-ak">
       <a class="pm-btn" data-pm-jenis="tel" data-pm-hp="${esc(k.hp)}" data-pm-wa="${esc(k.wa)}" href="tel:+${esc(k.wa)}" aria-label="Telepon Kepala Cabang ${esc(k.nama||'')}">${IK_TEL}<span>Telepon</span></a>
       <a class="pm-btn pm-wa" data-pm-jenis="wa" data-pm-hp="${esc(k.hp)}" data-pm-wa="${esc(k.wa)}" href="https://wa.me/${esc(k.wa)}" target="_blank" rel="noopener" aria-label="WhatsApp Kepala Cabang ${esc(k.nama||'')}">${IK_WA}<span>WhatsApp</span></a>
+      ${tombolUbah('kc',kode,k.hp,k.nama||namaBm)}
     </span>
   </div>`;
 }

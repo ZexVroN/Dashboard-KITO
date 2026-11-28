@@ -5,6 +5,7 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.view.WindowManager
 import android.webkit.ValueCallback
 import android.webkit.WebChromeClient
 import android.webkit.WebResourceRequest
@@ -32,6 +33,9 @@ class MainActivity : AppCompatActivity() {
     @SuppressLint("SetJavaScriptEnabled")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        // Blokir screenshot & rekam layar sejak awal (aman secara bawaan). Halaman melepasnya lewat
+        // KitoAndroid.setSecure(false) setelah pengguna login (assets/js/tamu-aman.js).
+        aturLayarAman(true)
         setContentView(R.layout.activity_main)
 
         webView = findViewById(R.id.myWebView)
@@ -48,6 +52,12 @@ class MainActivity : AppCompatActivity() {
         } else {
             loadDashboardUrl(DASHBOARD_URL)
         }
+    }
+
+    /** FLAG_SECURE: layar tidak bisa di-screenshot / direkam dan tampil hitam di daftar aplikasi terbaru. */
+    fun aturLayarAman(aktif: Boolean) {
+        if (aktif) window.addFlags(WindowManager.LayoutParams.FLAG_SECURE)
+        else window.clearFlags(WindowManager.LayoutParams.FLAG_SECURE)
     }
 
     override fun onNewIntent(intent: Intent?) {

@@ -148,7 +148,7 @@
   app.addEventListener('touchstart', (event) => {
     g = null;
     if (sibuk || !mobile.matches || event.touches.length !== 1) return;
-    if (event.target.closest('input, select, textarea, [contenteditable], [role="dialog"], .kmk-notif')) return;
+    if (event.target.closest('input, select, textarea, [contenteditable], [role="dialog"], .kmk-notif, #pgn-notif, .kito-pctl-top')) return;
     for (let el = event.target; el && el !== app; el = el.parentElement) {
       if (el.scrollWidth > el.clientWidth + 1 && /(auto|scroll)/.test(getComputedStyle(el).overflowX)) return;
     }

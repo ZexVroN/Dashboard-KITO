@@ -178,6 +178,18 @@
     try { const r = await api('POST', '/api/feedback/cuti', a.kred); if (cu.kunci === a.kunci) { cu.list = r.cuti || []; cu.hariIni = r.hariIni; cu.cakupan = r.cakupan; } }
     catch (e) { if (cu.kunci === a.kunci) { cu.err = /password salah/i.test(e.message) ? 'Sesi login tidak berlaku lagi. Silakan logout lalu login ulang.' : e.message; cu.list = cu.list || []; } }
   }
+  // satu baris pegawai tidak masuk (dipakai di kotak 🔔 dan di kartu halaman Cabang untuk level ROH)
+  function itemCuti(r, hi) {
+    const jalan = r.cuti_mulai <= hi, sisa = selisihHari(hi, r.cuti_mulai);
+    const tanda = jalan ? `<span class="knp-cu-t on">Tidak masuk${r.cuti_selesai > hi ? ' s.d. ' + esc(tglPendek(r.cuti_selesai)) : ' hari ini'}</span>`
+      : `<span class="knp-cu-t">${sisa === 1 ? 'Mulai besok' : `Mulai ${sisa} hari lagi`}</span>`;
+    return `<div class="knp-cu ${jalan ? 'on' : ''}">
+      <div class="knp-cu-h"><b>${esc(r.nama || '–')}</b>${tanda}</div>
+      <small>${esc([r.cuti_jabatan, `${r.kode} ${r.cabang || ''}`.trim()].filter(Boolean).join(' · '))}</small>
+      <small>${esc(r.kategori || 'Cuti')} · ${esc(tglPendek(r.cuti_mulai))}${r.cuti_selesai !== r.cuti_mulai ? ' – ' + esc(tglPendek(r.cuti_selesai)) : ''}${r.cuti_hari != null ? ` · ${r.cuti_hari} hari kerja` : ''}</small>
+      ${r.cuti_pengganti ? `<small>Pengganti: ${esc(r.cuti_pengganti)}</small>` : ''}
+    </div>`;
+  }
   function bagianCuti() {
     const a = akun();
     if (!a) return '';
@@ -190,17 +202,7 @@
     if (!cu.list.length) return judul + (cu.err ? `<p class="knp-msg">${esc(cu.err)}</p>` : `<p class="knp-kosong">${penerimaCuti ? 'Tidak ada pegawai yang cuti hari ini maupun 60 hari ke depan.' : 'Belum ada rencana tidak masuk yang Anda kirim untuk hari ini maupun 60 hari ke depan.'}</p>`) + infoPenerima;
     const hi = cu.hariIni || new Date(Date.now() + 7 * 3600e3).toISOString().slice(0, 10);
     const sedang = cu.list.filter((r) => r.cuti_mulai <= hi), nanti = cu.list.filter((r) => r.cuti_mulai > hi);
-    const item = (r) => {
-      const jalan = r.cuti_mulai <= hi, sisa = selisihHari(hi, r.cuti_mulai);
-      const tanda = jalan ? `<span class="knp-cu-t on">Tidak masuk${r.cuti_selesai > hi ? ' s.d. ' + esc(tglPendek(r.cuti_selesai)) : ' hari ini'}</span>`
-        : `<span class="knp-cu-t">${sisa === 1 ? 'Mulai besok' : `Mulai ${sisa} hari lagi`}</span>`;
-      return `<div class="knp-cu ${jalan ? 'on' : ''}">
-        <div class="knp-cu-h"><b>${esc(r.nama || '–')}</b>${tanda}</div>
-        <small>${esc([r.cuti_jabatan, `${r.kode} ${r.cabang || ''}`.trim()].filter(Boolean).join(' · '))}</small>
-        <small>${esc(r.kategori || 'Cuti')} · ${esc(tglPendek(r.cuti_mulai))}${r.cuti_selesai !== r.cuti_mulai ? ' – ' + esc(tglPendek(r.cuti_selesai)) : ''}${r.cuti_hari != null ? ` · ${r.cuti_hari} hari kerja` : ''}</small>
-        ${r.cuti_pengganti ? `<small>Pengganti: ${esc(r.cuti_pengganti)}</small>` : ''}
-      </div>`;
-    };
+    const item = (r) => itemCuti(r, hi);
     return judul + `<p class="knp-note knp-as"><b>${sedang.length}</b> pegawai tidak masuk hari ini · <b>${nanti.length}</b> rencana cuti 60 hari ke depan.</p>`
       + `<div class="knp-cul">${sedang.map(item).join('')}${nanti.map(item).join('')}</div>` + infoPenerima + (cu.err ? `<p class="knp-msg">${esc(cu.err)}</p>` : '');
   }
@@ -221,6 +223,13 @@
     if (!app || typeof tampil === 'undefined' || tampil !== 'cabang' || kartuCutiTutup || !p.kode || !a) { el?.remove(); return; }
     const hi = cu.hariIni || new Date(Date.now() + 7 * 3600e3).toISOString().slice(0, 10);
     const sedang = list.filter((r) => r.cuti_mulai <= hi), nanti = list.filter((r) => r.cuti_mulai > hi);
+    // level ROH (ROH, SQO Region, admin = penerima Region II): kartu hanya menampilkan daftar pegawai, tanpa form input
+    const lihatSaja = seRegion(a.jab);
+    const mode = lihatSaja ? 'daftar' : 'form';
+    if (el && el.dataset.mode !== mode) {   // akun berganti (login/logout): kosongkan isi kartu lama
+      formCutiBuka = false; el.classList.remove('buka');
+      const fc0 = el.querySelector('.knp-cuk-form'); fc0.hidden = true; fc0.innerHTML = ''; delete fc0.dataset.kode;
+    }
     if (!el) {
       el = document.createElement('div');
       el.id = 'knp-cuk'; el.className = 'kmk-notif knp-cuk'; el.setAttribute('role', 'group'); el.tabIndex = 0; kartuCutiEl = el;
@@ -231,11 +240,12 @@
         <button type="button" class="kmk-n-x" aria-label="Tutup informasi rencana pegawai tidak masuk">${IKON_TUTUP}</button>
         <div class="knp-cuk-form" hidden></div>`;
       el.querySelector('.kmk-n-x').addEventListener('click', (e) => { e.stopPropagation(); kartuCutiTutup = true; el.remove(); });
-      // ketuk kartu = buka / tutup form pengisian di dalam kartu
+      // ketuk kartu = buka / tutup form pengisian di dalam kartu (level ROH: buka / tutup daftar pegawai)
       const bukaInput = () => {
         const fc = el.querySelector('.knp-cuk-form');
         formCutiBuka = !formCutiBuka;
         fc.hidden = !formCutiBuka; el.classList.toggle('buka', formCutiBuka);
+        if (el.dataset.mode === 'daftar') { segarKartuCuti(); return; }
         if (formCutiBuka) {
           if (window.KITO_MASUKAN?.formCuti) { if (!fc.firstChild || fc.dataset.kode !== String(pilihan().kode)) window.KITO_MASUKAN.formCuti(fc); fc.querySelector('input')?.focus({ preventScroll: true }); }
           else fc.textContent = 'Form belum siap, coba lagi sebentar.';
@@ -249,22 +259,47 @@
       });
       el.addEventListener('keydown', (e) => { if ((e.key === 'Enter' || e.key === ' ') && e.target === el) { e.preventDefault(); bukaInput(); } });
     }
+    el.dataset.mode = mode;
     const nama = (r) => `${r.nama}${r.cuti_jabatan ? ' (' + r.cuti_jabatan + ')' : ''} ${r.cuti_mulai <= hi ? 's.d. ' + tglPendek(r.cuti_selesai) : 'mulai ' + tglPendek(r.cuti_mulai)}`;
     let sub, isi;
-    if (list.length) {
+    if (lihatSaja) {
+      // daftar pegawai: cabang terpilih di atas, lalu cabang lain se-Region II
+      const semua = cu.list || [];
+      const sR = semua.filter((r) => r.cuti_mulai <= hi).length, nR = semua.length - sR;
+      sub = cu.list ? `Region II · ${sR} tidak masuk hari ini · ${nR} rencana cuti` : 'Memuat daftar…';
+      isi = list.length ? `${p.kode} ${p.cabang || ''}: ` + list.slice(0, 2).map(nama).join(' · ') + (list.length > 2 ? ` · +${list.length - 2} lainnya` : '')
+        : (semua.length ? `Cabang ${p.kode} tidak ada rencana tidak masuk.` : '');
+      const fc = el.querySelector('.knp-cuk-form');
+      if (formCutiBuka) {
+        const lain = semua.filter((r) => String(r.kode) !== String(p.kode));
+        const grup = (judul, rows) => (rows.length ? `<p class="knp-cuk-gj">${esc(judul)}</p><div class="knp-cul knp-cuk-list">${rows.map((r) => itemCuti(r, hi)).join('')}</div>` : '');
+        fc.innerHTML = !cu.list ? '<p class="knp-cuk-kosong">Memuat daftar…</p>'
+          : cu.err && !semua.length ? `<p class="knp-cuk-kosong">${esc(cu.err)}</p>`
+          : !semua.length ? '<p class="knp-cuk-kosong">Tidak ada pegawai yang cuti hari ini maupun 60 hari ke depan di Region II.</p>'
+          : grup(`Cabang ${p.kode} ${p.cabang || ''}`.trim(), list) + grup(list.length ? 'Cabang lain · Region II' : 'Region II', lain);
+      }
+      el.querySelector('em').textContent = sub;
+      el.querySelector('.knp-cuk-n').textContent = isi;
+      el.querySelector('[data-cuk-lihat]').hidden = true;
+      el.querySelector('.kmk-n-tx b').textContent = 'Pegawai Tidak Masuk';
+      el.setAttribute('aria-label', `Daftar pegawai tidak masuk Region II${cu.list ? `: ${sR} hari ini, ${nR} rencana` : ''}. Ketuk untuk ${formCutiBuka ? 'menutup' : 'melihat'} daftar.`);
+    } else if (list.length) {
       sub = `${p.kode} ${p.cabang || ''} · ${sedang.length} tidak masuk hari ini · ${nanti.length} rencana cuti`;
       isi = list.slice(0, 3).map(nama).join(' · ') + (list.length > 3 ? ` · +${list.length - 3} lainnya` : '');
     } else {
       sub = formCutiBuka ? 'Isi formulir di bawah' : 'Ketuk untuk isi formulir';
       isi = '';
     }
-    el.querySelector('em').textContent = sub;
-    el.querySelector('.knp-cuk-n').textContent = isi;
-    el.querySelector('[data-cuk-lihat]').hidden = !list.length;
-    // ganti cabang saat form terbuka: form digambar ulang untuk cabang baru (isian tetap)
-    const fc = el.querySelector('.knp-cuk-form');
-    if (formCutiBuka && fc.dataset.kode && fc.dataset.kode !== String(p.kode) && window.KITO_MASUKAN?.formCuti && fc.querySelector('form')) window.KITO_MASUKAN.formCuti(fc);
-    el.setAttribute('aria-label', `Rencana pegawai tidak masuk ${p.kode} ${p.cabang || ''}${list.length ? `: ${sedang.length} hari ini, ${nanti.length} rencana` : ''}. Ketuk untuk input rencana tidak masuk.`);
+    if (!lihatSaja) {
+      el.querySelector('em').textContent = sub;
+      el.querySelector('.knp-cuk-n').textContent = isi;
+      el.querySelector('[data-cuk-lihat]').hidden = !list.length;
+      el.querySelector('.kmk-n-tx b').textContent = 'Rencana Pegawai Tidak Masuk';
+      // ganti cabang saat form terbuka: form digambar ulang untuk cabang baru (isian tetap)
+      const fc = el.querySelector('.knp-cuk-form');
+      if (formCutiBuka && fc.dataset.kode && fc.dataset.kode !== String(p.kode) && window.KITO_MASUKAN?.formCuti && fc.querySelector('form')) window.KITO_MASUKAN.formCuti(fc);
+      el.setAttribute('aria-label', `Rencana pegawai tidak masuk ${p.kode} ${p.cabang || ''}${list.length ? `: ${sedang.length} hari ini, ${nanti.length} rencana` : ''}. Ketuk untuk input rencana tidak masuk.`);
+    }
     // posisi: tepat di bawah kartu Lapor Masalah Operasional Cabang (masukan.js), atau paling atas bila kartu itu ditutup
     const lapor = document.getElementById('kmk-info');
     if (lapor && lapor.parentNode === app) { if (lapor.nextElementSibling !== el) lapor.after(el); }

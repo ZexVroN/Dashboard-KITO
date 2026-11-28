@@ -3,7 +3,9 @@
    - Notifikasi yang ditutup muncul kembali setelah halaman dimuat ulang.
    - Halaman informasi berbentuk daftar berita (array BERITA). Ketuk berita = pindah ke halaman detailnya:
      "Penguatan Operasional" (7 kartu poin, array POIN), "Waspada Setor Angin" (objek SETOR) dan
-     "Saling Ingatkan Bahaya Penipuan Digital" (objek PENIPUAN, dengan tombol bagikan WhatsApp/salin).
+     "Saling Ingatkan Bahaya Penipuan Digital" (objek PENIPUAN, dengan tombol bagikan WhatsApp/salin),
+     "Sikap Akhir Layanan & Edukasi Klik Livin’ Food" (objek LIVIN) dan
+     "Penegasan Mekanisme Pelaksanaan, Persetujuan & Pemeriksaan Transaksi" (objek MEKANISME, SE OPT.OB1/GH.1128/2026).
    Tombol ‹ Kembali di halaman detail = kembali ke daftar informasi. Add-on non-destruktif: menyisipkan kartu ke URUTAN. */
 (()=>{'use strict';
 if(typeof URUTAN==='undefined'||typeof render!=='function')return;
@@ -169,6 +171,64 @@ Service yang Me-Menangkan 💪🏻
 
 #Salam1ServiceMandiri 🙏`;
 
+/* ----- berita "Penegasan Mekanisme Pelaksanaan, Pemberian Persetujuan & Pemeriksaan Transaksi"
+   (Surat Edaran OPT.OB1/GH.1128/2026, 19 Nov 2026) ----- */
+const MEKANISME={
+  label:'Ringkasan Surat Edaran · Operasional Cabang',
+  judul:'Penegasan Mekanisme Pelaksanaan, Pemberian Persetujuan & Pemeriksaan Transaksi',
+  intro:'Cabang kini menjalankan **dua sistem secara paralel**. Perbedaan desain keduanya membuat mekanisme persetujuan, pemeriksaan & laporan juga berbeda — surat ini menyeragamkan pelaksanaan oleh **BOM / BOS / CSO / CS Spv** agar kontrol optimal.',
+  ref:'Nomor OPT.OB1/GH.1128/2026 · 19 November 2026 · Outserve & Branch Operations Group 1 & 2',
+  pdf:'assets/dokumen/se-mekanisme-transaksi-opt-ob1-gh-1128-2026.pdf',
+  sistem:[
+    {tag:'Sistem Baru', j:'New BDS', baru:true, k:'Untuk transaksi yang fiturnya sudah tersedia. Nasabah menginisiasi & menyetujui sendiri via **e-form, Livin’ atau Kopra by Mandiri**.',
+     alur:[['Happy Flow','Verifikasi data otomatis melalui integrasi sistem'],['Exception Flow','Verifikasi manual untuk kondisi / transaksi tertentu']]},
+    {tag:'Sistem Lama', j:'Old BDS', k:'Untuk transaksi/layanan yang fiturnya **belum tersedia** di New BDS.',
+     alur:[['Posting oleh Teller/CSR','Berdasarkan slip / formulir / surat perintah nasabah'],['Eyeballing','Pemeriksaan selama & pasca transaksi']]},
+  ],
+  userid:[
+    {ik:'orang', j:'Wajib Dimiliki', poin:['BOM, BOS, CSO, CS Spv, Teller & CSR wajib punya **kedua user ID**','Pegawai baru: lampirkan **sertifikat training** (sudah ikut training & lulus tes)']},
+    {ik:'gembokS', j:'Personal & Rahasia', poin:['**Dilarang berbagi** user ID, password, atau perangkat dalam kondisi log in','**Kunci layar & log off** saat meninggalkan meja','Tanggung jawab penuh atas tiap transaksi dengan ID sendiri']},
+    {ik:'putar', j:'Review & Sanksi', poin:['ASM/BOM/BOS review user ID & akses level **min. 1×/bulan**','Segera sesuaikan saat rotasi / mutasi / resign','Penyalahgunaan user ID **dikenakan sanksi**']},
+  ],
+  useridCat:'Tata cara pembuatan user ID New BDS via IT Remedy → Lampiran 1',
+  transaksi:[
+    {j:'Dalam kewenangan Teller/CSR', k:'Selesai tanpa persetujuan penyelia',
+     old:'Dijalankan berdasarkan **slip/formulir** nasabah. Teller/CSR wajib memastikan nasabah **berwenang** (identitas asli, spesimen tanda tangan, data sistem).',
+     baru:'Diinisiasi nasabah via **e-form / Livin’ / Kopra**. Teller/CSR memastikan **status verifikasi** nasabah & kesesuaian dengan data di sistem.'},
+    {j:'Di atas kewenangan Teller/CSR', k:'Wajib persetujuan BOM / BOS / CSO / CS Spv', atas:true,
+     old:'Penyelia **menghampiri** Teller/CSR, cek kelengkapan data & dokumen, serta cocokkan detail transaksi dengan slip/perintah nasabah.',
+     baru:'Penyelia **menghampiri** Teller/CSR, periksa detail transaksi, lalu menyetujui via:',
+     metode:[['Face Recognition','Wajib · mekanisme utama'],['OTP','Hanya fallback, mis. FR terkendala integrasi',1]]},
+  ],
+  transaksiCat:'Penyelia bertanggung jawab penuh atas setiap persetujuan & dilarang berbagi password → Lampiran 2a & 2b',
+  periksa:[
+    {tag:'Old BDS', j:'Cocokkan Laporan Akhir Hari', k:'Teller/CSR mencocokkan perintah nasabah (slip/formulir) dengan **laporan transaksi akhir hari** — mis. transaksi sukses, gagal, tertunda, dikoreksi, posisi kas.', cat:'Daftar laporan → Lampiran 3a'},
+    {tag:'New BDS · Happy Flow', j:'Periksa Warkat Sebelum Proses', k:'Tidak perlu pemeriksaan manual, **kecuali** transaksi dengan warkat (cek, bilyet giro, LOA, dll): periksa **keaslian fisik & syarat formal** sebelum diproses, lalu administrasikan dokumen dengan tertib.'},
+    {tag:'New BDS · Exception Flow', j:'Exception Report Harian', k:'Tercatat di **Web Branch Admin**. BOM/BOS wajib memeriksa **seluruh** transaksi di exception report **setiap hari**.', sorot:true},
+  ],
+  checklist:['Jenis transaksi, nominal, rekening sumber & rekening/nama penerima','Status transaksi','Status verifikasi nasabah (OCR KTP / FR / OTP)','Alasan approval',
+    'Metode approval penyelia','Status approval penyelia','Dokumen pendukung & foto nasabah'],
+  checklistCat:'Klasifikasi eksepsi (non finansial, finansial, back office) & panduan → Lampiran 3b',
+  kas:[
+    {ik:'jam', j:'Selama Jam Layanan', poin:['BOM/BOS melakukan **cash on hand reconciliation mendadak min. 2×** selama jam layanan','Pastikan fisik uang tunai = saldo di sistem','Hasil dilaporkan **setiap hari** melalui tautan Microsoft Forms']},
+    {ik:'bulan', j:'Akhir Hari', poin:['**Teller:** cocokkan saldo sistem vs fisik uang, alokasikan sisa ke BOM/BOS','**CSR:** cocokkan fisik kartu debit, alokasikan sisa ke pengelola kartu','**CSR/CSO/CS Spv:** cocokkan surat berharga, alokasikan sisa ke BOM/BOS']},
+  ],
+  kalender:[
+    {n:'2×', f:'per hari', poin:['Cash on hand reconciliation mendadak (BOM/BOS)']},
+    {n:'1×', f:'per hari', poin:['Cash Opname: Cashier Box tiap Teller + seluruh uang di kluis','Periksa exception report','Lapor hasil rekonsiliasi']},
+    {n:'2×', f:'per bulan (min.)', poin:['Cross Opname acak/tidak terjadwal oleh BM cabang lain / pejabat independen yang ditunjuk Area Head']},
+    {n:'1×', f:'per bulan (min.)', poin:['Opname Stok Besar: surat berharga & kartu debit','Review user ID & akses level']},
+  ],
+  kalenderCat:'Tata cara opname → Lampiran 4 · Berita Acara Pemeriksaan Cross Opname → Lampiran 5 & 6',
+  tindak:[
+    '**Regional Operations Head & Area Service Manager** memastikan seluruh pegawai terkait memahami & konsisten menjalankan persetujuan dan pemeriksaan.',
+    '**CCTV di area kluis** wajib terpasang di tiap cabang — merekam seluruh aktivitas & uang **tanpa blind spot**, termasuk depan & dalam pintu kluis. Retensi rekaman sesuai PTO Pengamanan Korporasi.',
+    '**BOM / BOS / CSO / CS Spv / Teller / CSR** wajib menjalankan verifikasi, persetujuan & pemeriksaan transaksi sesuai ketentuan.',
+  ],
+  sanksi:'Pegawai yang terbukti melakukan **penyalahgunaan, pelanggaran, atau penyimpangan** wajib bertanggung jawab dan dikenakan **sanksi serta proses hukum** sesuai ketentuan.',
+  sumber:'Diterbitkan oleh Outserve & Branch Operations Group 1 & 2 · PT Bank Mandiri (Persero) Tbk. Infografis ini adalah ringkasan — untuk rincian, prosedur lengkap dan lampiran, rujuk surat asli Nomor OPT.OB1/GH.1128/2026.',
+};
+
 /* teks yang dibagikan (WhatsApp / bagikan bawaan HP) */
 const PESAN_PENIPUAN_ASLI=`Satu pesan kecil bisa menyelamatkan orang terdekat dari penipuan digital. 💙
 
@@ -188,6 +248,9 @@ const INFO={
   intro:'Kumpulan informasi & pengingat kewaspadaan **operasional cabang**. Ketuk informasi untuk membaca selengkapnya.',
 };
 const BERITA=[
+  {id:'mekanisme', ik:'stempel', warna:'hijau', baru:true, kat:'Surat Edaran · Operasional Cabang', tgl:'19 Nov 2026',
+   judul:'Penegasan Mekanisme Pelaksanaan, Persetujuan & Pemeriksaan Transaksi',
+   ringkas:'Old BDS & New BDS berjalan paralel: aturan user ID, persetujuan penyelia via Face Recognition (OTP hanya fallback), exception report harian, serta kalender kontrol kas, kartu debit & surat berharga.'},
   {id:'livin', ik:'pesan', warna:'emas', baru:true, kat:'Customer Journey · Morning Briefing', tgl:'24 Nov 2026',
    judul:'Sikap Akhir Layanan & Edukasi Klik Livin’ Food',
    ringkas:'Panduan wajib Morning Briefing: Security menutup layanan dengan hangat dan mengedukasi nasabah fitur Livin’ Food, juga saat selesai ganti kartu O2O dan saat menunggu antrean CS/Teller.'},
@@ -234,6 +297,10 @@ const IKON={
   bagikan:S('<circle cx="18" cy="5" r="2.5"/><circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="19" r="2.5"/><path d="M8.2 10.8l7.6-4.4M8.2 13.2l7.6 4.4"/>'),
   unduh:S('<path d="M12 4v11"/><path d="M7 10l5 5 5-5"/><path d="M5 20h14"/>'),
   salin:S('<rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V6a2 2 0 00-2-2H6a2 2 0 00-2 2v8a2 2 0 002 2h2"/>'),
+  stempel:S('<path d="M9 3h6l-1 7h-4L9 3z"/><path d="M5 14a2 2 0 012-2h10a2 2 0 012 2v3H5v-3z"/><path d="M4 21h16"/>'),
+  jam:S('<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>'),
+  bulan:S('<path d="M20 14.5A8 8 0 019.5 4a8 8 0 1010.5 10.5z"/>'),
+  pdf:S('<path d="M14 3H7a2 2 0 00-2 2v14a2 2 0 002 2h10a2 2 0 002-2V8l-5-5z"/><path d="M14 3v5h5"/><path d="M9 13h6M9 17h4"/>'),
 };
 const tebal=t=>esc(t).replace(/\*\*(.+?)\*\*/g,'<b>$1</b>');
 
@@ -383,7 +450,54 @@ function isiLivin(){
     </div>
     <p class="pn-status" role="status" aria-live="polite"></p>`;
 }
-const HALAMAN={daftar:isiDaftar,penguatan:isiPenguatan,setor:isiSetor,penipuan:isiPenipuan,livin:isiLivin};
+/* halaman berita Penegasan Mekanisme Pelaksanaan, Persetujuan & Pemeriksaan Transaksi */
+function isiMekanisme(){
+  const s=MEKANISME,li=a=>`<ul>${a.map(t=>`<li>${tebal(t)}</li>`).join('')}</ul>`;
+  const sub=(no,t,k)=>`<h3 class="sa-sub mk-sub"><span class="mk-no">${esc(no)}</span><span>${esc(t)}${k?`<small>${esc(k)}</small>`:''}</span></h3>`;
+  const cat=t=>`<p class="mk-cat">${esc(t)}</p>`;
+  const sistem=s.sistem.map(x=>`<div class="mk-sis ${x.baru?'mk-sis-baru':''}">
+      <span class="mk-tag">${esc(x.tag)}</span><b class="mk-sis-j">${esc(x.j)}</b><p>${tebal(x.k)}</p>
+      <div class="mk-sis-alur">${x.alur.map(a=>`<div><b>${esc(a[0])}</b><small>${esc(a[1])}</small></div>`).join('')}</div>
+    </div>`).join('');
+  const transaksi=s.transaksi.map(t=>`<div class="mk-trx ${t.atas?'mk-trx-atas':''}">
+      <div class="mk-trx-h"><b>${esc(t.j)}</b><small>${esc(t.k)}</small></div>
+      <div class="mk-trx-g">
+        <div class="mk-trx-s"><span class="mk-tag">Old BDS</span><p>${tebal(t.old)}</p></div>
+        <div class="mk-trx-s"><span class="mk-tag mk-tag-baru">New BDS</span><p>${tebal(t.baru)}</p>
+          ${t.metode?`<div class="mk-met">${t.metode.map(m=>`<div class="${m[2]?'mk-met-otp':'mk-met-fr'}"><b>${esc(m[0])}</b><small>${esc(m[1])}</small></div>`).join('')}</div>`:''}</div>
+      </div>
+    </div>`).join('');
+  return `<div class="pgn-hero sa-hero mk-hero">
+      <span class="sa-tag">${esc(s.label)}</span>
+      <h2 class="pgn-hero-j" id="pgn-judul" tabindex="-1">${esc(s.judul)}</h2>
+      <p class="pgn-hero-intro">${tebal(s.intro)}</p>
+      <p class="sa-ref">${esc(s.ref)}</p>
+    </div>
+    <a class="mk-pdf" href="${s.pdf}" target="_blank" rel="noopener">${IKON.pdf}<span><b>Buka infografis lengkap (PDF)</b><small>Ringkasan surat edaran · 1 halaman</small></span>${IKON.panah}</a>
+    ${sub('A','Latar Belakang','Cabang kini berjalan dengan dua sistem secara paralel')}
+    <div class="sa-g2">${sistem}</div>
+    ${sub('1','User ID Old BDS & New BDS')}
+    <div class="mk-g3">${s.userid.map(c=>`<div class="sa-cg"><div class="sa-cg-h"><span class="sa-cg-ik">${IKON[c.ik]}</span><b>${esc(c.j)}</b></div>${li(c.poin)}</div>`).join('')}</div>
+    ${cat(s.useridCat)}
+    ${sub('2','Pelaksanaan Transaksi','Siapa melakukan apa, berdasarkan kewenangan & sistem')}
+    <div class="mk-trx-list">${transaksi}</div>
+    ${cat(s.transaksiCat)}
+    ${sub('3','Pemeriksaan Transaksi','Memastikan transaksi sesuai perintah nasabah & ketentuan')}
+    <div class="mk-g3">${s.periksa.map(p=>`<div class="mk-prk ${p.sorot?'mk-prk-sorot':''}"><span class="mk-tag ${p.tag==='Old BDS'?'':'mk-tag-baru'}">${esc(p.tag)}</span><b>${esc(p.j)}</b><p>${tebal(p.k)}</p>${p.cat?`<small>${esc(p.cat)}</small>`:''}</div>`).join('')}</div>
+    <div class="mk-cek"><b>Checklist pemeriksaan Exception Report oleh BOM/BOS</b>
+      <ul>${s.checklist.map(t=>`<li>${IKON.centang}<span>${esc(t)}</span></li>`).join('')}</ul>
+      <small>${esc(s.checklistCat)}</small></div>
+    ${sub('4','Kontrol Kas, Kartu Debit & Surat Berharga')}
+    <div class="sa-g2">${s.kas.map(c=>`<div class="sa-cg"><div class="sa-cg-h"><span class="sa-cg-ik">${IKON[c.ik]}</span><b>${esc(c.j)}</b></div>${li(c.poin)}</div>`).join('')}</div>
+    <h4 class="mk-kal-j">Kalender kontrol yang wajib dijalankan</h4>
+    <div class="mk-kal">${s.kalender.map(k=>`<div class="mk-kal-k"><div class="mk-kal-h"><strong>${esc(k.n)}</strong><span>${esc(k.f)}</span></div>${li(k.poin)}</div>`).join('')}</div>
+    ${cat(s.kalenderCat)}
+    ${sub('C','Tindak Lanjut')}
+    <div class="sa-g2">${s.tindak.map((t,i)=>`<div class="mk-tl"><span class="mk-tl-no">${i+1}</span><p>${tebal(t)}</p></div>`).join('')}
+      <div class="mk-tl mk-tl-sanksi"><span class="mk-tl-no">!</span><p>${tebal(s.sanksi)}</p></div></div>
+    <p class="sa-src">${esc(s.sumber)}</p>`;
+}
+const HALAMAN={daftar:isiDaftar,penguatan:isiPenguatan,setor:isiSetor,penipuan:isiPenipuan,livin:isiLivin,mekanisme:isiMekanisme};
 function isiDetail(hal){
   const detail=hal!=='daftar';
   return `<div class="pgn-xbar">${detail?`<button type="button" class="pgn-back" data-pgn-kembali aria-label="Kembali ke Informasi Highlight Issue Operasional">${IKON.kembali}<span>Kembali</span></button>`:''}

@@ -60,6 +60,13 @@ class KitoBridge(
         activity.runOnUiThread { (activity as? MainActivity)?.bukaEksternal(url) }
     }
 
+    /** Blokir (true) / izinkan (false) screenshot & rekam layar. Dipanggil assets/js/tamu-aman.js:
+        aktif untuk pengguna tanpa login, dilepas setelah login. */
+    @JavascriptInterface
+    fun setSecure(aktif: Boolean) {
+        activity.runOnUiThread { (activity as? MainActivity)?.aturLayarAman(aktif) }
+    }
+
     @JavascriptInterface
     fun isNotificationEnabled(): Boolean {
         return NotificationManagerCompat.from(activity).areNotificationsEnabled()

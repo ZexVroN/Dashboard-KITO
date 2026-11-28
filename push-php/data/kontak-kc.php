@@ -1,6 +1,6 @@
 <?php
 /* Nomor HP Kepala Cabang per cabang: kode => [nama, nomor tampilan, nomor WhatsApp]. Dibuat tools/build_kontak_kc.py.
-   RAHASIA: hanya untuk akun ROH. Jangan di-commit, jangan disalin ke data/kito.json. */
+   RAHASIA: hanya untuk akun ROH & SQO Region. Jangan di-commit, jangan disalin ke data/kito.json. */
 return [
 "11000" => [
 "Bambang Tri Asmoro",

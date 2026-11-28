@@ -3,7 +3,7 @@
    Nomor HP BOM/BOS + tombol Telepon & WhatsApp: hanya untuk akun login ROH & SQO Region (semua cabang) serta
    ASM & SQO Area (hanya cabang di areanya). Nomor TIDAK ada di data publik: diambil dari server (POST /api/kontak/bom,
    push-php/lib/kontak.php) memakai kredensial akun login, disimpan di memori saja, hilang saat logout/muat ulang.
-   Nomor HP/WhatsApp Kepala Cabang: HANYA akun ROH (server mengirim field "kc" khusus ROH; data/kontak-kc.php).
+   Nomor HP/WhatsApp Kepala Cabang: HANYA akun ROH & SQO Region (server mengirim field "kc" khusus keduanya; data/kontak-kc.php).
    Add-on non-destruktif: membungkus kartuCabang di URUTAN, tidak mengubah script.js. */
 (()=>{'use strict';
 const P=window.KITO_PIMPINAN;
@@ -12,6 +12,7 @@ const i=URUTAN.indexOf(kartuCabang);if(i<0)return;
 // dibaca saat dipakai: push-config.js dimuat setelah file ini
 const API=()=>(window.KITO_PUSH?.api||'').replace(/\/+$/,'');
 const BOLEH=['admin','roh','sqor','sqoa','asm'];
+const BOLEH_KC=['roh','sqor'];   // nomor Kepala Cabang (harus sama dengan KP_KONTAK_KC_JAB di push-php/lib/kontak.php)
 const akun=()=>{try{return window.KITO_AKUN?.kini()||null;}catch(e){return null;}};
 const SVG=d=>`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
 const IK_TEL=SVG('<path d="M5 4h4l2 5-2.5 1.5a11 11 0 005 5L15 13l5 2v4a2 2 0 01-2 2A16 16 0 013 6a2 2 0 012-2"/>');
@@ -29,8 +30,8 @@ async function muatKontak(){
     const r=await fetch(API()+'/api/kontak/bom',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(a.kred),cache:'no-store'});
     const j=await r.json().catch(()=>({}));
     if(!r.ok)throw new Error(r.status===401?'Sesi login tidak berlaku lagi. Silakan logout lalu login ulang.':(j.error||'server tidak merespons ('+r.status+')'));
-    data=j.kontak||{};kc=a.jab==='roh'&&j.kc?j.kc:null;
-    if(a.jab==='roh'&&!kc)kcInfo=!('kc' in j)?'Server belum diperbarui: unggah berkas push-php/lib/kontak.php terbaru ke hosting.'
+    data=j.kontak||{};kc=BOLEH_KC.includes(a.jab)&&j.kc?j.kc:null;
+    if(BOLEH_KC.includes(a.jab)&&!kc)kcInfo=!('kc' in j)?'Server belum diperbarui: unggah berkas push-php/lib/kontak.php terbaru ke hosting.'
       :j.kcStatus==='kosong'?'Berkas push-php/data/kontak-kc.php di server kosong. Unggah ulang berkas terbaru.'
       :'Berkas push-php/data/kontak-kc.php belum ada di server. Unggah ke folder push-php/data/ di hosting.';
   }catch(e){err=e instanceof TypeError?'Nomor HP belum bisa dimuat: server tidak bisa dihubungi. Akan dicoba lagi otomatis.':(e.message||'server tidak bisa dihubungi');}
@@ -122,10 +123,10 @@ function blokKontak(kode,namaBom){
   </div>`;
 }
 
-/* nomor Kepala Cabang: khusus akun ROH */
+/* nomor Kepala Cabang: khusus akun ROH & SQO Region */
 function blokKc(kode,namaBm){
   const a=akun();
-  if(!a||a.jab!=='roh'||K.kunci!==a.kunci||K.muat||K.err||!K.data)return '';
+  if(!a||!BOLEH_KC.includes(a.jab)||K.kunci!==a.kunci||K.muat||K.err||!K.data)return '';
   const k=K.kc&&K.kc[kode];
   if(!K.kc)return `<div class="pm-hp pm-hp-info">Nomor HP Kepala Cabang belum tampil. ${esc(K.kcInfo||'')}</div>`;
   if(!k)return `<div class="pm-hp pm-hp-info">Nomor HP Kepala Cabang cabang ini belum tersedia.</div>`;

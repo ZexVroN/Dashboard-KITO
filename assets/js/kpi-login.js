@@ -334,7 +334,11 @@
      Muncul sekali per sesi tab bila belum login dan belum memilih "Lanjut tanpa login".
      Tanpa login (tamu): hanya navigasi Cabang yang bisa dibuka (termasuk Informasi Sales & DTI di dalamnya);
      Ranking, Region, Area, dan KPI terkunci 🔒 dan membuka gerbang login bila diketuk. */
-  const sudahLewati = () => { try { return sessionStorage.getItem(KUNCI_LEWATI) === '1'; } catch (e) { return false; } };
+  // "Lanjut tanpa login" hanya berlaku sampai halaman dimuat ulang: setelah refresh, halaman login tampil lagi.
+  // (dulu disimpan di sessionStorage; kunci lama dibersihkan agar tidak tersisa)
+  let lewati = false;
+  try { sessionStorage.removeItem(KUNCI_LEWATI); } catch (e) {}
+  const sudahLewati = () => lewati;
 
   function tandaiNav() {
     const t = tamu();
@@ -364,7 +368,7 @@
     pasangLogin(g.querySelector('form'), () => { tutupGerbang(); render(); });
     g.querySelector('[data-kl-lewati]').addEventListener('click', () => {
       if (modeAdmin) { location.href = location.pathname.replace(/admin\.html$/, ''); return; }   // keluar dari link admin ke login biasa
-      try { sessionStorage.setItem(KUNCI_LEWATI, '1'); } catch (e) {}
+      lewati = true;
       tutupGerbang();
       if (TAB_TERKUNCI.includes(tampil)) { tampil = 'cabang'; render(); }
     });

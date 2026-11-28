@@ -2,14 +2,15 @@
 /* Nomor HP BOM/BOS per cabang untuk pimpinan (kartu cabang, tombol Telepon & WhatsApp).
    Data: data/kontak-bom.php (tools/build_kontak_bom.py, hanya di server; tidak ada di data/kito.json maupun git).
    POST /api/kontak/bom {jabatan, area?, hash, bukti?}
-   Nomor HP Kepala Cabang (data/kontak-kc.php): hanya untuk akun ROH (field "kc" pada respons yang sama).
+   Nomor HP Kepala Cabang (data/kontak-kc.php): hanya untuk akun ROH & SQO Region (field "kc" pada respons yang sama).
    Akses : ROH & SQO Region = seluruh Region II; ASM & SQO Area = hanya cabang di areanya (aturan cakupan keluhan, lib/masukan.php).
    Aman  : akun yang masih memakai password bawaan hanya dilayani bila bukti bawaan sudah diaktifkan
            (tools/amankan_password_bawaan.py), karena hash bawaan tertulis di kpi-login.js yang publik. */
 declare(strict_types=1);
 
 const KP_KONTAK_BERKAS = KP_DIR . '/data/kontak-bom.php';
-// Nomor HP Kepala Cabang (tools/build_kontak_kc.py): HANYA dikirim ke akun ROH, field "kc".
+// Nomor HP Kepala Cabang (tools/build_kontak_kc.py): HANYA dikirim ke akun ROH & SQO Region, field "kc".
+const KP_KONTAK_KC_JAB = ['roh', 'sqor'];
 const KP_KONTAK_KC_BERKAS = KP_DIR . '/data/kontak-kc.php';
 
 function kp_kontak_bom(array $b): array {
@@ -29,8 +30,8 @@ function kp_kontak_bom(array $b): array {
         $out[(string)$kode] = ['nama' => $v[0] ?: null, 'hp' => $v[1], 'wa' => $v[2]];
     }
     $res = ['ok' => true, 'versi' => 2, 'cakupan' => $area ?? 'REGION', 'kontak' => $out];
-    if ($jab === 'roh') {
-        // selalu kirim field kc untuk ROH: null + kcStatus bila berkas belum ada, agar dashboard bisa menjelaskan sebabnya
+    if (in_array($jab, KP_KONTAK_KC_JAB, true)) {
+        // selalu kirim field kc untuk ROH & SQO Region: null + kcStatus bila berkas belum ada, agar dashboard bisa menjelaskan sebabnya
         $res['kc'] = null;
         $res['kcStatus'] = 'tidak-ada';
         if (is_file(KP_KONTAK_KC_BERKAS)) {
@@ -50,7 +51,7 @@ function kp_kontak_bom(array $b): array {
 /** ringkasan untuk status.php (tanpa menampilkan nomor) */
 function kp_kontak_ringkas(): array {
     $hasil = [];
-    foreach (['BOM/BOS' => KP_KONTAK_BERKAS, 'Kepala Cabang (khusus ROH)' => KP_KONTAK_KC_BERKAS] as $label => $f) {
+    foreach (['BOM/BOS' => KP_KONTAK_BERKAS, 'Kepala Cabang (khusus ROH & SQO Region)' => KP_KONTAK_KC_BERKAS] as $label => $f) {
         $n = 0;
         if (is_file($f)) { $d = require $f; $n = is_array($d) ? count($d) : 0; }
         $hasil[] = [$label, basename($f), is_file($f), $n];

@@ -1,0 +1,66 @@
+/* Perlindungan halaman untuk pengguna tanpa login (html.tamu, diatur assets/js/tamu-aman.js) */
+
+/* tombol ekspor CSV dan Cetak / Simpan PDF disembunyikan */
+html.tamu #cetak,
+html.tamu .aksi:has(#cetak),
+html.tamu .unduh,
+html.tamu [data-ex],
+html.tamu [data-rg-csv],
+html.tamu [data-rg-pcsv],
+html.tamu [data-rx-csv],
+html.tamu [data-nb-csv] { display: none !important; }
+
+/* seleksi teks, drag gambar, dan menu tekan-lama (iOS) dimatikan; kolom isian tetap bisa dipakai */
+html.tamu body { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+html.tamu img { -webkit-user-drag: none; pointer-events: auto; }
+html.tamu input, html.tamu textarea, html.tamu select, html.tamu [contenteditable] { -webkit-user-select: text; user-select: text; }
+
+/* watermark tamu: berulang di seluruh layar, tidak menghalangi sentuhan/klik */
+.tamu-tanda { display: none; }
+html.tamu .tamu-tanda {
+  position: fixed;
+  inset: 0;
+  z-index: 2147483000;
+  display: block;
+  pointer-events: none;
+  background-repeat: repeat;
+  opacity: .16;
+}
+html[data-theme="dark"].tamu .tamu-tanda { opacity: .22; }
+/* tidak tampil di layar login (gerbang login / form login di halaman), hanya saat dashboard dibuka tanpa login */
+html.tamu:not(.kito-siap) .tamu-tanda,   /* layar loading (splash.js memberi <html> kelas kito-siap setelah selesai) */
+html.tamu body:has(#kito-splash:not(.is-hidden)) .tamu-tanda,
+html.tamu body:has(#app > .memuat) .tamu-tanda,
+html.tamu body.mode-gerbang .tamu-tanda,
+html.tamu body:has(#app .kl) .tamu-tanda { display: none; }
+
+/* tirai penutup saat tombol Win/Cmd atau PrintScreen ditekan / jendela kehilangan fokus / tab disembunyikan */
+.tamu-tirai { display: none; }
+html.tamu.tamu-tutup .tamu-tirai {
+  position: fixed;
+  inset: 0;
+  z-index: 2147483647;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: #0b1630;
+  color: #fff;
+  text-align: center;
+}
+.tamu-tirai div { display: flex; flex-direction: column; gap: 8px; max-width: 320px; }
+.tamu-tirai b { font-size: 18px; }
+.tamu-tirai span { font-size: 13.5px; line-height: 1.5; opacity: .8; }
+html.tamu.tamu-tutup body > *:not(.tamu-tirai) { filter: blur(24px); }
+
+/* cetak dari menu browser: hanya pemberitahuan, tanpa isi dashboard */
+@media print {
+  html.tamu body > * { display: none !important; }
+  html.tamu body::before {
+    content: "Konten dilindungi. Login ke dashboard KITO untuk mencetak atau menyimpan halaman ini.";
+    display: block;
+    padding: 40px;
+    font: 700 16px/1.5 system-ui, sans-serif;
+    color: #000;
+    text-align: center;
+  }
+}

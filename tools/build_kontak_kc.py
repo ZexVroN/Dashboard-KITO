@@ -115,7 +115,7 @@ for r in it:
 
 data = dict(sorted(data.items()))
 php = ("<?php\n/* Nomor HP Kepala Cabang per cabang: kode => [nama, nomor tampilan, nomor WhatsApp]. "
-       "Dibuat tools/build_kontak_kc.py.\n   RAHASIA: hanya untuk akun ROH. Jangan di-commit, jangan disalin ke data/kito.json. */\nreturn "
+       "Dibuat tools/build_kontak_kc.py.\n   RAHASIA: hanya untuk akun ROH & SQO Region. Jangan di-commit, jangan disalin ke data/kito.json. */\nreturn "
        + json.dumps(data, ensure_ascii=False, indent=0).replace("{", "[").replace("}", "]").replace('":', '" =>').replace("$", "\\$")
        + ";\n")
 with open(OUT, "w", encoding="utf-8") as f:

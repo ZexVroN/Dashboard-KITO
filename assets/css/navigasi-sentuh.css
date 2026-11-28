@@ -1,0 +1,177 @@
+/* Pintasan mengembalikan halaman ke bagian atas.
+   Posisi bawah diatur ulang oleh navigasi-sentuh.js agar berada DI ATAS tombol Masukan (.kmk-fab). */
+.scroll-atas {
+  position: fixed;
+  right: max(16px, env(safe-area-inset-right));
+  bottom: calc(136px + env(safe-area-inset-bottom));
+  z-index: 9;
+  width: 44px;
+  height: 44px;
+  border: 1px solid var(--ln);
+  border-radius: 50%;
+  background: var(--nv);
+  color: #fff;
+  box-shadow: 0 4px 15px rgba(0, 32, 96, .25);
+  font-size: 25px;
+  line-height: 1;
+  cursor: pointer;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transform: translateY(12px) scale(.8);
+  transition: opacity .22s ease, transform .25s cubic-bezier(.2, .9, .3, 1.3), bottom .25s ease, visibility 0s linear .25s;
+}
+.scroll-atas.tampil {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  transform: none;
+  transition: opacity .22s ease, transform .25s cubic-bezier(.2, .9, .3, 1.3), bottom .25s ease, visibility 0s;
+}
+.scroll-atas:active { transform: scale(.9); }
+.scroll-atas:focus-visible { outline: 3px solid #eaaa00; outline-offset: 3px; }
+@media (min-width: 769px) { .scroll-atas { display: none; } }
+@media print { .scroll-atas, .geser-ind, .geser-tepi { display: none; } }
+
+/* ===== Tombol Masukan sembunyi saat menggulir turun (mengikuti navigasi bawah) ===== */
+@media (max-width: 720px) and (prefers-reduced-motion: no-preference) {
+  /* muncul: masuk dari kanan sambil perlahan menjadi jelas */
+  html .kmk-fab {
+    will-change: transform, opacity;
+    transition: transform .55s cubic-bezier(.22, 1, .36, 1), opacity .45s ease-out, filter .45s ease-out;
+  }
+  /* sembunyi: memudar dan sedikit kabur sambil meluncur ke kanan */
+  html.nav-turun .kmk-fab {
+    transform: translateX(calc(100% + 24px)) scale(.94);
+    opacity: 0;
+    filter: blur(2px);
+    pointer-events: none;
+    transition: transform .6s cubic-bezier(.65, 0, .35, 1), opacity .4s ease-in, filter .4s ease-in;
+  }
+}
+
+/* ===== Geser pindah / kembali halaman ===== */
+html.geser-jalan, html.geser-jalan body { overflow-x: hidden; }
+html.geser-jalan #app { will-change: transform, opacity; }
+
+/* cahaya lembut di tepi layar, membesar mengikuti jarak geser */
+.geser-tepi {
+  --p: 0;
+  --y: 50%;
+  --w: rgba(0, 32, 96, .32);
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  z-index: 49;
+  width: 120px;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity .3s ease;
+}
+.geser-tepi.kiri  { left: 0;  background: radial-gradient(calc(30px + var(--p) * 70px) 220px at 0 var(--y), var(--w), transparent); }
+.geser-tepi.kanan { right: 0; background: radial-gradient(calc(30px + var(--p) * 70px) 220px at 100% var(--y), var(--w), transparent); }
+.geser-tepi.aktif { opacity: calc(.4 + var(--p) * .6); transition: none; }
+.geser-tepi.siap  { --w: rgba(37, 99, 235, .42); }
+.geser-tepi.buntu { --w: rgba(152, 162, 179, .3); }
+.geser-tepi.lepas { opacity: 0; transition: opacity .35s ease; }
+
+.geser-ind {
+  --p: 0;
+  position: fixed;
+  top: 50%;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity .25s ease;
+}
+.geser-ind.kiri  { left: 12px;  transform: translate(calc(-56px + var(--p) * 56px), -50%); }
+.geser-ind.kanan { right: 12px; transform: translate(calc(56px - var(--p) * 56px), -50%); flex-direction: row-reverse; }
+.geser-ind.aktif { opacity: min(1, calc(var(--p) * 1.6)); transition: none; }
+.geser-ind.lepas { opacity: 0; transition: opacity .3s ease .05s; }
+
+/* bulatan dengan cincin progres */
+.geser-bul {
+  position: relative;
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: var(--cd, #fff);
+  color: var(--nv, #002060);
+  box-shadow: 0 8px 24px rgba(0, 32, 96, .22), 0 1px 3px rgba(0, 0, 0, .1);
+  transform: scale(calc(.7 + var(--p) * .3));
+  transition: background .2s ease, color .2s ease, transform .25s cubic-bezier(.34, 1.56, .64, 1), box-shadow .2s ease;
+}
+.geser-ring { position: absolute; inset: 0; transform: rotate(-90deg); }
+.geser-jalur  { fill: none; stroke: rgba(0, 32, 96, .12); stroke-width: 3; }
+.geser-cincin { fill: none; stroke: currentColor; stroke-width: 3; stroke-linecap: round; transition: stroke .2s ease; }
+.geser-panah  { position: relative; transition: transform .25s cubic-bezier(.34, 1.56, .64, 1), opacity .2s ease; }
+.geser-ind.kiri .geser-panah { transform: scaleX(-1); }
+.geser-ind.siap .geser-bul {
+  background: var(--nv, #002060);
+  color: #fff;
+  transform: scale(1.12);
+  box-shadow: 0 0 0 6px rgba(37, 99, 235, .18), 0 10px 26px rgba(0, 32, 96, .35);
+}
+.geser-ind.siap .geser-cincin { stroke: transparent; }
+.geser-ind.siap.kanan .geser-panah { transform: translateX(2px); }
+.geser-ind.siap.kiri .geser-panah  { transform: scaleX(-1) translateX(2px); }
+.geser-ind.lepas .geser-bul { transform: scale(1.4); }
+.geser-ind.buntu .geser-bul { color: #98a2b3; }
+.geser-ind.buntu .geser-panah { opacity: .35; }
+
+/* label halaman tujuan (ikon + nama + petunjuk) */
+.geser-lbl {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  max-width: 170px;
+  padding: 7px 12px 7px 8px;
+  border-radius: 14px;
+  background: rgba(19, 32, 61, .9);
+  color: #fff;
+  box-shadow: 0 8px 22px rgba(0, 0, 0, .22);
+  opacity: calc(var(--p) * 1.2 - .2);
+  transform: translateX(calc((1 - var(--p)) * -10px));
+  transition: background .2s ease;
+}
+.geser-ind.kanan .geser-lbl { padding: 7px 8px 7px 12px; flex-direction: row-reverse; text-align: right; transform: translateX(calc((1 - var(--p)) * 10px)); }
+.geser-lbl-ik {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 28px;
+  height: 28px;
+  border-radius: 9px;
+  background: rgba(255, 255, 255, .14);
+  font-size: 16px;
+  line-height: 1;
+}
+.geser-lbl-tx { display: flex; flex-direction: column; min-width: 0; }
+.geser-lbl-tx b { font-size: 13px; line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.geser-lbl-tx small { font-size: 10.5px; line-height: 1.25; opacity: .75; white-space: nowrap; }
+.geser-lbl-tx small:empty { display: none; }
+.geser-ind.siap .geser-lbl { background: var(--nv, #002060); }
+.geser-ind.buntu .geser-lbl { background: rgba(102, 112, 133, .88); }
+
+/* tab tujuan di navigasi bawah ikut tersorot saat siap dilepas */
+.nav button.geser-tuju {
+  transform: translateY(-3px) scale(1.06);
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, .45);
+  transition: transform .25s cubic-bezier(.34, 1.56, .64, 1), box-shadow .2s ease;
+}
+
+[data-theme="dark"] .geser-bul, body.dark .geser-bul { color: var(--c1, #6ea0ff); box-shadow: 0 8px 24px rgba(0, 0, 0, .45); }
+[data-theme="dark"] .geser-jalur, body.dark .geser-jalur { stroke: rgba(255, 255, 255, .14); }
+[data-theme="dark"] .geser-ind.siap .geser-bul, body.dark .geser-ind.siap .geser-bul { background: var(--c1, #6ea0ff); color: #0d1424; }
+[data-theme="dark"] .geser-ind.siap .geser-lbl, body.dark .geser-ind.siap .geser-lbl { background: #2a4fa0; }
+[data-theme="dark"] .geser-tepi, body.dark .geser-tepi { --w: rgba(110, 160, 255, .28); }
+
+@media (prefers-reduced-motion: reduce) {
+  .scroll-atas, .scroll-atas.tampil, .geser-ind, .geser-bul, .geser-panah, .geser-tepi, .nav button.geser-tuju { transition: none; }
+}

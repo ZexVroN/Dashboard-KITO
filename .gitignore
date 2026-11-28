@@ -15,3 +15,7 @@ __pycache__/
 # Unggah manual ke hosting (push-php/lib/) bila ada perubahan.
 push-php/lib/pengguna.php
 push-php/lib/pengguna.html
+
+# Nomor HP pimpinan cabang: RAHASIA, hanya diunggah manual ke hosting (jangan di-commit)
+push-php/data/kontak-kc.php
+push-php/data/kontak-bom.php

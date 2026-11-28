@@ -260,6 +260,17 @@ if ATUR.get("pegawai") and ATUR.get("induk_mengikat"):
     pegawai = _hasil
 for p in pegawai:
     p.pop("aturan_jabatan", None)
+# kode area mengikuti cabang (pegawai yang dipindah lewat "pindah"/daftar induk ke cabang di area lain)
+from collections import Counter as _C
+_area_cab = {}
+for p in pegawai:
+    if p["id"][3]:
+        _area_cab.setdefault(p["id"][4], _C())[p["id"][3]] += 1
+for p in pegawai:
+    a = _area_cab.get(p["id"][4])
+    if a and a.most_common(1)[0][0] != p["id"][3]:
+        print(f"  area   : {p['id'][0]} ({p['id'][4]}) {p['id'][3] or '-'} -> {a.most_common(1)[0][0]}")
+        p["id"][3] = a.most_common(1)[0][0]
 # ubah jabatan: target & target balance ikut standar jabatan baru (nilai terbanyak pegawai lain dengan jabatan itu
 # di laporan yang sama); akuisisi & balance tetap pencapaian pegawai tersebut
 if any(p.get("ubah_jabatan") for p in pegawai):

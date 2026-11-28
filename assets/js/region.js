@@ -37,7 +37,11 @@ const entOf=id=>id==='NASIONAL'?NAS:REG.find(e=>e.id===id)||NAS;
 /* ----- tanggal: DtD mengikuti filter Tanggal di header ----- */
 const iso=()=>D.dates[st.d];
 const wIdx=()=>R.tglWaktu.indexOf(iso());
-const nIdx=()=>R.tglNbds.indexOf(iso());
+// tanggal yang lebih baru dari laporan NBDS terakhir (laporan belum tersedia, mis. 26 Nov) memakai data NBDS terakhir;
+// tanggal yang sengaja dikecualikan (13 & 18 Nov) tetap kosong
+const nbdsAkhir=()=>R.tglNbds[R.tglNbds.length-1];
+const nbdsLewat=()=>!!nbdsAkhir()&&iso()>nbdsAkhir();
+const nIdx=()=>{const i=R.tglNbds.indexOf(iso());return i<0&&nbdsLewat()?R.tglNbds.length-1:i;};
 
 /* ----- indikator -----
    val(e,per) nilai entitas · seri(e) nilai harian (untuk tren) · per: periode tersedia */
@@ -126,7 +130,7 @@ function hero(){
   const opsi=[['NASIONAL','Nasional (bankwide)'],...REG.filter(e=>e!==FOKUS).map(e=>[e.id,`Region ${e.no} · ${e.nama}`])];
   return `<section class="cd rx-hero"><span class="rg-eyebrow">DASHBOARD REGION · BANKWIDE</span>
     <h3>Region ${clean(FOKUS.no)} · ${clean(FOKUS.nama)} <small>vs 11 region lain</small></h3>
-    <p class="rg-sub">Waktu Antri, Utilisasi NBDS, O2O${emRegion.size?', dan Informasi Sales (Program Emas)':''}. Tanggal DtD mengikuti filter Tanggal di atas · P95 pada ${rentangP95}, P90 pada riwayat sebelumnya · data s.d. ${isoLong(R.tanggal)}.</p>
+    <p class="rg-sub">Waktu Antri, Utilisasi NBDS, O2O${emRegion.size?', dan Informasi Sales (Program Emas)':''}. Tanggal DtD mengikuti filter Tanggal di atas · P95 pada ${rentangP95}, P90 pada riwayat sebelumnya · data s.d. ${isoLong(R.tanggal)}.${nbdsLewat()?` NBDS DtD ${isoLong(iso())} kosong (laporan belum tersedia): memakai data terakhir ${isoLong(nbdsAkhir())}.`:''}</p>
     <div class="rx-chips">${ranks}</div>
     <div class="rx-ctrl"><div><span class="rg-g">Periode</span>${seg('per',[['dtd',`DtD ${isoShort(iso())}`],['mtd',`MTD ${BULAN}`]],ui.per)}</div>
     <label class="rx-cmp"><span class="rg-g">Bandingkan dengan</span><select data-rx-cmp aria-label="Pembanding">${opsi.map(([v,t])=>`<option value="${clean(v)}" ${v===ui.cmp?'selected':''}>${clean(t)}</option>`).join('')}</select></label></div>

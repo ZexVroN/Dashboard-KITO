@@ -359,6 +359,7 @@ function kartuUtilisasi() {
     // tanggal yang sengaja tidak ditampilkan (tools/nbds_kecuali.json), mis. 13 & 18 Nov 2026: data tidak ada dari OBO
     const alasan = !mtd && N.kecuali ? N.kecuali[D.dates[st.d]] : null;
     if (alasan) catKec = `<div class="note">ℹ️ Data utilisasi ${dlong(D.dates[st.d])} tidak ditampilkan: ${esc(alasan)}.${terakhir ? ` Yang tampil adalah data terakhir (${dlong(N.tanggal)}).` : ""}</div>`;
+    else if (terakhir) catKec = `<div class="note">ℹ️ Data utilisasi ${dlong(D.dates[st.d])} kosong (laporan NBDS belum tersedia). Yang tampil adalah data terakhir (${dlong(N.tanggal)}).</div>`;
   } else {
     // cadangan: D.M[4..9] = DtD tanggal laporan
     const m = D.M[st.b];

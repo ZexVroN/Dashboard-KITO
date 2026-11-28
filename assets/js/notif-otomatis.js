@@ -422,14 +422,19 @@
      KITO_AREA_NBDS.kecuali). Banner muncul sekali per perangkat setiap daftarnya berubah; isinya juga tampil sebagai kartu di lembar 🔔. */
   const tglPanjang = (t) => { try { return new Date(t + 'T00:00').toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }); } catch (e) { return t; } };
   function infoData() {
-    const kec = (window.KITO_AREA_NBDS && window.KITO_AREA_NBDS.kecuali) || {};
+    const N = window.KITO_AREA_NBDS || {};
+    const kec = N.kecuali || {};
     const tgl = Object.keys(kec).sort();
-    if (!tgl.length) return null;
-    const alasan = [...new Set(tgl.map((t) => kec[t]))];
-    const daftar = tgl.map(tglPanjang);
-    const gabung = daftar.length > 1 ? daftar.slice(0, -1).join(', ') + ' dan ' + daftar[daftar.length - 1] : daftar[0];
-    return { kunci: tgl.map((t) => t + ':' + kec[t]).join('|'), title: 'Info data Utilisasi NBDS',
-      body: `Data Utilisasi NBDS ${gabung} tidak ditampilkan: ${alasan.join('; ')}.` };
+    // tanggal yang sudah ada data antrian/O2O tetapi laporan NBDS-nya belum ada (mis. 26 Nov): otomatis, tanpa membuang data
+    const dTgl = (window.D && window.D.dates) || [];
+    const belum = N.tanggal ? dTgl.filter((t) => t > N.tanggal && !kec[t]) : [];
+    if (!tgl.length && !belum.length) return null;
+    const gabungT = (a) => { const d = a.map(tglPanjang); return d.length > 1 ? d.slice(0, -1).join(', ') + ' dan ' + d[d.length - 1] : d[0]; };
+    const kal = [];
+    if (tgl.length) kal.push(`Data Utilisasi NBDS ${gabungT(tgl)} tidak ditampilkan: ${[...new Set(tgl.map((t) => kec[t]))].join('; ')}.`);
+    if (belum.length) kal.push(`Data Utilisasi NBDS ${gabungT(belum)} kosong (laporan belum tersedia); yang tampil data terakhir ${tglPanjang(N.tanggal)}.`);
+    return { kunci: tgl.map((t) => t + ':' + kec[t]).concat(belum.map((t) => t + ':belum')).join('|'), title: 'Info data Utilisasi NBDS',
+      body: kal.join(' ') };
   }
   async function bannerInfoData() {
     if (!window.KITO_AREA_NBDS) {   // data dashboard (kito.json) belum termuat: coba lagi

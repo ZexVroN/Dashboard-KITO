@@ -33,6 +33,19 @@ OUT = sys.argv[2] if len(sys.argv) > 2 else "KITO_DTI"
 TARGET_DTI = 98.5
 
 wb = openpyxl.load_workbook(SRC, read_only=True, data_only=True)
+_SHEET = {n.strip().lower(): n for n in wb.sheetnames}
+
+
+def sheet(nama):
+    """Ambil sheet tanpa peduli huruf besar/kecil ("Cendup NTB Bulan berjalan" = "... Berjalan")."""
+    return wb[_SHEET[nama.strip().lower()]]
+
+
+# data lama: kolom ringkasan yang KOSONG di laporan baru tetap memakai nilai sebelumnya
+try:
+    LAMA = kito_data.baca(OUT) or {}
+except Exception:
+    LAMA = {}
 
 
 def num(v):
@@ -92,7 +105,7 @@ def pasang(r, i):
 
 cabang, area_kode = {}, {}
 area_skrg = None
-for r in wb["Cabang"].iter_rows(min_row=4, values_only=True):
+for r in sheet("Cabang").iter_rows(min_row=4, values_only=True):
     r = list(r) + [None] * 40
     nama, kd = teks(r[1]), kode(r[2])
     if not nama or not kd:
@@ -110,7 +123,7 @@ for r in wb["Cabang"].iter_rows(min_row=4, values_only=True):
     }
 
 area = {}
-for r in wb["Area"].iter_rows(min_row=4, values_only=True):
+for r in sheet("Area").iter_rows(min_row=4, values_only=True):
     r = list(r) + [None] * 45
     nama = teks(r[1])
     key = nama or "REGION II"
@@ -125,8 +138,30 @@ for r in wb["Area"].iter_rows(min_row=4, values_only=True):
     }
 
 
-def baris(sheet):
-    it = wb[sheet].iter_rows(values_only=True)
+# ---------- 1b. bulan laporan (judul "NTB NOVEMBER2026") ----------
+BULAN_ID = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"]
+judul = " ".join(teks(v) for v in next(sheet("Cabang").iter_rows(max_row=1, values_only=True)) if v)
+m = re.search(r"NTB\s+([A-Z]+)\s*(\d{4})", judul.upper())
+bulan = next((f"{b} {m.group(2)}" for b in BULAN_ID if m and b.upper() == m.group(1)), None)
+
+# ---------- 1c. kolom ringkasan yang kosong di SEMUA cabang -> pakai data sebelumnya ----------
+BIDANG = [("ntb", "err"), ("ntb", "slik"), ("ntb", "cd"), ("etb", "err"), ("etb", "cd")]
+tetap = {}
+for grp, f in BIDANG:
+    if cabang and all(c[grp][f] == [None, None] for c in cabang.values()):
+        lama_cab, lama_area = LAMA.get("cabang", {}), LAMA.get("area", {})
+        for kd, c in cabang.items():
+            if kd in lama_cab:
+                c[grp][f] = lama_cab[kd][grp][f]
+        for nm_a, a in area.items():
+            if nm_a in lama_area:
+                a[grp][f] = lama_area[nm_a][grp][f]
+        tetap[f"{grp}.{f}"] = (LAMA.get("tetap") or {}).get(f"{grp}.{f}") or LAMA.get("bulan") or "Oktober 2026"
+        print(f"  {grp.upper()} {f}: kosong di laporan -> tetap memakai data sebelumnya ({tetap[f'{grp}.{f}']})")
+
+
+def baris(nama):
+    it = sheet(nama).iter_rows(values_only=True)
     h = [teks(x) for x in next(it)]
     for r in it:
         if any(v is not None for v in r):
@@ -140,7 +175,7 @@ for d in baris("CIF Dana NTB Bulan Berjalan"):
     tgl_data.add(iso(d["TGL_DATA"]))
     errs = list(dict.fromkeys(k(pesan(e)) for e in str(d["ERROR_MSG"] or "").split(";") if pesan(e)))
     ntb[kd].append([samar(d["NO_CIF"]), teks(d["CFCLAS"]), iso(d["TGL_BUKA"]), errs,
-                    num(d["umur_data_error"]), k(d["CFVUSR"]), 1 if teks(d["Progress"]) == "Done" else 0])
+                    num(d["umur_data_error"]), k(d["CFVUSR"]), 1 if teks(d.get("Progress")) == "Done" else 0])
 
 # ---------- 3. CIF Dana ETB (ringkasan per cabang) ----------
 etb = defaultdict(lambda: {"th": defaultdict(lambda: [0, 0]), "err": Counter(), "umur": Counter(), "ch": Counter()})
@@ -148,7 +183,7 @@ UMUR = [(0, "0 hari"), (30, "1–30 hari"), (90, "31–90 hari"), (10 ** 9, "> 9
 for d in baris("CIF Dana ETB."):
     kd = kode(d["KD_CABANG"])
     e = etb[kd]
-    done = teks(d["Progress"]) == "Done"
+    done = teks(d.get("Progress")) == "Done"
     th = teks(d["STATUS_CIF"]).split(":")[-1].strip() or "–"
     e["th"][th][0 if done else 1] += 1
     if not done:
@@ -174,14 +209,14 @@ def grup(v):
 
 cendup = {"ntb": defaultdict(list), "etb": defaultdict(list)}
 tgl_cd = set()
-for key, sheet in (("ntb", "Cendup NTB Bulan Berjalan"), ("etb", "Cendup ETB")):
-    for d in baris(sheet):
+for key, nm in (("ntb", "Cendup NTB Bulan Berjalan"), ("etb", "Cendup ETB")):
+    for d in baris(nm):
         kd = kode(d["KD_CABANG"])
         tgl_cd.add(iso(d["Tgl_Proses"]))
         ket = teks(d["KETERANGAN"]).replace("Field yang sama :", "").strip(" ,")
         cendup[key][kd].append([samar(d["CIF"]), grup(d["KD_DUPLIKASI"]), teks(d["JNS_NASABAH"]), iso(d["CREATE_DATE"]),
                                 num(d["JMLH_DUPLIKAT"]), k(ket), k(d["SOURCE"]), num(d["umur_data"]),
-                                1 if teks(d["Progress"]) == "Done" else 0])
+                                1 if teks(d.get("Progress")) == "Done" else 0])
 
 # ---------- 5. User SSIM ----------
 ssim = defaultdict(list)
@@ -208,6 +243,8 @@ for kd, c in cabang.items():
 out = {
     "periode": {"ntb": max(t for t in tgl_data if t), "cendup": max(t for t in tgl_cd if t)},
     "targetDti": TARGET_DTI,
+    "bulan": bulan,          # bulan laporan, mis. "November 2026"
+    "tetap": tetap,          # {"ntb.err": "Oktober 2026", ...}: kolom yang dipertahankan dari data sebelumnya
     "sumber": SRC.replace("\\", "/").split("/")[-1],
     "umur": [u for _, u in UMUR],
     "kamus": KAMUS,

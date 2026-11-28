@@ -82,17 +82,13 @@ class MainActivity : AppCompatActivity() {
         webView.webViewClient = object : WebViewClient() {
             override fun shouldOverrideUrlLoading(view: WebView?, request: WebResourceRequest?): Boolean {
                 val url = request?.url?.toString() ?: return false
-                // Buka link eksternal (di luar inbranch.region2.co.id) di browser Chrome
-                return if (url.contains("region2.co.id") || url.startsWith("file://") || url.startsWith("data:")) {
-                    false
-                } else {
-                    try {
-                        startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
-                        true
-                    } catch (e: Exception) {
-                        false
-                    }
-                }
+                // Halaman KITO sendiri tetap di WebView
+                if (url.contains("region2.co.id") || url.startsWith("file://") || url.startsWith("data:")
+                    || url.startsWith("blob:") || url.startsWith("about:")) return false
+                // Selain itu (wa.me, whatsapp://, tel:, mailto:, intent://, situs lain) dibuka di aplikasi yang sesuai.
+                // Tanpa ini WebView mencoba memuat whatsapp:// sendiri -> "net::ERR_UNKNOWN_URL_SCHEME".
+                bukaEksternal(url)
+                return true
             }
         }
 
@@ -159,5 +155,35 @@ class MainActivity : AppCompatActivity() {
                 }
             }
         })
+    }
+
+    /** Buka URL di luar WebView: Telepon, WhatsApp, email, intent://, atau browser. Dipakai juga oleh KitoBridge.openExternal. */
+    fun bukaEksternal(url: String) {
+        try {
+            val intent = if (url.startsWith("intent:")) {
+                Intent.parseUri(url, Intent.URI_INTENT_SCHEME).apply {
+                    addCategory(Intent.CATEGORY_BROWSABLE); component = null; selector = null
+                }
+            } else {
+                val uri = Uri.parse(url)
+                if (uri.scheme == "tel") Intent(Intent.ACTION_DIAL, uri) else Intent(Intent.ACTION_VIEW, uri)
+            }
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            startActivity(intent)
+        } catch (e: Exception) {
+            // aplikasi tujuan tidak terpasang: coba alamat cadangan (intent:// browser_fallback_url / wa.me lewat browser)
+            val cadangan = when {
+                url.startsWith("intent:") -> try {
+                    Intent.parseUri(url, Intent.URI_INTENT_SCHEME).getStringExtra("browser_fallback_url")
+                } catch (x: Exception) { null }
+                url.startsWith("whatsapp:") -> Uri.parse(url).getQueryParameter("phone")?.let { "https://wa.me/$it" }
+                else -> null
+            }
+            if (cadangan != null) {
+                try { startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(cadangan)).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) } catch (x: Exception) { }
+            } else {
+                android.widget.Toast.makeText(this, "Aplikasi untuk membuka tautan ini tidak ditemukan", android.widget.Toast.LENGTH_SHORT).show()
+            }
+        }
     }
 }

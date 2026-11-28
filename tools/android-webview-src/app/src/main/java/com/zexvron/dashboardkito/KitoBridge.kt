@@ -54,6 +54,12 @@ class KitoBridge(
     /**
      * Memeriksa apakah izin notifikasi aktif di pengaturan sistem Android
      */
+    /** Buka Telepon / WhatsApp / tautan luar dari halaman (pimpinan.js memakai ini bila ada). */
+    @JavascriptInterface
+    fun openExternal(url: String) {
+        activity.runOnUiThread { (activity as? MainActivity)?.bukaEksternal(url) }
+    }
+
     @JavascriptInterface
     fun isNotificationEnabled(): Boolean {
         return NotificationManagerCompat.from(activity).areNotificationsEnabled()
